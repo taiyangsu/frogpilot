@@ -221,6 +221,7 @@ struct CarState {
   charging @43 :Bool;
 
   # FrogPilot CarStates
+  toyotaCar @48 :Bool;
 
   struct WheelSpeeds {
     # optional wheel speeds
@@ -330,6 +331,7 @@ struct CarControl {
   rightBlinker @16: Bool;
 
   # FrogPilot CarControls
+  reverseCruise @18: Bool;
 
   # Any car specific rate limits or quirks applied by
   # the CarController are reflected in actuatorsOutput
