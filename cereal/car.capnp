@@ -331,6 +331,7 @@ struct CarControl {
   rightBlinker @16: Bool;
 
   # FrogPilot CarControls
+  alwaysOnLateral @17: Bool;
   reverseCruise @18: Bool;
 
   # Any car specific rate limits or quirks applied by
@@ -501,6 +502,7 @@ struct CarParams {
 
   # FrogPilot CarParams
   accelerationProfile @72 :UInt8;
+  alwaysOnLateral @73 :Bool;
   conditionalExperimentalMode @74 :Bool;
   drivingPersonalitiesUIWheel @75 :Bool;
   experimentalModeViaWheel @76 :Bool;
