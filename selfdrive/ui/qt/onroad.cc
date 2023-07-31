@@ -78,7 +78,7 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
   static Params params;
   static bool propagateEvent = false;
   static bool recentlyTapped = false;
-  const int x_offset = 250;
+  const int x_offset = scene.mute_dm ? 50 : 250;
   bool rightHandDM = sm["driverMonitoringState"].getDriverMonitoringState().getIsRHD();
 
   const bool clickedOnWidget = false;
@@ -352,6 +352,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   // FrogPilot properties
   setProperty("experimentalMode", s.scene.experimental_mode);
   setProperty("frogColors", s.scene.frog_colors);
+  setProperty("muteDM", s.scene.mute_dm);
 }
 
 void AnnotatedCameraWidget::drawHud(QPainter &p) {
@@ -736,7 +737,7 @@ void AnnotatedCameraWidget::paintGL() {
   }
 
   // DMoji
-  if (!hideBottomIcons && (sm.rcv_frame("driverStateV2") > s->scene.started_frame)) {
+  if (!hideBottomIcons && (sm.rcv_frame("driverStateV2") > s->scene.started_frame) && !muteDM) {
     update_dmonitoring(s, sm["driverStateV2"].getDriverStateV2(), dm_fade_state, rightHandDM);
     drawDriverState(painter, s);
   }
