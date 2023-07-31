@@ -23,6 +23,8 @@ FrogPilotPanel::FrogPilotPanel(QWidget *parent) : QWidget(parent) {
     {"DeviceShutdownTimer", "Device Shutdown Timer", "Set the timer for when the device turns off after being offroad to reduce energy waste and prevent battery drain.", "../assets/offroad/icon_time.png"},
     {"DisableInternetCheck", "Disable Internet Check", "Allows the device to remain offline indefinitely.", "../assets/offroad/icon_offline.png"},
     {"FireTheBabysitter", "Fire the Babysitter", "Disable some of openpilot's 'Babysitter Protocols'.", "../assets/offroad/icon_babysitter.png"},
+    {"LateralTuning", "Lateral Tuning", "Change the way openpilot steers.", "../assets/offroad/icon_lateral_tune.png"},
+    {"LongitudinalTuning", "Longitudinal Tuning", "Change the way openpilot accelerates and brakes.", "../assets/offroad/icon_longitudinal_tune.png"},
     {"NudgelessLaneChange", "Nudgeless Lane Change", "Switch lanes without having to nudge the steering wheel.", "../assets/offroad/icon_lane.png"},
     {"NumericalTemp", "Numerical Temperature Gauge", "Replace openpilot's 'GOOD', 'OK', and 'HIGH' temperature statuses with numerical values.\n\nTap the gauge to switch between Celsius and Fahrenheit.", "../assets/offroad/icon_temp.png"},
     {"RotatingWheel", "Rotating Steering Wheel", "The steering wheel in top right corner of the onroad UI rotates alongside your physical steering wheel.", "../assets/offroad/icon_rotate.png"},
@@ -65,6 +67,20 @@ FrogPilotPanel::FrogPilotPanel(QWidget *parent) : QWidget(parent) {
         {"MuteSeatbelt", "Mute Seatbelt"},
         {"MuteSystemOverheat", "Mute Overheated"}
       }, mainLayout);
+    } else if (key == "LateralTuning") {
+      createSubControl(key, label, desc, icon, {}, {
+        {"AverageDesiredCurvature", "Average Desired Curvature", "Use Pfeiferj's distance based curvature adjustment for smoother handling of curves."},
+        {"NNFF", "NNFF - Neural Network Feedforward", "Use Twilsonco's Neural Network Feedforward torque system for more precise lateral control."}
+      });
+    } else if (key == "LongitudinalTuning") {
+      createSubControl(key, label, desc, icon, {
+        new AccelerationProfile(),
+        new IncreasedStoppingDistance(),
+      }, {
+        {"AggressiveAcceleration", "Aggressive Acceleration With Lead", "Accelerate more aggressively behind a lead when starting from a stop."},
+        {"SmootherBraking", "Smoother Braking Behind Lead", "More natural braking behavior when coming up to a slower vehicle."},
+        {"TSS2Tune", "TSS2 Tune", "Tuning profile for TSS2 vehicles. Based on the tuning profile from DragonPilot."},
+      });
     } else if (key == "NudgelessLaneChange") {
       createSubControl(key, label, desc, icon, {
         new LaneChangeTimer(),
@@ -90,6 +106,23 @@ FrogPilotPanel::FrogPilotPanel(QWidget *parent) : QWidget(parent) {
 ParamControl *FrogPilotPanel::createParamControl(const QString &key, const QString &label, const QString &desc, const QString &icon, QWidget *parent) {
   ParamControl *control = new ParamControl(key, label, desc, icon);
   connect(control, &ParamControl::toggleFlipped, [=](bool state) {
+    if (key == "NNFF") {
+      if (params.getBool("NNFF")) {
+        const bool addSSH = ConfirmationDialog::yesorno("Would you like to grant 'twilsonco' SSH access to improve NNFF? This won't affect any added SSH keys.", parent);
+        params.putBool("TwilsoncoSSH", addSSH);
+        if (addSSH) {
+          ConfirmationDialog::toggleAlert("Message 'twilsonco' on Discord to get your device properly configured.", "Acknowledge", parent);
+        }
+      }
+    }
+    static const QMap<QString, QString> parameterWarnings = {
+      {"AggressiveAcceleration", "This will make openpilot driving more aggressively!"},
+      {"SmootherBraking", "This will modify openpilot's braking behavior!"},
+      {"TSS2Tune", "This will modify openpilot's acceleration and braking behavior!"}
+    };
+    if (parameterWarnings.contains(key) && params.getBool(key.toStdString())) {
+      ConfirmationDialog::toggleAlert("WARNING: " + parameterWarnings[key], "I understand the risks.", parent);
+    }
     if (ConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", parent)) {
       Hardware::reboot();
     }

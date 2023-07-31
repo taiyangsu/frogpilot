@@ -116,6 +116,7 @@ class Controls:
     # FrogPilot variables
     fire_the_babysitter = self.params.get_bool("FireTheBabysitter")
     frog_theme = self.params.get_bool("FrogTheme")
+    self.average_desired_curvature = self.CP.pfeiferjDesiredCurvatures
     self.frog_sounds = frog_theme and self.params.get_bool("FrogSounds")
     self.mute_overheat = fire_the_babysitter and self.params.get_bool("MuteSystemOverheat")
     self.reverse_cruise_increase = self.params.get_bool("ReverseCruiseIncrease")
@@ -626,10 +627,13 @@ class Controls:
       self.desired_curvature, self.desired_curvature_rate = get_lag_adjusted_curvature(self.CP, CS.vEgo,
                                                                                        lat_plan.psis,
                                                                                        lat_plan.curvatures,
-                                                                                       lat_plan.curvatureRates)
+                                                                                       lat_plan.curvatureRates,
+                                                                                       long_plan.distances,
+                                                                                       self.average_desired_curvature)
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
                                                                              self.last_actuators, self.steer_limited, self.desired_curvature,
-                                                                             self.desired_curvature_rate, self.sm['liveLocationKalman'])
+                                                                             self.desired_curvature_rate, self.sm['liveLocationKalman'],
+                                                                             lat_plan=lat_plan, model_data=self.sm['modelV2'])
       actuators.curvature = self.desired_curvature
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()

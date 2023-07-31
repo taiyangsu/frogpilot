@@ -21,6 +21,17 @@ A_CRUISE_MIN = -1.2
 A_CRUISE_MAX_VALS = [1.6, 1.2, 0.8, 0.6]
 A_CRUISE_MAX_BP = [0., 10.0, 25., 40.]
 
+                 # MPH = [0.,    35,    40,  45,  67, 123]
+A_CRUISE_MIN_BP_CUSTOM = [0., 15.66, 17.88, 20., 30., 55.]
+                 # MPH = [0., 6.71, 13.4, 17.9, 24.6, 33.6, 44.7, 55.9, 67.1, 123]
+A_CRUISE_MAX_BP_CUSTOM = [0.,    3,   6.,   8.,  11.,  15.,  20.,  25.,  30., 55.]
+
+A_CRUISE_MIN_VALS_ECO_TUNE = [-0.760, -0.760,  -0.76, -0.76, -0.70, -0.65]
+A_CRUISE_MAX_VALS_ECO_TUNE = [1.6, 1.8, 1.6, 1.2, .76, .62, .48, .36, .28, .09]
+
+A_CRUISE_MIN_VALS_SPORT_TUNE = [-0.770, -0.770, -0.90, -1.00, -0.90, -0.80]
+A_CRUISE_MAX_VALS_SPORT_TUNE = [1.6, 1.8, 2.4, 2.9, 2.1, 1.7, 1.3, .7, .5, .3]
+
 # Lookup table for turns
 _A_TOTAL_MAX_V = [1.7, 3.2]
 _A_TOTAL_MAX_BP = [20., 40.]
@@ -29,6 +40,17 @@ _A_TOTAL_MAX_BP = [20., 40.]
 def get_max_accel(v_ego):
   return interp(v_ego, A_CRUISE_MAX_BP, A_CRUISE_MAX_VALS)
 
+def get_min_accel_eco_tune(v_ego):
+  return interp(v_ego, A_CRUISE_MIN_BP_CUSTOM, A_CRUISE_MIN_VALS_ECO_TUNE)
+
+def get_max_accel_eco_tune(v_ego):
+  return interp(v_ego, A_CRUISE_MAX_BP_CUSTOM, A_CRUISE_MAX_VALS_ECO_TUNE)
+
+def get_min_accel_sport_tune(v_ego):
+  return interp(v_ego, A_CRUISE_MIN_BP_CUSTOM, A_CRUISE_MIN_VALS_SPORT_TUNE)
+
+def get_max_accel_sport_tune(v_ego):
+  return interp(v_ego, A_CRUISE_MAX_BP_CUSTOM, A_CRUISE_MAX_VALS_SPORT_TUNE)
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   """
@@ -48,13 +70,14 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
 class LongitudinalPlanner:
   def __init__(self, CP, init_v=0.0, init_a=0.0):
     self.CP = CP
-    self.mpc = LongitudinalMpc()
+    self.mpc = LongitudinalMpc(self.CP)
     self.fcw = False
 
     self.a_desired = init_a
     self.v_desired_filter = FirstOrderFilter(init_v, 2.0, DT_MDL)
     self.v_model_error = 0.0
 
+    self.x_desired_trajectory = np.zeros(CONTROL_N)
     self.v_desired_trajectory = np.zeros(CONTROL_N)
     self.a_desired_trajectory = np.zeros(CONTROL_N)
     self.j_desired_trajectory = np.zeros(CONTROL_N)
@@ -64,6 +87,8 @@ class LongitudinalPlanner:
     self.personality = log.LongitudinalPersonality.standard
 
     # FrogPilot variables
+    self.acceleration_profile = self.CP.accelerationProfile
+    self.increased_stopping_distance = self.params.get_int("IncreasedStoppingDistance") if self.CP.longitudinalTune else 0
     self.frogpilot_toggles_checked = False
     self.frogpilot_toggles_updated = False
     self.read_param()
@@ -71,6 +96,9 @@ class LongitudinalPlanner:
   def read_param(self):
     self.frogpilot_toggles_updated = self.params.get_bool("FrogPilotTogglesUpdated")
     if self.frogpilot_toggles_updated:
+      if self.CP.longitudinalTune:
+        self.acceleration_profile = self.params.get_int("AccelerationProfile")
+        self.increased_stopping_distance = self.params.get_int("IncreasedStoppingDistance")
       # Check values twice before resetting "FrogPilotTogglesUpdated" so other parts of the code update
       if self.frogpilot_toggles_checked:
         put_bool_nonblocking("FrogPilotTogglesUpdated", False)
@@ -117,7 +145,12 @@ class LongitudinalPlanner:
     prev_accel_constraint = not (reset_state or sm['carState'].standstill)
 
     if self.mpc.mode == 'acc':
-      accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
+      if self.acceleration_profile == 1:
+        accel_limits = [get_min_accel_eco_tune(v_ego), get_max_accel_eco_tune(v_ego)]
+      elif self.acceleration_profile == 2:
+        accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
+      elif self.acceleration_profile == 3:
+        accel_limits = [get_min_accel_sport_tune(v_ego), get_max_accel_sport_tune(v_ego)]
       accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
     else:
       accel_limits = [MIN_ACCEL, MAX_ACCEL]
@@ -143,10 +176,12 @@ class LongitudinalPlanner:
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
     x, v, a, j = self.parse_model(sm['modelV2'], self.v_model_error)
-    self.mpc.update(sm['radarState'], v_cruise, x, v, a, j, personality=self.personality)
+    self.mpc.update(sm['radarState'], v_cruise, x, v, a, j, self.increased_stopping_distance, personality=self.personality)
 
+    self.x_desired_trajectory_full = np.interp(T_IDXS, T_IDXS_MPC, self.mpc.x_solution)
     self.v_desired_trajectory_full = np.interp(T_IDXS, T_IDXS_MPC, self.mpc.v_solution)
     self.a_desired_trajectory_full = np.interp(T_IDXS, T_IDXS_MPC, self.mpc.a_solution)
+    self.x_desired_trajectory = self.x_desired_trajectory_full[:CONTROL_N]
     self.v_desired_trajectory = self.v_desired_trajectory_full[:CONTROL_N]
     self.a_desired_trajectory = self.a_desired_trajectory_full[:CONTROL_N]
     self.j_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC[:-1], self.mpc.j_solution)
@@ -170,6 +205,7 @@ class LongitudinalPlanner:
     longitudinalPlan.modelMonoTime = sm.logMonoTime['modelV2']
     longitudinalPlan.processingDelay = (plan_send.logMonoTime / 1e9) - sm.logMonoTime['modelV2']
 
+    longitudinalPlan.distances = self.x_desired_trajectory.tolist()
     longitudinalPlan.speeds = self.v_desired_trajectory.tolist()
     longitudinalPlan.accels = self.a_desired_trajectory.tolist()
     longitudinalPlan.jerks = self.j_desired_trajectory.tolist()

@@ -129,7 +129,7 @@ class className : public ParamValueControl { \
   Q_OBJECT \
 public: \
   className() : ParamValueControl(labelText, descText, iconPath) { \
-    if (std::string(#className) == "DeviceShutdownTimer") { \
+    if (std::string(#className) == "DeviceShutdownTimer" || std::string(#className) == "IncreasedStoppingDistance") { \
       label.setFixedWidth(225); \
     } \
     refresh(); \
@@ -149,10 +149,22 @@ private: \
   int newValue(int v) { newValueFunc } \
 };
 
+ParamControllerInt(AccelerationProfile, "AccelerationProfile", "   Acceleration Profile", "Change the rate at which openpilot accelerates with either a sporty or more eco friendly profile.", "../assets/offroad/icon_blank.png",
+  int value = params.getInt("AccelerationProfile");
+  return value == 1 ? "Eco" : value == 2 ? "Normal" : "Sport";,
+  return std::clamp(v, 1, 3);
+)
+
 ParamControllerInt(DeviceShutdownTimer, "DeviceShutdownTimer", "Device Shutdown Timer", "Set the timer for when the device turns off after being offroad to reduce energy waste and prevent battery drain.", "../assets/offroad/icon_time.png",
   int value = params.getInt("DeviceShutdownTimer");
   return value == 0 ? "Instant" : (value > 0 && value <= 3) ? QString::number(value * 15) + " mins" : QString::number(value - 3) + (value == 4 ? " hour" : " hours");,
   return std::clamp(v, 0, 33);
+)
+
+ParamControllerInt(IncreasedStoppingDistance, "IncreasedStoppingDistance", "   Increase Stopping Distance", "Increase the stopping distance for a more comfortable stop.", "../assets/offroad/icon_blank.png",
+  int value = params.getInt("IncreasedStoppingDistance");
+  return value == 0 ? "Off" : QString::number(value) + " meters";,
+  return std::clamp(v, 0, 10);
 )
 
 ParamControllerInt(LaneChangeTimer, "LaneChangeTimer", "Lane Change Timer", "Set a time delay before openpilot conducts a nudgeless lane change.", "../assets/offroad/icon_blank.png",

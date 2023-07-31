@@ -79,8 +79,16 @@ def get_T_FOLLOW(personality=log.LongitudinalPersonality.standard):
   else:
     raise NotImplementedError("Longitudinal personality not supported")
 
-def get_stopped_equivalence_factor(v_lead):
-  return (v_lead**2) / (2 * COMFORT_BRAKE)
+def get_stopped_equivalence_factor(v_ego, v_lead, v_lead_distance, t_follow, increased_stopping_distance, smoother_braking):
+  distance_offset = 0
+  speed_difference = np.mean(v_ego - v_lead)
+  if smoother_braking and np.all(v_lead >= 5):
+    # Smoothly decelerate behind a slower lead vehicle
+    distance_offset += np.clip(np.mean(v_lead_distance / (v_lead + speed_difference)) - t_follow, 0, v_lead_distance)
+  if increased_stopping_distance and speed_difference > 0:
+    # Increase the stopping distance for a more comfortable stop
+    distance_offset -= np.clip(np.mean(increased_stopping_distance - v_lead), 0, increased_stopping_distance)
+  return (v_lead**2) / (2 * COMFORT_BRAKE) + distance_offset
 
 def get_safe_obstacle_distance(v_ego, t_follow):
   return (v_ego**2) / (2 * COMFORT_BRAKE) + t_follow * v_ego + STOP_DISTANCE
@@ -220,7 +228,7 @@ def gen_long_ocp():
 
 
 class LongitudinalMpc:
-  def __init__(self, mode='acc'):
+  def __init__(self, CP, mode='acc'):
     self.mode = mode
     self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
     self.reset()
@@ -228,11 +236,16 @@ class LongitudinalMpc:
 
     # FrogPilot variables
     params = Params()
+    longitudinal_tuning = CP.longitudinalTune
+    self.aggressive_acceleration = longitudinal_tuning and params.get_bool("AggressiveAcceleration")
+    self.smoother_braking = longitudinal_tuning and params.get_bool("SmootherBraking")
+    self.distance_increase = 0
 
   def reset(self):
     # self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
     self.solver.reset()
     # self.solver.options_set('print_level', 2)
+    self.x_solution = np.zeros(N+1)
     self.v_solution = np.zeros(N+1)
     self.a_solution = np.zeros(N+1)
     self.prev_a = np.array(self.a_solution)
@@ -333,7 +346,7 @@ class LongitudinalMpc:
     self.cruise_min_a = min_a
     self.max_a = max_a
 
-  def update(self, radarstate, v_cruise, x, v, a, j, personality=log.LongitudinalPersonality.standard):
+  def update(self, radarstate, v_cruise, x, v, a, j, increased_stopping_distance, personality=log.LongitudinalPersonality.standard):
     t_follow = get_T_FOLLOW(personality)
     v_ego = self.x0[1]
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
@@ -341,11 +354,23 @@ class LongitudinalMpc:
     lead_xv_0 = self.process_lead(radarstate.leadOne)
     lead_xv_1 = self.process_lead(radarstate.leadTwo)
 
+    # More aggressive following distance when following a lead vehicle from a stop
+    if self.aggressive_acceleration:
+      lead_distance = lead_xv_0[:,0]
+      lead_speed = lead_xv_0[:,1]
+      speed_difference = lead_speed - v_ego
+      if np.all(speed_difference > lead_speed * 0.2) and np.all(lead_speed < 10):
+        low_speed_boost = np.clip(10 - v_ego, 0, 10)
+        t_follow = min(t_follow, np.mean(t_follow * (lead_speed / (lead_distance + (speed_difference * low_speed_boost)))))
+
+    # Fake a longer lead distance by the value of t_follow
+    self.distance_increase = t_follow
+
     # To estimate a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance
     # and then treat that as a stopped car/obstacle at this new distance.
-    lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1])
-    lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1])
+    lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(self.x_sol[:,1], lead_xv_0[:,1], lead_xv_0[:,0], t_follow, increased_stopping_distance, self.smoother_braking)
+    lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(self.x_sol[:,1], lead_xv_1[:,1], lead_xv_0[:,0], t_follow, increased_stopping_distance, self.smoother_braking)
 
     self.params[:,0] = MIN_ACCEL
     self.params[:,1] = self.max_a
@@ -438,6 +463,7 @@ class LongitudinalMpc:
     for i in range(N):
       self.u_sol[i] = self.solver.get(i, 'u')
 
+    self.x_solution = self.x_sol[:,0]
     self.v_solution = self.x_sol[:,1]
     self.a_solution = self.x_sol[:,2]
     self.j_solution = self.u_sol[:,0]

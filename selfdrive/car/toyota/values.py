@@ -17,6 +17,10 @@ PEDAL_TRANSITION = 10. * CV.MPH_TO_MS
 class CarControllerParams:
   ACCEL_MAX = 1.5  # m/s2, lower than allowed 2.0 m/s2 for tuning reasons
   ACCEL_MIN = -3.5  # m/s2
+  # Slower acceleration at low speeds to not floor it when turning
+  ACCEL_MAX_VALS_SPORT = [1.5, 2.0]
+  # Allow full acceleration once over 22mph
+  ACCEL_MAX_BP_SPORT = [0.0, 10.0]
 
   STEER_STEP = 1
   STEER_MAX = 1500
