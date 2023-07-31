@@ -60,7 +60,7 @@ mat3 update_calibration(Eigen::Vector3d device_from_calib_euler, bool wide_camer
 void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcClient &vipc_client_extra, bool main_wide_camera, bool use_extra_client) {
   // messaging
   PubMaster pm({"modelV2", "cameraOdometry"});
-  SubMaster sm({"lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState", "navModel", "navInstruction"});
+  SubMaster sm({"lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState", "navModel", "navInstruction", "carParams"});
 
   Params params;
 
@@ -143,7 +143,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     // Enable/disable nav features
     uint64_t timestamp_llk = sm["navModel"].getNavModel().getLocationMonoTime();
     bool nav_valid = sm["navModel"].getValid() && (nanos_since_boot() - timestamp_llk < 1e9);
-    bool use_nav = nav_valid && params.getBool("ExperimentalMode");
+    bool use_nav = nav_valid && (params.getBool("ExperimentalMode") || sm["carParams"].getCarParams().getConditionalExperimentalMode());
     if (!nav_enabled && use_nav) {
       nav_enabled = true;
     } else if (nav_enabled && !use_nav) {
