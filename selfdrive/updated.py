@@ -13,6 +13,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import List, Union, Optional
 from markdown_it import MarkdownIt
+from zoneinfo import ZoneInfo
 
 from common.basedir import BASEDIR
 from common.params import Params
@@ -415,8 +416,7 @@ def main() -> None:
     cloudlog.event("update installed")
 
   if not params.get("InstallDate"):
-    t = datetime.datetime.utcnow().isoformat()
-    params.put("InstallDate", t.encode('utf8'))
+    params.put("InstallDate", datetime.datetime.now().astimezone(ZoneInfo('America/Phoenix')).strftime("%B %d, %Y - %I:%M%p"))
 
   updater = Updater()
   update_failed_count = 0 # TODO: Load from param?
