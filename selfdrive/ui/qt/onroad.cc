@@ -116,6 +116,15 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
     speedHidden = !currentVisibility;
     params.putBool("HideSpeed", speedHidden);
     propagateEvent = false;
+  // If the click wasn't for anything specific, change the value of "ExperimentalMode"
+  } else if (recentlyTapped && scene.experimental_mode_via_wheel && scene.enabled) {
+    const bool experimentalMode = params.getBool("ExperimentalMode");
+    params.putBool("ExperimentalMode", !experimentalMode);
+    recentlyTapped = false;
+    propagateEvent = true;
+  } else {
+    recentlyTapped = true;
+    propagateEvent = true;
   }
 
   const bool clickedOnWidget = isDrivingPersonalitiesClicked || isMaxSpeedClicked || isSpeedClicked;
