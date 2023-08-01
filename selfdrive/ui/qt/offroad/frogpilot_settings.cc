@@ -100,7 +100,6 @@ FrogPilotPanel::FrogPilotPanel(QWidget *parent) : QWidget(parent) {
     } else if (key == "LongitudinalTuning") {
       createSubControl(key, label, desc, icon, {
         new AccelerationProfile(),
-        new IncreasedStoppingDistance(),
       }, {
         {"AggressiveAcceleration", "Aggressive Acceleration With Lead", "Accelerate more aggressively behind a lead when starting from a stop."},
         {"SmootherBraking", "Smoother Braking Behind Lead", "More natural braking behavior when coming up to a slower vehicle."},

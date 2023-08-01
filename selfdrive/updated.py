@@ -420,8 +420,14 @@ def main() -> None:
   if Path(os.path.join(STAGING_ROOT, "old_openpilot")).is_dir():
     cloudlog.event("update installed")
 
-  if not params.get("InstallDate"):
-    params.put("InstallDate", datetime.datetime.now().astimezone(ZoneInfo('America/Phoenix')).strftime("%B %d, %Y - %I:%M%p"))
+  date_format = "%B %d, %Y - %I:%M%p"
+  install_date = params.get("InstallDate")
+  if isinstance(install_date, bytes):
+    install_date = install_date.decode('utf-8')
+  try:
+    datetime.datetime.strptime(install_date, date_format)
+  except ValueError:
+    params.put("InstallDate", datetime.datetime.now().astimezone(ZoneInfo('America/Phoenix')).strftime(date_format))
 
   updater = Updater()
   update_failed_count = 0 # TODO: Load from param?

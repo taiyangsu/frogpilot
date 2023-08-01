@@ -104,8 +104,9 @@ def get_stopped_equivalence_factor(v_ego, v_lead, v_lead_distance, t_follow, inc
   speed_difference = np.mean(v_ego - v_lead)
   if smoother_braking and np.all(v_lead >= 5):
     # Smoothly decelerate behind a slower lead vehicle
-    distance_offset += np.clip(np.mean(v_lead_distance / (v_lead + speed_difference)) - t_follow, 0, v_lead_distance)
-  if increased_stopping_distance and speed_difference > 0:
+    if np.all(v_lead + speed_difference > 0):
+      distance_offset += np.clip(np.mean(v_lead_distance / (v_lead + speed_difference)) - t_follow, 0, v_lead_distance)
+  if False:
     # Increase the stopping distance for a more comfortable stop
     distance_offset -= np.clip(np.mean(increased_stopping_distance - v_lead), 0, increased_stopping_distance)
   return (v_lead**2) / (2 * COMFORT_BRAKE) + distance_offset
@@ -391,8 +392,8 @@ class LongitudinalMpc:
     self.distance_increase = t_follow
 
     # LongitudinalPlan variables for onroad driving insights
-    self.safe_obstacle_distance = int(np.mean(get_safe_obstacle_distance(np.mean(self.x_sol[:,1]), t_follow)))
-    self.stopped_equivalence_factor = int(np.mean(get_stopped_equivalence_factor(np.mean(self.x_sol[:,1]), np.mean(lead_xv_0[:,1]), np.mean(lead_xv_0[:,0]), t_follow, increased_stopping_distance, self.smoother_braking)))
+    self.safe_obstacle_distance = max(int(np.max(get_safe_obstacle_distance(self.x_sol[:,1], t_follow))), 0)
+    self.stopped_equivalence_factor = max(int(np.max(get_stopped_equivalence_factor(self.x_sol[:,1], lead_xv_0[:,1], lead_xv_0[:,0], t_follow, increased_stopping_distance, self.smoother_braking))), 0)
 
     # To estimate a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance

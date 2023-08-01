@@ -84,9 +84,6 @@ def init(project: SentryProject) -> None:
     return
 
   env = "release" if is_tested_branch() else "master"
-  dongle_id = Params().get("DongleId", encoding='utf-8')
-  installed = params.get("InstallDate", encoding='utf-8')
-  updated = params.get("Updated", encoding='utf-8')
 
   integrations = []
   if project == SentryProject.SELFDRIVE:
