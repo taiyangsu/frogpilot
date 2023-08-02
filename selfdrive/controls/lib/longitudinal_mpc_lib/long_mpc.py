@@ -384,8 +384,8 @@ class LongitudinalMpc:
       lead_speed = lead_xv_0[:,1]
       speed_difference = lead_speed - v_ego
       if np.all(speed_difference > lead_speed * 0.2):
-        low_speed_boost = np.clip(10 - v_ego, 0, 10)
         lead_speed = np.clip(10 - lead_speed, 0, 10)
+        low_speed_boost = np.clip(25 - v_ego, 0, 25)
         t_follow = min(t_follow, np.mean(t_follow * (lead_speed / (lead_distance + (speed_difference * low_speed_boost)))))
 
     # LongitudinalPlan variables for onroad driving insights

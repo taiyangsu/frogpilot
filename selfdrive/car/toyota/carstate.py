@@ -49,6 +49,7 @@ class CarState(CarStateBase):
     self.conditional_experimental_mode = self.CP.conditionalExperimentalMode
     self.driving_personalities_via_wheel = self.CP.drivingPersonalitiesUIWheel
     self.experimental_mode_via_wheel = self.CP.experimentalModeViaWheel
+    self.cruiseState_previously_enabled = False
     self.lkas_pressed = False
     self.lkas_previously_pressed = False
     self.distance_button = 0
@@ -196,7 +197,8 @@ class CarState(CarStateBase):
     if self.experimental_mode_via_wheel:
       message_keys = ["LDA_ON_MESSAGE", "LKAS_STATUS", "SET_ME_X02"]
       self.lkas_pressed = any(cp_cam.vl["LKAS_HUD"].get(key) == 1 for key in message_keys)
-      if self.lkas_pressed and not self.lkas_previously_pressed and ret.cruiseState.enabled:
+      if self.lkas_pressed and not self.lkas_previously_pressed and (ret.cruiseState.enabled or self.cruiseState_previously_enabled):
+        self.cruiseState_previously_enabled = True
         if self.conditional_experimental_mode:
           # Set "ConditionalStatus" to work with "Conditional Experimental Mode"
           conditional_status = self.params.get_int("ConditionalStatus")
