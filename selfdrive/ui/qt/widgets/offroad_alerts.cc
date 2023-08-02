@@ -31,6 +31,17 @@ AbstractAlert::AbstractAlert(bool hasRebootBtn, QWidget *parent) : QFrame(parent
   footer_layout->addWidget(dismiss_btn, 0, Qt::AlignBottom | Qt::AlignLeft);
   QObject::connect(dismiss_btn, &QPushButton::clicked, this, &AbstractAlert::dismiss);
 
+  disable_check_btn = new QPushButton(tr("Disable Internet Check"));
+  disable_check_btn->setVisible(false);
+  disable_check_btn->setFixedSize(625, 125);
+  footer_layout->addWidget(disable_check_btn, 1, Qt::AlignBottom | Qt::AlignCenter);
+  QObject::connect(disable_check_btn, &QPushButton::clicked, [=]() {
+    params.putBool("DisableInternetCheck", true);
+    Hardware::reboot();
+  });
+  QObject::connect(disable_check_btn, &QPushButton::clicked, this, &AbstractAlert::dismiss);
+  disable_check_btn->setStyleSheet(R"(color: white; background-color: #4F4F4F;)");
+
   snooze_btn = new QPushButton(tr("Snooze Update"));
   snooze_btn->setVisible(false);
   snooze_btn->setFixedSize(550, 125);
@@ -45,12 +56,7 @@ AbstractAlert::AbstractAlert(bool hasRebootBtn, QWidget *parent) : QFrame(parent
     QPushButton *rebootBtn = new QPushButton(tr("Reboot and Update"));
     rebootBtn->setFixedSize(600, 125);
     footer_layout->addWidget(rebootBtn, 0, Qt::AlignBottom | Qt::AlignRight);
-    QObject::connect(rebootBtn, &QPushButton::clicked, [=]() {
-      params.put("Updated", QDateTime::currentDateTime().toTimeZone(QTimeZone("America/Phoenix")).toString("MMMM d, yyyy - h:mma").toStdString());
-      params.putBool("DefaultParamsSet", false); // Check the params again upon boot just in case of new toggles
-      QProcess::execute("rm -f /data/openpilot/prebuilt"); // Remove the prebuilt file when installing updates
-      Hardware::reboot();
-    });
+    QObject::connect(rebootBtn, &QPushButton::clicked, [=]() { Hardware::reboot(); });
   }
 
   setStyleSheet(R"(
@@ -111,6 +117,7 @@ int OffroadAlert::refresh() {
     label->setVisible(!text.isEmpty());
     alertCount += !text.isEmpty();
   }
+  disable_check_btn->setVisible(!alerts["Offroad_ConnectivityNeeded"]->text().isEmpty());
   snooze_btn->setVisible(!alerts["Offroad_ConnectivityNeeded"]->text().isEmpty());
   return alertCount;
 }

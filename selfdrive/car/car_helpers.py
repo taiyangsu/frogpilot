@@ -190,11 +190,11 @@ def get_frogpilot_params(params):
     "ConditionalExperimentalModeSignal", "CustomDrivingPersonalities", "AggressivePersonalityValue", "AggressiveJerkValue", 
     "StandardPersonalityValue", "StandardJerkValue", "RelaxedPersonalityValue", "RelaxedJerkValue", "CustomRoadUI", 
     "LaneLinesWidth", "RoadEdgesWidth", "PathWidth", "PathEdgeWidth", "BlindSpotPath", "UnlimitedLength", "DeveloperUI", 
-    "DeviceShutdownTimer", "DisableInternetCheck", "DrivingPersonalitiesUIWheel", "ExperimentalModeViaWheel", "FireTheBabysitter", 
+    "DeviceShutdownTimer", "DrivingPersonalitiesUIWheel", "ExperimentalModeViaWheel", "FireTheBabysitter", 
     "MuteDM", "MuteDoor", "MuteSeatbelt", "MuteSystemOverheat", "LateralTuning", "AverageDesiredCurvature", "NNFF", "LongitudinalTuning", 
     "AccelerationProfile", "IncreasedStoppingDistance", "AggressiveAcceleration", "SmootherBraking", "TSS2Tune", "NudgelessLaneChange", 
     "LaneChangeTimer", "LaneDetection", "OneLaneChange", "NumericalTemp", "Fahrenheit", "RotatingWheel", "ScreenBrightness", 
-    "Sidebar", "SilentMode", "SteeringWheel", "WideCameraDisable", "HideSpeed", "ReverseCruiseIncrease", "TwilsoncoSSH"
+    "Sidebar", "SilentMode", "SteeringWheel", "WideCameraDisable", "DisableInternetCheck", "HideSpeed", "ReverseCruiseIncrease", "TwilsoncoSSH"
   ]
   return {key: params.get(key) or '0' for key in KEYS}
 

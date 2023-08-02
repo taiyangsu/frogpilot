@@ -106,9 +106,9 @@ def get_stopped_equivalence_factor(v_ego, v_lead, v_lead_distance, t_follow, inc
     # Smoothly decelerate behind a slower lead vehicle
     if np.all(v_lead + speed_difference > 0):
       distance_offset += np.clip(np.mean(v_lead_distance / (v_lead + speed_difference)) - t_follow, 0, v_lead_distance)
-  if False:
+  if increased_stopping_distance and speed_difference > 0:
     # Increase the stopping distance for a more comfortable stop
-    distance_offset -= np.clip(np.mean(increased_stopping_distance - v_lead), 0, increased_stopping_distance)
+    distance_offset -= np.clip(increased_stopping_distance - speed_difference, 0, increased_stopping_distance)
   return (v_lead**2) / (2 * COMFORT_BRAKE) + distance_offset
 
 def get_safe_obstacle_distance(v_ego, t_follow):
@@ -260,7 +260,6 @@ class LongitudinalMpc:
     longitudinal_tuning = CP.longitudinalTune
     self.aggressive_acceleration = longitudinal_tuning and params.get_bool("AggressiveAcceleration")
     self.smoother_braking = longitudinal_tuning and params.get_bool("SmootherBraking")
-    self.distance_increase = 0
 
     # Declare variables for onroad driving insights
     self.safe_obstacle_distance = 0
@@ -384,12 +383,10 @@ class LongitudinalMpc:
       lead_distance = lead_xv_0[:,0]
       lead_speed = lead_xv_0[:,1]
       speed_difference = lead_speed - v_ego
-      if np.all(speed_difference > lead_speed * 0.2) and np.all(lead_speed < 10):
+      if np.all(speed_difference > lead_speed * 0.2):
         low_speed_boost = np.clip(10 - v_ego, 0, 10)
+        lead_speed = np.clip(10 - lead_speed, 0, 10)
         t_follow = min(t_follow, np.mean(t_follow * (lead_speed / (lead_distance + (speed_difference * low_speed_boost)))))
-
-    # Fake a longer lead distance by the value of t_follow
-    self.distance_increase = t_follow
 
     # LongitudinalPlan variables for onroad driving insights
     self.safe_obstacle_distance = max(int(np.max(get_safe_obstacle_distance(self.x_sol[:,1], t_follow))), 0)

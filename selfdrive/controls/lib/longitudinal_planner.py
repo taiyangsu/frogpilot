@@ -28,10 +28,10 @@ A_CRUISE_MIN_BP_CUSTOM = [0., 15.66, 17.88, 20., 30., 55.]
 A_CRUISE_MAX_BP_CUSTOM = [0.,    3,   6.,   8.,  11.,  15.,  20.,  25.,  30., 55.]
 
 A_CRUISE_MIN_VALS_ECO_TUNE = [-0.760, -0.760,  -0.76, -0.76, -0.70, -0.65]
-A_CRUISE_MAX_VALS_ECO_TUNE = [1.6, 1.8, 1.6, 1.2, .76, .62, .48, .36, .28, .09]
+A_CRUISE_MAX_VALS_ECO_TUNE = [3.2, 2.6, 1.6, 1.2, .76, .62, .48, .36, .28, .09]
 
 A_CRUISE_MIN_VALS_SPORT_TUNE = [-0.770, -0.770, -0.90, -1.00, -0.90, -0.80]
-A_CRUISE_MAX_VALS_SPORT_TUNE = [1.6, 1.8, 2.4, 2.9, 2.1, 1.7, 1.3, .7, .5, .3]
+A_CRUISE_MAX_VALS_SPORT_TUNE = [3.5, 3.0, 2.4, 2.9, 2.1, 1.7, 1.3, .7, .5, .3]
 
 # Lookup table for turns
 _A_TOTAL_MAX_V = [1.7, 3.2]

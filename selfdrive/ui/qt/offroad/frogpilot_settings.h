@@ -195,7 +195,7 @@ ParamControllerInt(IncreasedStoppingDistance, "IncreasedStoppingDistance", "   I
   return std::clamp(v, 0, 10);
 )
 
-ParamControllerInt(LaneChangeTimer, "LaneChangeTimer", "Lane Change Timer", "Set a time delay before openpilot conducts a nudgeless lane change.", "../assets/offroad/icon_blank.png",
+ParamControllerInt(LaneChangeTimer, "LaneChangeTimer", "   Lane Change Timer", "Set a time delay before openpilot conducts a nudgeless lane change.", "../assets/offroad/icon_blank.png",
   int delay = params.getInt("LaneChangeTimer");
   return delay == 0 ? "Instant" : QString::number(static_cast<double>(delay) / 2.0) + " sec";,
   return std::clamp(v, 0, 10);

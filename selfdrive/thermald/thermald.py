@@ -292,7 +292,7 @@ def thermald_thread(end_event, hw_queue):
     startup_conditions["time_valid"] = now > MIN_DATE
     set_offroad_alert_if_changed("Offroad_InvalidTime", (not startup_conditions["time_valid"]) and peripheral_panda_present)
 
-    startup_conditions["up_to_date"] = params.get("Offroad_ConnectivityNeeded") is None or params.get_bool("DisableUpdates") or params.get_bool("SnoozeUpdate")
+    startup_conditions["up_to_date"] = params.get("DisableInternetCheck") or params.get("Offroad_ConnectivityNeeded") is None or params.get_bool("DisableUpdates") or params.get_bool("SnoozeUpdate")
     startup_conditions["not_uninstalling"] = not params.get_bool("DoUninstall")
     startup_conditions["accepted_terms"] = params.get("HasAcceptedTerms") == terms_version
 
@@ -491,7 +491,7 @@ def thermald_thread(end_event, hw_queue):
         "FrogSignals": "1",
         "FrogSounds": "1",
         "FrogTheme": "1",
-        "IncreasedStoppingDistance": "5",
+        "IncreasedStoppingDistance": "3",
         "LaneChangeTimer": "0",
         "LaneDetection": "1",
         "LaneLinesWidth": "4",
@@ -511,7 +511,7 @@ def thermald_thread(end_event, hw_queue):
         "RelaxedPersonalityValue": "30",
         "RoadEdgesWidth": "2",
         "RotatingWheel": "1",
-        "ScreenBrightness": "100",
+        "ScreenBrightness": "101",
         "Sidebar": "1",
         "SilentMode": "0",
         "SmootherBraking": "1",
