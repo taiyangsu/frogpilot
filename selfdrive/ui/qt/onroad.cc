@@ -79,6 +79,7 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
   const auto &scene = uiState()->scene;
   const SubMaster &sm = *uiState()->sm;
   static Params params;
+  static bool previouslyEnabled = false;
   static bool propagateEvent = false;
   static bool recentlyTapped = false;
   const bool isToyotaCar = scene.toyota_car;
@@ -118,7 +119,8 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
     params.putBool("HideSpeed", speedHidden);
     propagateEvent = false;
   // If the click wasn't for anything specific, change the value of "ExperimentalMode" and "ConditionalStatus"
-  } else if (recentlyTapped && scene.experimental_mode_via_wheel && scene.enabled) {
+  } else if (recentlyTapped && scene.experimental_mode_via_wheel && (scene.enabled || previouslyEnabled)) {
+    previouslyEnabled = true;
     if (scene.conditional_experimental) {
       const int override_value = (scene.conditional_status == 1 || scene.conditional_status == 2) ? 0 : scene.conditional_status >= 2 ? 1 : 2;
       params.putInt("ConditionalStatus", override_value);
@@ -494,6 +496,8 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   setProperty("experimentalMode", s.scene.experimental_mode);
   setProperty("frogColors", s.scene.frog_colors);
   setProperty("frogSignals", s.scene.frog_signals);
+  setProperty("laneWidthLeft", s.scene.lane_width_left);
+  setProperty("laneWidthRight", s.scene.lane_width_right);
   setProperty("muteDM", s.scene.mute_dm);
   setProperty("obstacleDistance", s.scene.obstacle_distance);
   setProperty("onroadAdjustableProfiles", s.scene.driving_personalities_ui_wheel && !s.scene.toyota_car);
@@ -762,12 +766,12 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   painter.setBrush(bg);
   painter.drawPolygon(scene.track_vertices);
 
-  // Create new path with track vertices and track edge vertices
+  // create new path with track vertices and track edge vertices
   QPainterPath path;
   path.addPolygon(scene.track_vertices);
   path.addPolygon(scene.track_edge_vertices);
 
-  // Paint path edges
+  // paint path edges
   QLinearGradient pe(0, height(), 0, 0);
   if (alwaysOnLateral) {
     pe.setColorAt(0.0, QColor::fromHslF(178 / 360., 0.90, 0.38, 1.0));
@@ -798,20 +802,66 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   painter.setBrush(pe);
   painter.drawPath(path);
 
-  // Paint blindspot path
+  // paint blindspot path
   QLinearGradient bs(0, height(), 0, 0);
-  if (blindSpotLeft || blindSpotRight) {
+  const bool speedCheck = speed > 8.9408 * (scene.is_metric ? MS_TO_KPH : MS_TO_MPH);
+  if ((blindSpotLeft || blindSpotRight) && speedCheck) {
     bs.setColorAt(0.0, QColor::fromHslF(0 / 360., 0.75, 0.50, 0.6));
     bs.setColorAt(0.5, QColor::fromHslF(0 / 360., 0.75, 0.50, 0.4));
     bs.setColorAt(1.0, QColor::fromHslF(0 / 360., 0.75, 0.50, 0.2));
   }
 
   painter.setBrush(bs);
-  if (blindSpotLeft) {
-    painter.drawPolygon(scene.track_left_blindspot_vertices);
+  if (blindSpotLeft && speedCheck) {
+    painter.drawPolygon(scene.track_left_desired_lane_vertices);
   }
-  if (blindSpotRight) {
-    painter.drawPolygon(scene.track_right_blindspot_vertices);
+  if (blindSpotRight && speedCheck) {
+    painter.drawPolygon(scene.track_right_desired_lane_vertices);
+  }
+
+  // paint adjacent lane paths
+  if (developerUI) {
+    const bool isImperialUnits = developerUI == 1;
+    const double conversionFactor = isImperialUnits ? 3.28084 : 1.0;
+    const float minLaneWidth = 2.8;
+    const float maxLaneWidth = 3.5;
+    const QFont font = InterFont(35, QFont::Bold);
+    const QPen whitePen(Qt::white), transparentPen(Qt::transparent);
+    const QString unit_d = isImperialUnits ? " feet" : " meters";
+
+    // Draw the paths if we're going over the minimum lane change speed
+    if (speedCheck) {
+      const auto setGradientColors = [](QLinearGradient& gradient, const float laneWidth, const float minLaneWidth, const float maxLaneWidth) {
+        static double hue;
+        if (laneWidth < minLaneWidth) {
+          // Make the path red for smaller paths
+          hue = 0;
+        } else if (laneWidth >= maxLaneWidth) {
+          // Make the path green for larger paths
+          hue = 120;
+        } else {
+          // Transition the path from red to green based on lane width
+          hue = (120 * (laneWidth - minLaneWidth)) / (maxLaneWidth - minLaneWidth);
+        }
+        gradient.setColorAt(0.0, QColor::fromHslF(hue / 360., 0.75, 0.50, 0.6));
+        gradient.setColorAt(0.5, QColor::fromHslF(hue / 360., 0.75, 0.50, 0.4));
+        gradient.setColorAt(1.0, QColor::fromHslF(hue / 360., 0.75, 0.50, 0.2));
+      };
+
+      const auto paintLane = [&](QPainter& painter, const QPolygonF& lane, const float laneWidth) {
+        QLinearGradient gradient(0, height(), 0, 0);
+        setGradientColors(gradient, laneWidth, minLaneWidth, maxLaneWidth);
+        painter.setBrush(gradient);
+        painter.setFont(font);
+        painter.setPen(whitePen);
+        painter.drawText(lane.boundingRect().center(), QString("%1%2").arg(laneWidth * conversionFactor, 0, 'f', 2).arg(unit_d));
+        painter.setPen(transparentPen);
+        painter.drawPolygon(lane);
+      };
+
+      paintLane(painter, scene.track_left_desired_lane_vertices, laneWidthLeft);
+      paintLane(painter, scene.track_right_desired_lane_vertices, laneWidthRight);
+    }
   }
 
   painter.restore();
@@ -894,10 +944,13 @@ void AnnotatedCameraWidget::drawLead(QPainter &painter, const cereal::RadarState
   // Add developer UI if enabled
   if (developerUI) {
     // Declare and initialize the variables
+    const auto &scene = uiState()->scene;
     float distance = d_rel;
     float lead_speed = std::max(lead_data.getVLead(), 0.0f); // Ensure speed doesn't go under 0 m/s since that's dumb
+    float t_follow = scene.t_follow;
     QString unit_d = "meters";
     QString unit_s = "m/s";
+    QString unit_t = "seconds";
 
     // Conduct any necessary conversions
     if (developerUI == 1) {
@@ -915,11 +968,13 @@ void AnnotatedCameraWidget::drawLead(QPainter &painter, const cereal::RadarState
     // Form the text centered below the chevron
     painter.setPen(Qt::white);
     painter.setFont(InterFont(35, QFont::Bold));
-    QString text = QString("%1 %2 | %3 %4")
+    QString text = QString("%1 %2 | %3 %4 | %5 %6")
                    .arg(distance, 0, 'f', 2, '0')
                    .arg(unit_d)
                    .arg(lead_speed, 0, 'f', 2, '0')
-                   .arg(unit_s);
+                   .arg(unit_s)
+                   .arg(t_follow, 0, 'f', 2, '0')
+                   .arg(unit_t);
 
     // Calculate the start position for drawing
     const QFontMetrics metrics(painter.font());

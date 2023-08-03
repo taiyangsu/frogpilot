@@ -1007,6 +1007,7 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
   safeObstacleDistance @41 :Int32;
   stoppedEquivalenceFactor @42 :Int32;
   statusValue @43 :Int8;
+  tFollow @44 :Float32;
 
   enum LongitudinalPlanSource {
     cruise @0;
@@ -1078,6 +1079,10 @@ struct LateralPlan @0xe1e9318e2ae8b51e {
   solverExecutionTime @30 :Float32;
   solverCost @32 :Float32;
   solverState @33 :SolverState;
+
+  # FrogPilot LateralPlans
+  laneWidthLeft @34 :Float32;
+  laneWidthRight @35 :Float32;
 
   struct SolverState {
     x @0 :List(List(Float32));

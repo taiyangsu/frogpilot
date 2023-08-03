@@ -171,9 +171,12 @@ typedef struct UIScene {
   bool unlimited_road_ui_length;
   bool wide_camera_disabled;
   float lane_line_width;
+  float lane_width_left;
+  float lane_width_right;
   float path_edge_width;
   float path_width;
   float road_edge_width;
+  float t_follow;
   int bearing_deg;
   int conditional_speed;
   int conditional_speed_lead;
@@ -186,8 +189,8 @@ typedef struct UIScene {
   int steering_wheel;
   int stopped_equivalence;
   QPolygonF track_edge_vertices;
-  QPolygonF track_left_blindspot_vertices;
-  QPolygonF track_right_blindspot_vertices;
+  QPolygonF track_left_desired_lane_vertices;
+  QPolygonF track_right_desired_lane_vertices;
 
 } UIScene;
 

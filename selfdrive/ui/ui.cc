@@ -88,8 +88,6 @@ void update_model(UIState *s,
   }
   float max_distance = scene.unlimited_road_ui_length ? plan_position.getX()[TRAJECTORY_SIZE - 1] : std::clamp(plan_position.getX()[TRAJECTORY_SIZE - 1],
                                   MIN_DRAW_DISTANCE, MAX_DRAW_DISTANCE);
-  float max_distance_bs = std::clamp(plan_position.getX()[TRAJECTORY_SIZE - 1], 
-                                  MIN_DRAW_DISTANCE, MAX_DRAW_DISTANCE);
 
   // update lane lines
   const auto lane_lines = model.getLaneLines();
@@ -122,11 +120,10 @@ void update_model(UIState *s,
 
   // update left blindspot path
   bool isNotTurning = abs(scene.steering_angle_deg) <= 60;
-  int max_idx_bs = get_path_length_idx(plan_position, max_distance_bs);
-  update_line_data(s, lane_lines[4], scene.blind_spot_path && isNotTurning ? scene.path_width : 0, 0, &scene.track_left_blindspot_vertices, max_idx_bs);
+  update_line_data(s, lane_lines[4], (scene.blind_spot_path || scene.developer_ui) && isNotTurning ? scene.lane_width_left / 2 : 0, 0, &scene.track_left_desired_lane_vertices, max_distance);
 
   // update right blindspot path
-  update_line_data(s, lane_lines[5], scene.blind_spot_path && isNotTurning ? scene.path_width : 0, 0, &scene.track_right_blindspot_vertices, max_idx_bs);
+  update_line_data(s, lane_lines[5], (scene.blind_spot_path || scene.developer_ui) && isNotTurning ? scene.lane_width_right / 2 : 0, 0, &scene.track_right_desired_lane_vertices, max_distance);
 }
 
 void update_dmonitoring(UIState *s, const cereal::DriverStateV2::Reader &driverstate, float dm_fade_state, bool is_rhd) {
@@ -232,11 +229,11 @@ static void update_state(UIState *s) {
       scene.blind_spot_left = carState.getLeftBlindspot();
       scene.blind_spot_right = carState.getRightBlindspot();
     }
-    if (scene.frog_signals) {
+    if (scene.developer_ui || scene.frog_signals) {
       scene.turn_signal_left = carState.getLeftBlinker();
       scene.turn_signal_right = carState.getRightBlinker();
     }
-    if (scene.blind_spot_path || scene.rotating_wheel) {
+    if (scene.blind_spot_path || scene.developer_ui || scene.rotating_wheel) {
       scene.steering_angle_deg = carState.getSteeringAngleDeg();
     }
     if (scene.started) {
@@ -254,6 +251,11 @@ static void update_state(UIState *s) {
       scene.bearing_deg = gpsLocationExternal.getBearingDeg();
     }
   }
+  if (sm.updated("lateralPlan")) {
+    const auto lateralPlan = sm["lateralPlan"].getLateralPlan();
+    scene.lane_width_left = lateralPlan.getLaneWidthLeft();
+    scene.lane_width_right = lateralPlan.getLaneWidthRight();
+  }
   if (sm.updated("longitudinalPlan")) {
     const auto longitudinalPlan = sm["longitudinalPlan"].getLongitudinalPlan();
     scene.frogpilot_toggles_updated = longitudinalPlan.getFrogpilotTogglesUpdated();
@@ -264,6 +266,7 @@ static void update_state(UIState *s) {
       scene.desired_follow = longitudinalPlan.getDesiredFollowDistance();
       scene.obstacle_distance = longitudinalPlan.getSafeObstacleDistance();
       scene.stopped_equivalence = longitudinalPlan.getStoppedEquivalenceFactor();
+      scene.t_follow = longitudinalPlan.getTFollow();
     }
   }
   if (sm.updated("wideRoadCameraState")) {
@@ -368,7 +371,7 @@ UIState::UIState(QObject *parent) : QObject(parent) {
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "roadCameraState",
     "pandaStates", "carParams", "driverMonitoringState", "carState", "liveLocationKalman", "driverStateV2",
     "wideRoadCameraState", "managerState", "navInstruction", "navRoute", "uiPlan", "longitudinalPlan",
-    "gpsLocationExternal", "carControl",
+    "gpsLocationExternal", "carControl", "lateralPlan",
   });
 
   Params params;

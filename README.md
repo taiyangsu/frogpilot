@@ -43,7 +43,7 @@ FrogPilot is my custom "Frog Themed" fork of openpilot that has been tailored to
 
 FrogPilot was last updated on:
 
-**August 2nd, 2023**
+**August 3rd, 2023**
 
 Features
 ------
@@ -109,8 +109,7 @@ FrogPilot offers a wide range of customizable features that can be easily toggle
 - Steering wheel in the top right corner of the onroad UI rotates alongside your car's steering wheel
 - Tap the speed indicator to remove it from the screen
 - Toggle Experimental Mode via the "Lane Departure Alert" button on your steering wheel (Toyota/Lexus only)
-  - Other makes can simply double tap the screen while onroad
-- ZSS (Zorro Steering Sensor) Support - *Currently in testing*
+  - Other makes can simply double tap the screen while on-road
 
 How to Install
 ------

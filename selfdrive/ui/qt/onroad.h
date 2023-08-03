@@ -106,6 +106,8 @@ class AnnotatedCameraWidget : public CameraWidget {
   Q_PROPERTY(bool toyotaCar MEMBER toyotaCar);
   Q_PROPERTY(bool turnSignalLeft MEMBER turnSignalLeft);
   Q_PROPERTY(bool turnSignalRight MEMBER turnSignalRight);
+  Q_PROPERTY(float laneWidthLeft MEMBER laneWidthLeft);
+  Q_PROPERTY(float laneWidthRight MEMBER laneWidthRight);
   Q_PROPERTY(int bearingDeg MEMBER bearingDeg);
   Q_PROPERTY(int conditionalSpeed MEMBER conditionalSpeed);
   Q_PROPERTY(int conditionalSpeedLead MEMBER conditionalSpeedLead);
@@ -173,6 +175,8 @@ private:
   bool turnSignalLeft;
   bool turnSignalRight;
   double maxAcceleration = std::numeric_limits<double>::lowest();
+  float laneWidthLeft;
+  float laneWidthRight;
   int animationFrameIndex;
   int bearingDeg;
   int conditionalSpeed;

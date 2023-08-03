@@ -372,5 +372,6 @@ class LongitudinalPlanner:
     longitudinalPlan.safeObstacleDistance = self.mpc.safe_obstacle_distance if have_lead else 0
     longitudinalPlan.stoppedEquivalenceFactor = self.mpc.stopped_equivalence_factor if have_lead else 0
     longitudinalPlan.desiredFollowDistance = self.mpc.safe_obstacle_distance - self.mpc.stopped_equivalence_factor if have_lead else 0
+    longitudinalPlan.tFollow = self.mpc.t_follow if have_lead else 0
 
     pm.send('longitudinalPlan', plan_send)

@@ -44,6 +44,8 @@ class DesireHelper:
 
     # FrogPilot variables
     self.params = Params()
+    self.blindspot_path = self.params.get_bool("CustomRoadUI") and self.params.get_bool("BlindSpotPath")
+    self.developer_ui = self.params.get_int("DeveloperUI");
     self.nudgeless = self.params.get_bool("NudgelessLaneChange")
     self.lane_change_delay = self.nudgeless and self.params.get_int("LaneChangeTimer")
     self.lane_detection = self.nudgeless and self.params.get_bool("LaneDetection")
@@ -51,6 +53,20 @@ class DesireHelper:
     self.lane_available = False
     self.lane_change_completed = False
     self.lane_change_wait_timer = 0
+    self.lane_width_left = 0
+    self.lane_width_right = 0
+
+  # FrogPilot functions for lane detection
+  def valid_lane(self, lane, current_lane):
+    return all([lane.x, lane.y, current_lane.x, current_lane.y]) and len(lane.x) == len(current_lane.x)
+
+  def calculate_lane_width(self, lane, current_lane):
+    return self.get_max_lane_width(lane, current_lane) if self.valid_lane(lane, current_lane) else 0
+
+  def get_max_lane_width(self, lane, current_lane):
+    sorted_indices = np.argsort(lane.x)
+    lane_y = np.interp(current_lane.x, np.array(lane.x)[sorted_indices], np.array(lane.y)[sorted_indices])
+    return np.amax(np.abs(current_lane.y - lane_y))
 
   def update(self, carstate, lateral_active, lane_change_prob, modeldata, frogpilot_toggles_updated):
     v_ego = carstate.vEgo
@@ -61,6 +77,16 @@ class DesireHelper:
     if self.nudgeless and frogpilot_toggles_updated:
       self.lane_change_delay = self.params.get_int("LaneChangeTimer")
 
+    # LateralPlan variables for onroad driving insights
+    if self.developer_ui or self.blindspot_path:
+      current_lane_left = modeldata.laneLines[1]
+      current_lane_right = modeldata.laneLines[2]
+      left_lane = [modeldata.laneLines[0], modeldata.roadEdges[0]]
+      right_lane = [modeldata.laneLines[3], modeldata.roadEdges[1]]
+
+      self.lane_width_left = max(self.calculate_lane_width(lane, current_lane_left) for lane in left_lane)
+      self.lane_width_right = max(self.calculate_lane_width(lane, current_lane_right) for lane in right_lane)
+
     # Lane detection
     if not (self.lane_detection and one_blinker):
       self.lane_available = True
@@ -70,20 +96,13 @@ class DesireHelper:
       # Set the blinker index based on which signal is on
       blinker_index = 0 if carstate.leftBlinker else 1
       current_lane = modeldata.laneLines[blinker_index + 1]
-      desired_edge = modeldata.roadEdges[blinker_index]
-      desired_lane = modeldata.laneLines[blinker_index] if carstate.leftBlinker else modeldata.laneLines[blinker_index + 2]
+      desired_lanes = [modeldata.laneLines[blinker_index] if carstate.leftBlinker else modeldata.laneLines[blinker_index + 2], 
+                       modeldata.roadEdges[blinker_index]]
 
-      # Calculate the desired lane's width
-      def get_max_lane_width(lane, current_lane):
-        sorted_indices = np.argsort(lane.x)
-        lane_y = np.interp(current_lane.x, np.array(lane.x)[sorted_indices], np.array(lane.y)[sorted_indices])
-        return np.amax(np.abs(current_lane.y - lane_y))
-
-      # Check if lanes are valid and if maximum lane width exceeds the threshold
-      self.lane_available = any(all([lane.x, lane.y, current_lane.x, current_lane.y]) 
-                                and len(lane.x) == len(current_lane.x) 
-                                and get_max_lane_width(lane, current_lane) >= min_lane_threshold 
-                                for lane in [desired_lane, desired_edge])
+      # Determine if there's a lane to change into
+      self.lane_available = any(self.valid_lane(lane, current_lane) 
+                                and self.get_max_lane_width(lane, current_lane) >= min_lane_threshold 
+                                for lane in desired_lanes)
 
     if not lateral_active or self.lane_change_timer > LANE_CHANGE_TIME_MAX:
       self.lane_change_state = LaneChangeState.off
