@@ -193,6 +193,8 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.6371   # hand-tune
       ret.mass = 3115. * CV.LB_TO_KG + STD_CARGO_KG
 
+      ret.stoppingDecelRate = 0.05
+
     elif candidate == CAR.MIRAI:
       stop_and_go = True
       ret.wheelbase = 2.91
