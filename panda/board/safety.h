@@ -279,7 +279,7 @@ void generic_rx_checks(bool stock_ecu_detected) {
   }
 
   // check if stock ECU is on bus broken by car harness
-  if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && stock_ecu_detected) {
+  if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && stock_ecu_detected && !gm_skip_relay_check) {
     relay_malfunction_set();
   }
 }
@@ -537,7 +537,7 @@ bool longitudinal_brake_checks(int desired_brake, const LongitudinalLimits limit
 }
 
 bool longitudinal_interceptor_checks(CANPacket_t *to_send) {
-  return !get_longitudinal_allowed() && (GET_BYTE(to_send, 0) || GET_BYTE(to_send, 1));
+  return (!get_longitudinal_allowed() || brake_pressed_prev) && (GET_BYTE(to_send, 0) || GET_BYTE(to_send, 1));
 }
 
 // Safety checks for torque-based steering commands
