@@ -723,7 +723,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   // lanelines
   for (int i = 0; i < std::size(scene.lane_line_vertices); ++i) {
     if (frogColors) {
-      painter.setBrush(QColor(23, 143, 135 242));
+      painter.setBrush(QColor(23, 143, 135, 242));
     } else {
       painter.setBrush(QColor::fromRgbF(1.0, 1.0, 1.0, std::clamp<float>(scene.lane_line_probs[i], 0.0, 0.7)));
     }
@@ -807,7 +807,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   } else if (experimentalMode) {
     pe.setColorAt(0.0, QColor::fromHslF(263 / 360., 0.71, 0.20, 1.0));
     pe.setColorAt(0.5, QColor::fromHslF(263 / 360., 0.71, 0.20, 0.5));
-    pe.setColorAt(1.0, QColor::fromHslF(263 / 360., 0.71, 0.20,, 0.1));
+    pe.setColorAt(1.0, QColor::fromHslF(263 / 360., 0.71, 0.20, 0.1));
   } else if (scene.navigate_on_openpilot) {
     pe.setColorAt(0.0, QColor::fromHslF(205 / 360., 0.85, 0.56, 1.0));
     pe.setColorAt(0.5, QColor::fromHslF(205 / 360., 0.85, 0.56, 0.5));
