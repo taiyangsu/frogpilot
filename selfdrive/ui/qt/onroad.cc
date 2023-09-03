@@ -354,7 +354,7 @@ void ExperimentalButton::paintEvent(QPaintEvent *event) {
     // Custom steering wheel icon
     engage_img = wheel_images[steeringWheel];
     QPixmap img = steeringWheel ? engage_img : (experimental_mode ? experimental_img : engage_img);
-    QColor background_color = steeringWheel && (!isDown() && engageable) ? (scene.always_on_lateral_active ? QColor(10, 186, 181, 255) : scene.conditional_status == 1 ? QColor(255, 194, 0, 255) : experimental_mode ? QColor(37, 0, 43, 241) : scene.navigate_on_openpilot ? QColor(49, 161, 238, 255) : QColor(0, 0, 0, 166)) : QColor(0, 0, 0, 166);
+    QColor background_color = steeringWheel && (!isDown() && engageable) ? (scene.always_on_lateral_active ? QColor(10, 186, 181, 255) : scene.conditional_status == 1 ? QColor(255, 194, 0, 255) : experimental_mode ? QColor(255, 0, 120, 255) : scene.navigate_on_openpilot ? QColor(49, 161, 238, 255) : QColor(30, 0, 60, 166)) : QColor(30, 0, 60, 166);
     drawIcon(p, QPoint(btn_size / 2, btn_size / 2), img, background_color, (isDown() || !engageable) ? 0.6 : 1.0);
   }
 }
@@ -597,10 +597,10 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   }
   p.setFont(InterFont(40, QFont::DemiBold));
   p.setPen(max_color);
-  p.drawText(set_speed_rect.adjusted(0, 255, 0, 0), Qt::AlignTop | Qt::AlignHCenter, tr("MAX"));
+  p.drawText(set_speed_rect.adjusted(0, 27, 0, 0), Qt::AlignTop | Qt::AlignHCenter, tr("MAX"));
   p.setFont(InterFont(90, QFont::Bold));
   p.setPen(set_speed_color);
-  p.drawText(set_speed_rect.adjusted(160, 255, 0, 0), Qt::AlignTop | Qt::AlignHCenter, setSpeedStr);
+  p.drawText(set_speed_rect.adjusted(0, 77, 0, 0), Qt::AlignTop | Qt::AlignHCenter, setSpeedStr);
 
   const QRect sign_rect = set_speed_rect.adjusted(sign_margin, default_size.height(), -sign_margin, -sign_margin);
   // US/Canada (MUTCD style) sign
@@ -612,8 +612,8 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
     p.drawRoundedRect(sign_rect.adjusted(9, 9, -9, -9), 16, 16);
 
     p.setFont(InterFont(28, QFont::DemiBold));
-    p.drawText(sign_rect.adjusted(147, 255, 0, 0), Qt::AlignTop | Qt::AlignHCenter, tr("SPEED"));
-    p.drawText(sign_rect.adjusted(0, 255, 0, 0), Qt::AlignTop | Qt::AlignHCenter, tr("LIMIT"));
+    p.drawText(sign_rect.adjusted(0, 22, 0, 0), Qt::AlignTop | Qt::AlignHCenter, tr("SPEED"));
+    p.drawText(sign_rect.adjusted(0, 51, 0, 0), Qt::AlignTop | Qt::AlignHCenter, tr("LIMIT"));
     p.setFont(InterFont(70, QFont::Bold));
     p.drawText(sign_rect.adjusted(0, 85, 0, 0), Qt::AlignTop | Qt::AlignHCenter, speedLimitStr);
   }
@@ -667,7 +667,7 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
     // Custom steering wheel icon
     engage_img = wheel_images[steeringWheel];
     QPixmap img = steeringWheel ? engage_img : (experimentalMode ? experimental_img : engage_img);
-    QColor background_color = steeringWheel && (status != STATUS_DISENGAGED) ? (scene.always_on_lateral_active ? QColor(200, 255, 0, 255) : scene.conditional_status == 1 ? QColor(255, 246, 0, 255) : experimentalMode ? QColor(218, 111, 37, 241) : scene.navigate_on_openpilot ? QColor(49, 161, 238, 255) : QColor(0, 0, 0, 166)) : QColor(0, 0, 0, 166);
+    QColor background_color = steeringWheel && (status != STATUS_DISENGAGED) ? (scene.always_on_lateral_active ? QColor(200, 255, 0, 255) : scene.conditional_status == 1 ? QColor(0, 230, 224, 255) : experimentalMode ? QColor(255, 0, 130, 255) : scene.navigate_on_openpilot ? QColor(49, 161, 238, 255) : QColor(0, 0, 0, 166)) : QColor(0, 0, 0, 166);
     drawIconRotate(p, QPoint(rect().right() - btn_size / 2 - UI_BORDER_SIZE * 2 + 25, btn_size / 2 + int(UI_BORDER_SIZE * 1.5)), img, background_color, status != STATUS_DISENGAGED ? 1.0 : 0.6, steeringAngleDeg);
   }
 
@@ -723,9 +723,9 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   // lanelines
   for (int i = 0; i < std::size(scene.lane_line_vertices); ++i) {
     if (frogColors) {
-      painter.setBrush(QColor(200, 254, 1, 242));
+      painter.setBrush(QColor(255, 255, 255, 255));
     } else {
-      painter.setBrush(QColor::fromRgbF(0.70, 1.0, 0.5, std::clamp<float>(scene.lane_line_probs[i], 0.0, 0.7)));
+      painter.setBrush(QColor::fromRgbF(1.0, 1.0, 1.0, std::clamp<float>(scene.lane_line_probs[i], 0.0, 0.7)));
     }
     painter.drawPolygon(scene.lane_line_vertices[i]);
   }
@@ -773,7 +773,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
 
       float saturation = fmin(fabs(acceleration[i] * 1.5), 1);
       float lightness = util::map_val(saturation, 0.0f, 1.0f, 0.95f, 0.62f);  // lighter when grey
-      float alpha = util::map_val(lin_grad_point, 0.75f / 2.f, 1.00f, 0.15f, 0.0f);  // matches previous alpha fade
+      float alpha = util::map_val(lin_grad_point, 0.75f / 2.f, 0.75f, 0.4f, 0.0f);  // matches previous alpha fade
       bg.setColorAt(lin_grad_point, QColor::fromHslF(path_hue / 360., saturation, lightness, alpha));
 
       // Skip a point, unless next is last
@@ -781,9 +781,9 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     }
 
   } else {
-    bg.setColorAt(0.0, QColor::fromHslF(260 / 360., 0.94, 0.18, 0.4));
+    bg.setColorAt(0.0, QColor::fromHslF(266 / 360., 0.94, 0.18, 0.4));
     bg.setColorAt(0.5, QColor::fromHslF(260 / 360., 1.0, 0.35, 0.35));
-    bg.setColorAt(1.0, QColor::fromHslF(260 / 360., 1.0, 0.35, 0.0));
+    bg.setColorAt(1.0, QColor::fromHslF(260 / 360., 1.0, 0.35, 0.15));
   }
 
   painter.setBrush(bg);
@@ -801,13 +801,13 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     pe.setColorAt(0.5, QColor::fromHslF(73 / 360., 1.00, 0.50, 0.5));
     pe.setColorAt(1.0, QColor::fromHslF(73 / 360., 1.00, 0.50, 0.1));
   } else if (conditionalStatus == 1) {
-    pe.setColorAt(0.0, QColor::fromHslF(252 / 360., 1.00, 0.10, 1.0));
-    pe.setColorAt(0.5, QColor::fromHslF(252 / 360., 1.00, 0.10, 0.5));
-    pe.setColorAt(1.0, QColor::fromHslF(252 / 360., 1.00, 0.10, 0.1));
+    pe.setColorAt(0.0, QColor::fromHslF(188 / 360., 0.79, 0.58, 1.0));
+    pe.setColorAt(0.5, QColor::fromHslF(188 / 360., 0.79, 0.58, 0.5));
+    pe.setColorAt(1.0, QColor::fromHslF(188 / 360., 0.79, 0.58, 0.1));
   } else if (experimentalMode) {
-    pe.setColorAt(0.0, QColor::fromHslF(263 / 360., 0.71, 0.20, 1.0));
-    pe.setColorAt(0.5, QColor::fromHslF(263 / 360., 0.71, 0.20, 0.5));
-    pe.setColorAt(1.0, QColor::fromHslF(263 / 360., 0.71, 0.20, 0.1));
+    pe.setColorAt(0.0, QColor::fromHslF(319 / 360., 1.00, 0.33, 1.0));
+    pe.setColorAt(0.5, QColor::fromHslF(319 / 360., 1.00, 0.33, 0.5));
+    pe.setColorAt(1.0, QColor::fromHslF(319 / 360., 1.00, 0.33, 0.1));
   } else if (scene.navigate_on_openpilot) {
     pe.setColorAt(0.0, QColor::fromHslF(205 / 360., 0.85, 0.56, 1.0));
     pe.setColorAt(0.5, QColor::fromHslF(205 / 360., 0.85, 0.56, 0.5));
@@ -817,9 +817,9 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     pe.setColorAt(0.5, QColor::fromHslF(260 / 360., 1.00, 0.18, 0.5));
     pe.setColorAt(1.0, QColor::fromHslF(260 / 360., 1.00, 0.18, 0.1));
   } else {
-    pe.setColorAt(0.0, QColor::fromHslF(260 / 360., 0.94, 0.05, 1.0));
-    pe.setColorAt(0.5, QColor::fromHslF(260 / 360., 1.00, 0.06, 0.5));
-    pe.setColorAt(1.0, QColor::fromHslF(260 / 360., 1.00, 0.06, 0.1));
+    pe.setColorAt(0.0, QColor::fromHslF(260 / 360., 0.94, 0.18, 1.0));
+    pe.setColorAt(0.5, QColor::fromHslF(260 / 360., 1.00, 0.18, 0.5));
+    pe.setColorAt(1.0, QColor::fromHslF(260 / 360., 1.00, 0.18, 0.1));
   }
 
   painter.setBrush(pe);
@@ -832,9 +832,9 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   // paint blindspot path
   QLinearGradient bs(0, height(), 0, 0);
   if ((blindSpotLeft || blindSpotRight) && speedCheck && isNotTurning && is_cruise_set) {
-    bs.setColorAt(0.0, QColor::fromHslF(235 / 360., 1.00, 0.20, 0.6));
-    bs.setColorAt(0.5, QColor::fromHslF(235 / 360., 1.00, 0.20, 0.4));
-    bs.setColorAt(1.0, QColor::fromHslF(235 / 360., 1.00, 0.20, 0.2));
+    bs.setColorAt(0.0, QColor::fromHslF(235 / 360., 1.00, 0.36, 0.6));
+    bs.setColorAt(0.5, QColor::fromHslF(235 / 360., 1.00, 0.36, 0.4));
+    bs.setColorAt(1.0, QColor::fromHslF(235 / 360., 1.00, 0.36, 0.2));
   }
 
   painter.setBrush(bs);
@@ -859,7 +859,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       static double hue;
       if ((laneWidth < minLaneWidth) || blindspot) {
         // Make the path red for smaller paths or if there's a car in the blindspot
-        hue = 303;
+        hue = 272;
       } else if (laneWidth >= maxLaneWidth) {
         // Make the path green for larger paths
         hue = 245;
@@ -867,9 +867,9 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
         // Transition the path from red to green based on lane width
         hue = (245 * (laneWidth - minLaneWidth)) / (maxLaneWidth - minLaneWidth);
       }
-      gradient.setColorAt(0.0, QColor::fromHslF(hue / 360., 0.75, 0.09, 0.6));
-      gradient.setColorAt(0.5, QColor::fromHslF(hue / 360., 0.75, 0.09, 0.4));
-      gradient.setColorAt(1.0, QColor::fromHslF(hue / 360., 0.75, 0.09, 0.2));
+      gradient.setColorAt(0.0, QColor::fromHslF(hue / 360., 1.00, 0.30, 0.6));
+      gradient.setColorAt(0.5, QColor::fromHslF(hue / 360., 1.00, 0.30, 0.4));
+      gradient.setColorAt(1.0, QColor::fromHslF(hue / 360., 1.00, 0.30, 0.2));
     };
 
     const auto paintLane = [&](QPainter& painter, const QPolygonF& lane, const float laneWidth, const bool blindspot) {
