@@ -259,6 +259,7 @@ void ui_update_params(UIState *s) {
     scene.mute_dm = params.getBool("FireTheBabysitter") && params.getBool("MuteDM");
     scene.rotating_wheel = params.getBool("RotatingWheel");
     scene.screen_brightness = params.getInt("ScreenBrightness");
+    scene.steering_wheel = params.getInt("SteeringWheel");
     scene.wide_camera_disabled = params.getBool("WideCameraDisable");
     toggles_checked = true;
   }
@@ -284,6 +285,7 @@ void ui_update_live_params(UIState *s) {
       scene.custom_signals = params.getInt("CustomSignals");
     }
     scene.screen_brightness = params.getInt("ScreenBrightness");
+    scene.steering_wheel = params.getInt("SteeringWheel");
     if (live_toggles_checked && scene.enabled) {
       params_memory.putBool("FrogPilotTogglesUpdated", false);
     }
