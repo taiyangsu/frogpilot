@@ -169,6 +169,9 @@ typedef struct UIScene {
   bool right_hand_dm;
   bool rotating_wheel;
   bool toyota_car = true;
+  bool turn_signal_animation;
+  bool turn_signal_left;
+  bool turn_signal_right;
   bool unlimited_road_ui_length;
   bool wide_camera_disabled;
   int custom_colors;
