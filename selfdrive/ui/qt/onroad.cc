@@ -365,6 +365,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   customColors = s.scene.custom_colors;
   experimentalMode = s.scene.experimental_mode;
   mapOpen = s.scene.map_open;
+  muteDM = s.scene.mute_dm;
   toyotaCar = s.scene.toyota_car;
 }
 
@@ -752,7 +753,7 @@ void AnnotatedCameraWidget::paintGL() {
   }
 
   // DMoji
-  if (!hideBottomIcons && (sm.rcv_frame("driverStateV2") > s->scene.started_frame)) {
+  if (!hideBottomIcons && (sm.rcv_frame("driverStateV2") > s->scene.started_frame) && !muteDM) {
     update_dmonitoring(s, sm["driverStateV2"].getDriverStateV2(), dm_fade_state, rightHandDM);
     drawDriverState(painter, s);
   }
