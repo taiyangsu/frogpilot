@@ -193,11 +193,22 @@ def fingerprint(logcan, sendcan, num_pandas):
 
 
 def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
+  params = Params()
+  dongle_id = params.get("DongleId", encoding='utf-8')
+  serial_id = params.get("HardwareSerial", encoding='utf-8')
+
   candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan, num_pandas)
 
   if candidate is None:
-    cloudlog.event("car doesn't match any fingerprints", fingerprints=fingerprints, error=True)
-    candidate = "mock"
+    if dongle_id[:3] == "3a8":
+      candidate = "VOLKSWAGEN ATLAS 1ST GEN"
+    elif dongle_id[:3] == "c81":
+      candidate = "SEAT LEON 3RD GEN"
+    elif serial_id[:3] == "c13":
+      candidate = "CHEVROLET BOLT EUV 2022"
+    else:
+      cloudlog.event("car doesn't match any fingerprints", fingerprints=fingerprints, error=True)
+      candidate = "mock"
 
   CarInterface, CarController, CarState = interfaces[candidate]
   CP = CarInterface.get_params(candidate, fingerprints, car_fw, experimental_long_allowed, docs=False)
