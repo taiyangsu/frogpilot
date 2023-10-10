@@ -45,6 +45,7 @@ class DesireHelper:
     self.params = Params()
     self.params_memory = Params("/dev/shm/params")
     self.blindspot_path = self.params.get_bool("CustomRoadUI") and self.params.get_bool("BlindSpotPath")
+    self.developer_ui = self.params.get_int("DeveloperUI");
     self.lane_width_left = 0
     self.lane_width_right = 0
 
@@ -71,7 +72,7 @@ class DesireHelper:
     self.lane_width_left = 0
     self.lane_width_right = 0
     turning = abs(carstate.steeringAngleDeg) >= 60
-    if self.blindspot_path and not below_lane_change_speed and not turning:
+    if (self.blindspot_path or self.developer_ui) and not below_lane_change_speed and not turning:
       # Calculate left and right lane widths
       self.lane_width_left = self.calculate_lane_width(modeldata.laneLines[0], modeldata.laneLines[1], modeldata.roadEdges[0])
       self.lane_width_right = self.calculate_lane_width(modeldata.laneLines[3], modeldata.laneLines[2], modeldata.roadEdges[1])
