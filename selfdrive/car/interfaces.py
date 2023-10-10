@@ -182,6 +182,8 @@ class CarInterfaceBase(ABC):
 
     # FrogPilot variables
     params = Params()
+    ret.alwaysOnLateral = params.get_bool("AlwaysOnLateral")
+
     ret.lateralTune = params.get_bool("LateralTuning")
 
     ret.longitudinalTune = params.get_bool("LongitudinalTuning")
