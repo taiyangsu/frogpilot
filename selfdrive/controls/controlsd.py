@@ -78,7 +78,10 @@ class Controls:
 
     self.log_sock = messaging.sub_sock('androidLog')
 
+    # FrogPilot variables
     self.params = Params()
+    self.params_memory = Params("/dev/shm/params")
+
     self.sm = sm
     if self.sm is None:
       ignore = self.sensor_packets + ['testJoystick']
@@ -114,6 +117,8 @@ class Controls:
     self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
     openpilot_enabled_toggle = self.params.get_bool("OpenpilotEnabledToggle")
     passive = self.params.get_bool("Passive") or not openpilot_enabled_toggle
+
+    # FrogPilot variables
 
     # detect sound card presence and ensure successful init
     sounds_available = HARDWARE.get_sound_card_online()
@@ -582,6 +587,8 @@ class Controls:
 
     CC = car.CarControl.new_message()
     CC.enabled = self.enabled
+
+    # Update FrogPilot parameters
 
     # Check which actuators can be enabled
     standstill = CS.vEgo <= max(self.CP.minSteerSpeed, MIN_LATERAL_CONTROL_SPEED) or CS.standstill

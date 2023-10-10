@@ -4,6 +4,7 @@ import math
 
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
+from openpilot.common.params import Params
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
 from openpilot.selfdrive.car.hyundai.hyundaicanfd import CanBus
@@ -51,6 +52,9 @@ class CarState(CarStateBase):
     self.cluster_speed_counter = CLUSTER_SAMPLE_RATE
 
     self.params = CarControllerParams(CP)
+
+    # FrogPilot variables
+    self.params_memory = Params("/dev/shm/params")
 
   def update(self, cp, cp_cam):
     if self.CP.carFingerprint in CANFD_CAR:

@@ -3,6 +3,7 @@
 #include <QHBoxLayout>
 #include <QWidget>
 
+#include "common/params.h"
 #include "selfdrive/ui/qt/maps/map.h"
 #include "selfdrive/ui/qt/maps/map_settings.h"
 #include "selfdrive/ui/qt/util.h"
