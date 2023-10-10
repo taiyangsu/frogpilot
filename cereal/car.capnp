@@ -514,6 +514,7 @@ struct CarParams {
   conditionalExperimental @75 :Bool;
   drivingPersonalitiesUIWheel @76 :Bool;
   experimentalModeViaWheel @77 :Bool;
+  hasZss @78: Bool;
   lateralTune @79 :Bool;
   longitudinalTune @80 :Bool;
   pfeiferjDesiredCurvatures @81 :Bool;
