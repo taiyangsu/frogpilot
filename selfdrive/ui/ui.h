@@ -166,6 +166,7 @@ typedef struct UIScene {
   bool conditional_experimental;
   bool custom_road_ui;
   bool custom_theme;
+  bool driving_personalities_ui_wheel;
   bool enabled;
   bool experimental_mode;
   bool experimental_mode_via_wheel;
@@ -186,6 +187,7 @@ typedef struct UIScene {
   int developer_ui;
   int obstacle_distance;
   int obstacle_distance_stock;
+  int personality_profile;
   int screen_brightness;
   int steering_angle_deg;
   int steering_wheel;

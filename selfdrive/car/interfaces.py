@@ -306,6 +306,7 @@ class CarInterfaceBase(ABC):
     params = Params()
     ret.alwaysOnLateral = params.get_bool("AlwaysOnLateral")
     ret.conditionalExperimental = params.get_bool("ConditionalExperimental")
+    ret.drivingPersonalitiesUIWheel = params.get_bool("DrivingPersonalitiesUIWheel")
     ret.experimentalModeViaWheel = params.get_bool("ExperimentalModeViaWheel")
 
     ret.lateralTune = params.get_bool("LateralTuning")

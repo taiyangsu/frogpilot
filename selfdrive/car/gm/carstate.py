@@ -31,6 +31,8 @@ class CarState(CarStateBase):
     # FrogPilot variables
     self.params = Params()
     self.params_memory = Params("/dev/shm/params")
+    self.driving_personalities_via_wheel = self.CP.drivingPersonalitiesUIWheel
+    self.distance_button_pressed_previously = False
     self.single_pedal_mode = False
 
   def update(self, pt_cp, cam_cp, loopback_cp):
@@ -134,6 +136,15 @@ class CarState(CarStateBase):
       ret.accFaulted = False
       ret.cruiseState.speed = pt_cp.vl["ECMCruiseControl"]["CruiseSetSpeed"] * CV.KPH_TO_MS
       ret.cruiseState.enabled = pt_cp.vl["ECMCruiseControl"]["CruiseActive"] != 0
+
+    # Driving personalities function
+    if self.driving_personalities_via_wheel and ret.cruiseState.available:
+      distance_button_pressed = pt_cp.vl["ASCMSteeringButton"]["DistanceButton"]
+      if distance_button_pressed and not self.distance_button_pressed_previously:
+        personality_profile = self.params.get_int("LongitudinalPersonality")
+        put_int_nonblocking("LongitudinalPersonality", (personality_profile + 1) % 3)
+        self.params_memory.put_bool("FrogPilotTogglesUpdated", True)
+      self.distance_button_pressed_previously = distance_button_pressed
 
     return ret
 

@@ -219,6 +219,7 @@ static void update_state(UIState *s) {
     scene.longitudinal_control = carParams.getOpenpilotLongitudinalControl();
     if (scene.longitudinal_control) {
       scene.conditional_experimental = carParams.getConditionalExperimental();
+      scene.driving_personalities_ui_wheel = carParams.getDrivingPersonalitiesUIWheel();
       scene.experimental_mode_via_wheel = carParams.getExperimentalModeViaWheel();
     }
   }
@@ -309,6 +310,7 @@ void ui_update_params(UIState *s) {
     scene.custom_signals = scene.custom_theme ? params.getInt("CustomSignals") : 0;
 
     scene.mute_dm = params.getBool("FireTheBabysitter") && params.getBool("MuteDM");
+    scene.personality_profile = params.getInt("LongitudinalPersonality");
     scene.rotating_wheel = params.getBool("RotatingWheel");
     scene.screen_brightness = params.getInt("ScreenBrightness");
     scene.steering_wheel = params.getInt("SteeringWheel");
@@ -347,6 +349,9 @@ void ui_update_live_params(UIState *s) {
       scene.custom_signals = params.getInt("CustomSignals");
     }
     scene.developer_ui = params.getInt("DeveloperUI");
+    if (scene.driving_personalities_ui_wheel && !scene.toyota_car) {
+      scene.personality_profile = params.getInt("LongitudinalPersonality");
+    }
     scene.screen_brightness = params.getInt("ScreenBrightness");
     scene.steering_wheel = params.getInt("SteeringWheel");
     if (live_toggles_checked && scene.enabled) {
