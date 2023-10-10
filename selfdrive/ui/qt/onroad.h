@@ -84,6 +84,7 @@ private:
 
   // FrogPilot widgets
   void drawStatusBar(QPainter &p);
+  void drawTurnSignals(QPainter &p);
 
   QVBoxLayout *main_layout;
   ExperimentalButton *experimental_btn;
@@ -110,16 +111,27 @@ private:
   // FrogPilot variables
   bool accelerationPath;
   bool alwaysOnLateral;
+  bool blindSpotLeft;
+  bool blindSpotRight;
   bool conditionalExperimental;
   bool experimentalMode;
   bool toyotaCar;
+  bool turnSignalLeft;
+  bool turnSignalRight;
   int conditionalSpeed;
   int conditionalSpeedLead;
   int conditionalStatus;
+  int customColors;
+  int customSignals;
   int steeringWheel;
+  int totalFrames = 8;
   QPixmap engage_img;
   QPixmap experimental_img;
+  QString theme_path;
+  size_t animationFrameIndex;
   std::map<int, QPixmap> wheelImages;
+  std::unordered_map<int, std::pair<QString, std::pair<QColor, std::map<double, QBrush>>>> themeConfiguration;
+  std::vector<QPixmap> signalImgVector;
 
 protected:
   void paintGL() override;

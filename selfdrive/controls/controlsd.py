@@ -129,6 +129,10 @@ class Controls:
     passive = self.params.get_bool("Passive") or not openpilot_enabled_toggle
 
     # FrogPilot variables
+    self.custom_theme = self.params.get_bool("CustomTheme")
+
+    self.custom_sounds = self.params.get_int("CustomSounds") if self.custom_theme else 0
+    self.frog_sounds = self.custom_sounds == 1
 
     self.average_desired_curvature = self.CP.pfeiferjDesiredCurvatures
     self.conditional_experimental_mode = self.CP.conditionalExperimental
@@ -602,6 +606,9 @@ class Controls:
     CC.enabled = self.enabled
 
     # Update FrogPilot parameters
+    if self.params_memory.get_bool("FrogPilotTogglesUpdated"):
+      self.custom_sounds = self.params.get_int("CustomSounds") if self.custom_theme else 0
+      self.frog_sounds = self.custom_sounds == 1
 
     # Always on lateral
     if self.always_on_lateral:
@@ -682,7 +689,7 @@ class Controls:
         good_speed = CS.vEgo > 5
         max_torque = abs(self.last_actuators.steer) > 0.99
         if undershooting and turning and good_speed and max_torque:
-          lac_log.active and self.events.add(EventName.steerSaturated)
+          lac_log.active and self.events.add(EventName.frogSteerSaturated if self.frog_sounds else EventName.steerSaturated)
       elif lac_log.saturated:
         dpath_points = lat_plan.dPathPoints
         if len(dpath_points):
