@@ -229,6 +229,8 @@ class LongitudinalMpc:
 
     # FrogPilot variables
     params = Params()
+    longitudinal_tuning = CP.longitudinalTune
+    self.aggressive_acceleration = longitudinal_tuning and params.get_bool("AggressiveAcceleration")
 
   def reset(self):
     # self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
@@ -341,6 +343,12 @@ class LongitudinalMpc:
 
     lead_xv_0 = self.process_lead(radarstate.leadOne)
     lead_xv_1 = self.process_lead(radarstate.leadTwo)
+
+    # Offset by FrogAi for FrogPilot for a more aggressive takeoff with a lead
+    if self.aggressive_acceleration:
+      speed_factor = np.maximum(1, lead_xv_0[:,1] - v_ego)
+      t_follow_offset = np.clip(10 - v_ego, 1, speed_factor)
+      t_follow = t_follow / t_follow_offset
 
     # To estimate a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance
