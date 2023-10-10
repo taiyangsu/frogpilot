@@ -247,6 +247,9 @@ static void update_state(UIState *s) {
   }
   if (sm.updated("gpsLocationExternal")) {
     const auto gpsLocationExternal = sm["gpsLocationExternal"].getGpsLocationExternal();
+    if (scene.compass) {
+      scene.bearing_deg = gpsLocationExternal.getBearingDeg();
+    }
   }
   if (sm.updated("lateralPlan")) {
     const auto lateralPlan = sm["lateralPlan"].getLateralPlan();
@@ -283,6 +286,8 @@ void ui_update_params(UIState *s) {
   static bool toggles_checked = false;
   static float conversion = scene.is_metric ? 0.06 : 0.1524;
   if (!toggles_checked) {
+    scene.compass = params.getBool("Compass");
+
     scene.conditional_speed = params.getInt("ConditionalSpeed");
     scene.conditional_speed_lead = params.getInt("ConditionalSpeedLead");
 
