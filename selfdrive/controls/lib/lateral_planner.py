@@ -86,7 +86,7 @@ class LateralPlanner:
       self.l_lane_change_prob = desire_state[log.LateralPlan.Desire.laneChangeLeft]
       self.r_lane_change_prob = desire_state[log.LateralPlan.Desire.laneChangeRight]
     lane_change_prob = self.l_lane_change_prob + self.r_lane_change_prob
-    self.DH.update(sm['carState'], sm['carControl'].latActive, lane_change_prob)
+    self.DH.update(sm['carState'], sm['carControl'].latActive, lane_change_prob, md)
 
     self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
                              LATERAL_ACCEL_COST, LATERAL_JERK_COST,
@@ -155,5 +155,7 @@ class LateralPlanner:
     lateralPlan.laneChangeDirection = self.DH.lane_change_direction
 
     # FrogPilot lateral variables
+    lateralPlan.laneWidthLeft = float(self.DH.lane_width_left)
+    lateralPlan.laneWidthRight = float(self.DH.lane_width_right)
 
     pm.send('lateralPlan', plan_send)
