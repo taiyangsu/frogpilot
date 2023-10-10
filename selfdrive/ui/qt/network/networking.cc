@@ -180,6 +180,11 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   });
   list->addItem(meteredToggle);
 
+  // Disable onroad uploads toggle
+  const bool disableOnroadUploads = params.getBool("DisableOnroadUploads");
+  disableOnroadUploadsToggle = new ToggleControl(tr("Disable Onroad Uploads"), tr("Prevent large data uploads when onroad."), "", disableOnroadUploads);
+  list->addItem(disableOnroadUploadsToggle);
+
   // Set initial config
   wifi->updateGsmSettings(roamingEnabled, QString::fromStdString(params.get("GsmApn")), metered);
 
