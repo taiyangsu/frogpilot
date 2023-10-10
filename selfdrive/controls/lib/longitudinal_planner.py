@@ -11,6 +11,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.modeld.constants import T_IDXS
 from openpilot.selfdrive.car.interfaces import ACCEL_MIN, ACCEL_MAX
+from openpilot.selfdrive.controls.vtsc import vtsc
 from openpilot.selfdrive.controls.lib.lateral_planner import TRAJECTORY_SIZE
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc
@@ -105,6 +106,10 @@ class LongitudinalPlanner:
     self.acceleration_profile = self.CP.accelerationProfile
     self.conditional_experimental_mode = self.CP.conditionalExperimental
 
+    self.vision_turn_controller = self.params.get_bool("VisionTurnControl")
+    self.curve_sensitivity = self.params.get_int("CurveSensitivity") / 100
+    self.turn_aggressiveness = self.params.get_int("TurnAggressiveness") / 100
+
     self.custom_personalities = self.params.get_bool("CustomDrivingPersonalities")
     self.aggressive_follow = self.params.get_int("AggressivePersonality") / 10
     self.standard_follow = self.params.get_int("StandardPersonality") / 10
@@ -123,7 +128,7 @@ class LongitudinalPlanner:
     # Set variables for Conditional Experimental Mode
     if self.conditional_experimental_mode:
       put_bool_nonblocking("ExperimentalMode", True)
-    self.curves = self.params.get_bool("ConditionalCurves")
+    self.curves = self.params.get_bool("ConditionalCurves") and not self.vision_turn_controller
     self.curves_lead = self.params.get_bool("ConditionalCurvesLead")
     self.experimental_mode_via_wheel = self.CP.experimentalModeViaWheel
     self.limit = self.params.get_int("ConditionalSpeed") * (CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS)
@@ -157,6 +162,9 @@ class LongitudinalPlanner:
         self.aggressive_jerk = self.params.get_int("AggressiveJerk") / 10
         self.standard_jerk = self.params.get_int("StandardJerk") / 10
         self.relaxed_jerk = self.params.get_int("RelaxedJerk") / 10
+      if self.vision_turn_controller:
+        self.curve_sensitivity = self.params.get_int("CurveSensitivity") / 100
+        self.turn_aggressiveness = self.params.get_int("TurnAggressiveness") / 100
     try:
       self.personality = int(self.params.get('LongitudinalPersonality'))
     except (ValueError, TypeError):
@@ -226,6 +234,16 @@ class LongitudinalPlanner:
     # clip limits, cannot init MPC outside of bounds
     accel_limits_turns[0] = min(accel_limits_turns[0], self.a_desired + 0.05)
     accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired - 0.05)
+
+    # Pfeiferj's Vision Turn Controller
+    enabled = prev_accel_constraint and self.CP.openpilotLongitudinalControl and self.vision_turn_controller
+    vtsc.update(enabled, v_ego, self.a_desired, v_cruise, sm, self.curve_sensitivity, self.turn_aggressiveness)
+    if vtsc.active:
+      original_v_cruise = v_cruise
+      a_target, v_cruise = vtsc.plan
+      if v_cruise < v_ego and original_v_cruise > v_cruise:
+        accel_limits_turns[0] = min(accel_limits_turns[0], a_target - 0.05)
+        accel_limits_turns[1] = min(accel_limits_turns[1], a_target)
 
     self.mpc.set_weights(prev_accel_constraint, self.custom_personalities, self.aggressive_jerk, self.standard_jerk, self.relaxed_jerk, personality=self.personality)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
@@ -403,6 +421,7 @@ class LongitudinalPlanner:
     # FrogPilot longitudinalPlan variables
     longitudinalPlan.conditionalExperimental = self.experimental_mode
     longitudinalPlan.greenLight = self.green_light
+    longitudinalPlan.vtscOffset = max(0, math.floor(vtsc.v_cruise_setpoint - vtsc.v_target))
     # LongitudinalPlan variables for onroad driving insights
     have_lead = self.detect_lead(sm['radarState'])
     longitudinalPlan.safeObstacleDistance = self.mpc.safe_obstacle_distance if have_lead else 0

@@ -34,7 +34,8 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
     {"Model", "Model Selector (Requires Reboot)", "Select your preferred openpilot model.\n\nNS = Night-Strike(Default)\nB4+B0 = B4+B0 Vision\nFV = Farmville\nNLP = New Lemon Pie\nNI = Non-Inflatable\nOP = Optimus Prime", "../assets/offroad/icon_calibration.png"},
     {"NudgelessLaneChange", "Nudgeless Lane Change", "Switch lanes without having to nudge the steering wheel.", "../assets/offroad/icon_lane.png"},
     {"PauseLateralOnSignal", "Pause Lateral On Turn Signal", "Pauses lateral control when a turn signal is active.", "../assets/offroad/icon_lane.png"},
-    {"TurnDesires", "Turn Desires", "Use turn desires when below the minimum lane change speed for more precise turns.", "../assets/navigation/direction_continue_right.png"}
+    {"TurnDesires", "Turn Desires", "Use turn desires when below the minimum lane change speed for more precise turns.", "../assets/navigation/direction_continue_right.png"},
+    {"VisionTurnControl", "Vision Turn Speed Control", "Automatically ajusts the vehicle's speed for smoother turning.", "../assets/offroad/icon_vtc.png"}
   };
 
   for (const auto &[key, label, desc, icon] : toggles) {
@@ -97,6 +98,11 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
         {"LaneDetection", "Lane Detection"},
         {"OneLaneChange", "One Lane Change Per Signal"},
       }, mainLayout);
+    } else if (key == "VisionTurnControl") {
+      createSubControl(key, label, desc, icon, {
+        new CurveSensitivity(),
+        new TurnAggressiveness(),
+      });
     } else {
       mainLayout->addWidget(control);
       if (key != std::get<0>(toggles.back())) mainLayout->addWidget(horizontalLine());

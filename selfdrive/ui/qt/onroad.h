@@ -132,6 +132,7 @@ private:
   double maxAcceleration;
   float laneWidthLeft;
   float laneWidthRight;
+  float vtscOffset;
   int bearingDeg;
   int conditionalSpeed;
   int conditionalSpeedLead;

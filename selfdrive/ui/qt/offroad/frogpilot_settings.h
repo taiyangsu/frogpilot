@@ -242,6 +242,11 @@ ParamController(ConditionalSpeedLead, "ConditionalSpeedLead", "With Lead", "Swit
   return std::clamp(v, 0, isMetric ? 150 : 99);
 )
 
+ParamController(CurveSensitivity, "CurveSensitivity", "   Curve Detection Sensitivity", "Increases / decreases the curvature threshold VTSC uses to determine if the road is a curve or not.", "../assets/offroad/icon_blank.png",
+  return QString::number(params.getInt("CurveSensitivity")) + "%";,
+  return std::clamp(v, 1, 200);
+)
+
 ParamController(CustomColors, "CustomColors", "Colors ", "Replace the stock openpilot colors with a custom color scheme.\n\nWant to submit your own color scheme? Post it in the 'feature-request' channel on the FrogPilot Discord!", "../assets/offroad/icon_blank.png",
   const int colors = params.getInt("CustomColors");
   return colors == 0 ? "Stock" : colors == 1 ? "Frog" : colors == 2 ? "Tesla" : "Stalin";,
@@ -347,3 +352,9 @@ ParamController(SteeringWheel, "SteeringWheel", "Steering Wheel Icon", "Replace 
   return wheel == 0 ? "Stock" : wheel == 1 ? "Lexus" : wheel == 2 ? "Toyota" : wheel == 3 ? "Frog" : wheel == 4 ? "Rocket" : wheel == 5 ? "Hyundai" : "Stalin";,
   return v >= 0 ? v % 7 : 6;
 )
+
+ParamController(TurnAggressiveness, "TurnAggressiveness", "   Turn Speed Aggressiveness", "Increases / decreases the speed at which VTSC will take curves at.", "../assets/offroad/icon_blank.png",
+  return QString::number(params.getInt("TurnAggressiveness")) + "%";,
+  return std::clamp(v, 1, 200);
+)
+
