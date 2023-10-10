@@ -121,6 +121,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     # FrogPilot Events
     frogSteerSaturated @120;
     greenLight @121;
+    torqueNNLoad @123;
 
     radarCanErrorDEPRECATED @15;
     communityFeatureDisallowedDEPRECATED @62;
@@ -512,6 +513,7 @@ struct CarParams {
   lateralTune @79 :Bool;
   longitudinalTune @80 :Bool;
   pfeiferjDesiredCurvatures @81 :Bool;
+  twilsoncoNNFF @82 :Bool;
 
   struct SafetyConfig {
     safetyModel @0 :SafetyModel;
@@ -542,6 +544,8 @@ struct CarParams {
     steeringAngleDeadzoneDeg @5 :Float32;
     latAccelFactor @6 :Float32;
     latAccelOffset @7 :Float32;
+    nnModelName @8 :Text;
+    nnModelFuzzyMatch @9 :Bool;
   }
 
   struct LongitudinalPIDTuning {

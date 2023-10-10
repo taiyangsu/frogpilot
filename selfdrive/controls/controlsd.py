@@ -141,6 +141,7 @@ class Controls:
 
     self.average_desired_curvature = self.CP.pfeiferjDesiredCurvatures
     self.conditional_experimental_mode = self.CP.conditionalExperimental
+    self.nnff = self.CP.twilsoncoNNFF
     self.reverse_cruise_increase = self.params.get_bool("ReverseCruiseIncrease")
 
     # detect sound card presence and ensure successful init
@@ -207,6 +208,7 @@ class Controls:
     self.experimental_mode = False
     self.v_cruise_helper = VCruiseHelper(self.CP)
     self.recalibrating_seen = False
+    self.nn_alert_shown = False
 
     # TODO: no longer necessary, aside from process replay
     self.sm['liveParameters'].valid = True
@@ -260,6 +262,11 @@ class Controls:
     # no more events while in dashcam mode
     if self.read_only:
       return
+
+    # show alert to indicate whether NNFF is loaded
+    if not self.nn_alert_shown and self.sm.frame % 600 == 0 and self.CP.lateralTuning.which() == 'torque' and self.nnff:
+      self.nn_alert_shown = True
+      self.events.add(EventName.torqueNNLoad)
 
     # Block resume if cruise never previously enabled
     resume_pressed = any(be.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for be in CS.buttonEvents)
@@ -670,7 +677,8 @@ class Controls:
                                                                                        self.average_desired_curvature)
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
                                                                              self.last_actuators, self.steer_limited, self.desired_curvature,
-                                                                             self.desired_curvature_rate, self.sm['liveLocationKalman'])
+                                                                             self.desired_curvature_rate, self.sm['liveLocationKalman'],
+                                                                             lat_plan=lat_plan, model_data=self.sm['modelV2'])
       actuators.curvature = self.desired_curvature
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
