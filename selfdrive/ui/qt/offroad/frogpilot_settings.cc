@@ -34,6 +34,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
     {"Model", "Model Selector (Requires Reboot)", "Select your preferred openpilot model.\n\nNS = Night-Strike(Default)\nB4+B0 = B4+B0 Vision\nFV = Farmville\nNLP = New Lemon Pie\nNI = Non-Inflatable\nOP = Optimus Prime", "../assets/offroad/icon_calibration.png"},
     {"NudgelessLaneChange", "Nudgeless Lane Change", "Switch lanes without having to nudge the steering wheel.", "../assets/offroad/icon_lane.png"},
     {"PauseLateralOnSignal", "Pause Lateral On Turn Signal", "Pauses lateral control when a turn signal is active.", "../assets/offroad/icon_lane.png"},
+    {"TurnDesires", "Turn Desires", "Use turn desires when below the minimum lane change speed for more precise turns.", "../assets/navigation/direction_continue_right.png"}
   };
 
   for (const auto &[key, label, desc, icon] : toggles) {
