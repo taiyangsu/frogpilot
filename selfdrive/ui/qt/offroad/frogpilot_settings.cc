@@ -175,6 +175,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(QWidget *parent) : FrogPilotPanel(p
     {"DeveloperUI", "Developer UI", "Display various information about openpilot and the device itself.", "../assets/offroad/icon_developer.png"},
     {"GreenLightAlert", "Green Light Alert", "Displays an alert when a light turns from red to green.", "../assets/offroad/icon_green_light.png"},
     {"NumericalTemp", "Numerical Temperature Gauge", "Replace openpilot's 'GOOD', 'OK', and 'HIGH' temperature statuses with numerical values.\n\nTap the gauge to switch between Celsius and Fahrenheit.", "../assets/offroad/icon_temp.png"},
+    {"RotatingWheel", "Rotating Steering Wheel", "The steering wheel in top right corner of the onroad UI rotates alongside your physical steering wheel.", "../assets/offroad/icon_rotate.png"},
     {"ScreenBrightness", "Screen Brightness", "Choose a custom screen brightness level or use the default 'Auto' brightness setting.", "../assets/offroad/icon_light.png"},
     {"SteeringWheel", "Steering Wheel Icon", "Replace the stock openpilot steering wheel icon with a custom icon.\n\nWant to submit your own steering wheel? Message me on Discord\n@FrogsGoMoo!", "../assets/offroad/icon_openpilot.png"},
   };

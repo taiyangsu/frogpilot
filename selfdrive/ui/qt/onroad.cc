@@ -29,6 +29,21 @@ static void drawIcon(QPainter &p, const QPoint &center, const QPixmap &img, cons
   p.setOpacity(1.0);
 }
 
+static void drawIconRotate(QPainter &p, const QPoint &center, const QPixmap &img, const QBrush &bg, float opacity, const int angle) {
+  p.setRenderHint(QPainter::Antialiasing);
+  p.setOpacity(1.0);  // bg dictates opacity of ellipse
+  p.setPen(Qt::NoPen);
+  p.setBrush(bg);
+  p.drawEllipse(center, btn_size / 2, btn_size / 2);
+  p.save();
+  p.translate(center);
+  p.rotate(-angle);
+  p.setOpacity(opacity);
+  p.drawPixmap(-QPoint(img.width() / 2, img.height() / 2), img); 
+  p.setOpacity(1.0);
+  p.restore();
+}
+
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout  = new QVBoxLayout(this);
   main_layout->setMargin(UI_BORDER_SIZE);
@@ -360,18 +375,20 @@ void ExperimentalButton::updateState(const UIState &s) {
 
 void ExperimentalButton::paintEvent(QPaintEvent *event) {
   const auto &scene = uiState()->scene;
-  QPainter p(this);
-  // Custom steering wheel icon
-  engage_img = wheelImages[steeringWheel];
-  QPixmap img = steeringWheel ? engage_img : (experimental_mode ? experimental_img : engage_img);
+  if (!scene.rotating_wheel) {
+    QPainter p(this);
+    // Custom steering wheel icon
+    engage_img = wheelImages[steeringWheel];
+    QPixmap img = steeringWheel ? engage_img : (experimental_mode ? experimental_img : engage_img);
 
-  const QColor background_color = steeringWheel && !isDown() && engageable ?
-      (scene.always_on_lateral_active ? QColor(10, 186, 181, 255) :
-      (scene.conditional_status == 1 ? QColor(255, 246, 0, 255) :
-      (experimental_mode ? QColor(218, 111, 37, 241) :
-      (scene.navigate_on_openpilot ? QColor(49, 161, 238, 255) : QColor(0, 0, 0, 166))))) : QColor(0, 0, 0, 166);
+    const QColor background_color = steeringWheel && !isDown() && engageable ?
+        (scene.always_on_lateral_active ? QColor(10, 186, 181, 255) :
+        (scene.conditional_status == 1 ? QColor(255, 246, 0, 255) :
+        (experimental_mode ? QColor(218, 111, 37, 241) :
+        (scene.navigate_on_openpilot ? QColor(49, 161, 238, 255) : QColor(0, 0, 0, 166))))) : QColor(0, 0, 0, 166);
 
-  drawIcon(p, QPoint(btn_size / 2, btn_size / 2), img, background_color, (isDown() || !engageable) ? 0.6 : 1.0);
+    drawIcon(p, QPoint(btn_size / 2, btn_size / 2), img, background_color, (isDown() || !engageable) ? 0.6 : 1.0);
+  }
 }
 
 
@@ -548,6 +565,8 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   muteDM = s.scene.mute_dm;
   obstacleDistance = s.scene.obstacle_distance;
   obstacleDistanceStock = s.scene.obstacle_distance_stock;
+  rotatingWheel = s.scene.rotating_wheel;
+  steeringAngleDeg = s.scene.steering_angle_deg;
   steeringWheel = s.scene.steering_wheel;
   stoppedEquivalence = s.scene.stopped_equivalence;
   stoppedEquivalenceStock = s.scene.stopped_equivalence_stock;
@@ -578,7 +597,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   }
 }
 
-void AnnotatedCameraWidget::drawHud(QPainter &p) {
+void AnnotatedCameraWidget::drawHud(QPainter &p, const UIState *s) {
   p.save();
 
   // Header gradient
@@ -689,6 +708,22 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   // Developer UI
   if (developerUI) {
     drawDeveloperUI(p);
+  }
+
+  // Rotating steering wheel
+  if (rotatingWheel) {
+    // Custom steering wheel icon
+    const UIScene &scene = s->scene;
+    engage_img = wheelImages[steeringWheel];
+    QPixmap img = steeringWheel ? engage_img : (experimentalMode ? experimental_img : engage_img);
+
+    const QColor background_color = steeringWheel && status != STATUS_DISENGAGED ?
+        (alwaysOnLateral ? QColor(10, 186, 181, 255) :
+        (conditionalStatus == 1 ? QColor(255, 246, 0, 255) :
+        (experimentalMode ? QColor(218, 111, 37, 241) :
+        (scene.navigate_on_openpilot ? QColor(49, 161, 238, 255) : QColor(0, 0, 0, 166))))) : QColor(0, 0, 0, 166);
+
+    drawIconRotate(p, QPoint(rect().right() - btn_size / 2 - UI_BORDER_SIZE * 2 + 25, btn_size / 2 + int(UI_BORDER_SIZE * 1.5)), img, background_color, status != STATUS_DISENGAGED ? 1.0 : 0.6, steeringAngleDeg);
   }
 
   // FrogPilot status bar
@@ -1130,7 +1165,7 @@ void AnnotatedCameraWidget::paintGL() {
     drawDriverState(painter, s);
   }
 
-  drawHud(painter);
+  drawHud(painter, s);
 
   double cur_draw_t = millis_since_boot();
   double dt = cur_draw_t - prev_draw_t;

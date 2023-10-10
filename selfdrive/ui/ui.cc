@@ -232,6 +232,9 @@ static void update_state(UIState *s) {
       scene.turn_signal_left = carState.getLeftBlinker();
       scene.turn_signal_right = carState.getRightBlinker();
     }
+    if (scene.rotating_wheel) {
+      scene.steering_angle_deg = carState.getSteeringAngleDeg();
+    }
     if (scene.started) {
       scene.toyota_car = carState.getToyotaCar();
     }
@@ -306,6 +309,7 @@ void ui_update_params(UIState *s) {
     scene.custom_signals = scene.custom_theme ? params.getInt("CustomSignals") : 0;
 
     scene.mute_dm = params.getBool("FireTheBabysitter") && params.getBool("MuteDM");
+    scene.rotating_wheel = params.getBool("RotatingWheel");
     scene.screen_brightness = params.getInt("ScreenBrightness");
     scene.steering_wheel = params.getInt("SteeringWheel");
     toggles_checked = true;
