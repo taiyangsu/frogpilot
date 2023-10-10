@@ -185,6 +185,7 @@ class CarInterfaceBase(ABC):
     ret.alwaysOnLateral = params.get_bool("AlwaysOnLateral")
 
     ret.lateralTune = params.get_bool("LateralTuning")
+    ret.pfeiferjDesiredCurvatures = ret.lateralTune and params.get_bool("AverageDesiredCurvature")
 
     ret.longitudinalTune = params.get_bool("LongitudinalTuning")
     ret.accelerationProfile = params.get_int("AccelerationProfile") if ret.longitudinalTune else 2

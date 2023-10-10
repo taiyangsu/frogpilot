@@ -506,6 +506,7 @@ struct CarParams {
   alwaysOnLateral @74 :Bool;
   lateralTune @79 :Bool;
   longitudinalTune @80 :Bool;
+  pfeiferjDesiredCurvatures @81 :Bool;
 
   struct SafetyConfig {
     safetyModel @0 :SafetyModel;
