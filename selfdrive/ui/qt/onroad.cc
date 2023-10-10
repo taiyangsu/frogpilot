@@ -139,8 +139,17 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
 
   bool widgetClicked = false;
 
+  // Hide speed button
+  const QRect speedRect(rect().center().x() - 175, 50, 350, 350);
+  const bool isSpeedClicked = speedRect.contains(e->pos());
+
+  if (isSpeedClicked) {
+    speedHidden = !params.getBool("HideSpeed");
+    params.putBool("HideSpeed", speedHidden);
+    params_memory.putBool("FrogPilotTogglesUpdated", true);
+    widgetClicked = true;
   // If the click wasn't for anything specific, change the value of "ExperimentalMode"
-  if (scene.experimental_mode_via_wheel && (scene.enabled || previouslyEnabled) && e->pos() != timeoutPoint) {
+  } else if (scene.experimental_mode_via_wheel && (scene.enabled || previouslyEnabled) && e->pos() != timeoutPoint) {
     if (clickTimer.isActive()) {
       clickTimer.stop();
       if (scene.conditional_experimental) {
@@ -389,6 +398,9 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
 
   // FrogPilot variable checks
   static auto params = Params();
+  if (params.getBool("HideSpeed")) {
+    speedHidden = true;
+  }
 
   // Load miscellaneous images
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
@@ -636,10 +648,12 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   }
 
   // current speed
-  p.setFont(InterFont(176, QFont::Bold));
-  drawText(p, rect().center().x(), 210, speedStr);
-  p.setFont(InterFont(66));
-  drawText(p, rect().center().x(), 290, speedUnit, 200);
+  if (!speedHidden) {
+    p.setFont(InterFont(176, QFont::Bold));
+    drawText(p, rect().center().x(), 210, speedStr);
+    p.setFont(InterFont(66));
+    drawText(p, rect().center().x(), 290, speedUnit, 200);
+  }
 
   p.restore();
 
