@@ -27,6 +27,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
     {"CustomDrivingPersonalities", "Custom Driving Personalities", "Customize the driving personality profiles to your liking.", "../assets/offroad/icon_custom.png"},
     {"DeviceShutdownTimer", "Device Shutdown Timer", "Set the timer for when the device turns off after being offroad to reduce energy waste and prevent battery drain.", "../assets/offroad/icon_time.png"},
     {"ExperimentalModeViaWheel", "Experimental Mode Via Steering Wheel / Screen", "Enable or disable Experimental Mode by double-clicking the 'Lane Departure'/LKAS button on the steering wheel (Toyota/Lexus Only) or double tapping the screen for other makes.\n\nOverrides 'Conditional Experimental Mode'. ", "../assets/img_experimental_white.svg"},
+    {"FireTheBabysitter", "Fire the Babysitter", "Disable some of openpilot's 'Babysitter Protocols'.", "../assets/offroad/icon_babysitter.png"},
     {"LateralTuning", "Lateral Tuning", "Change the way openpilot steers.", "../assets/offroad/icon_lateral_tune.png"},
     {"LongitudinalTuning", "Longitudinal Tuning", "Change the way openpilot accelerates and brakes.", "../assets/offroad/icon_longitudinal_tune.png"},
   };
@@ -57,6 +58,16 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
     } else if (key == "DeviceShutdownTimer") {
       mainLayout->addWidget(new DeviceShutdownTimer());
       mainLayout->addWidget(horizontalLine());
+    } else if (key == "FireTheBabysitter") {
+      createSubControl(key, label, desc, icon, {}, {
+        {"DisableAllLogging", "Disable Logging", "Prevent all data tracking by comma to go completely incognitio or to even just reduce thermals.\n\nWARNING: This will prevent any drives from being recorded and they WILL NOT be recoverable!"}
+      });
+      createSubButtonControl(key, {
+        {"MuteDM", "Mute DM"},
+        {"MuteDoor", "Mute Door Open"},
+        {"MuteSeatbelt", "Mute Seatbelt"},
+        {"MuteSystemOverheat", "Mute Overheat"}
+      }, mainLayout);
     } else if (key == "LateralTuning") {
       createSubControl(key, label, desc, icon, {}, {
         {"AverageDesiredCurvature", "Average Desired Curvature", "Use Pfeiferj's distance based curvature adjustment for smoother handling of curves."},
