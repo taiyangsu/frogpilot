@@ -185,6 +185,7 @@ class CarInterfaceBase(ABC):
     ret.lateralTune = params.get_bool("LateralTuning")
 
     ret.longitudinalTune = params.get_bool("LongitudinalTuning")
+    ret.accelerationProfile = params.get_int("AccelerationProfile") if ret.longitudinalTune else 2
     return ret
 
   @staticmethod
