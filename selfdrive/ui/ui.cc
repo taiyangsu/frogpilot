@@ -208,6 +208,9 @@ static void update_state(UIState *s) {
     const auto carParams = sm["carParams"].getCarParams();
     scene.always_on_lateral = carParams.getAlwaysOnLateral();
     scene.longitudinal_control = carParams.getOpenpilotLongitudinalControl();
+    if (scene.longitudinal_control) {
+      scene.conditional_experimental = carParams.getConditionalExperimental();
+    }
   }
   if (sm.updated("carState")) {
     const auto carState = sm["carState"].getCarState();
@@ -250,6 +253,8 @@ void ui_update_params(UIState *s) {
   static UIScene &scene = s->scene;
   static bool toggles_checked = false;
   if (!toggles_checked) {
+    scene.conditional_speed = params.getInt("ConditionalSpeed");
+    scene.conditional_speed_lead = params.getInt("ConditionalSpeedLead");
     toggles_checked = true;
   }
 }
@@ -269,6 +274,10 @@ void ui_update_live_params(UIState *s) {
   // Update FrogPilot variables when they are changed
   static bool live_toggles_checked = false;
   if (params_memory.getBool("FrogPilotTogglesUpdated")) {
+    if (scene.conditional_experimental) {
+      scene.conditional_speed = params.getInt("ConditionalSpeed");
+      scene.conditional_speed_lead = params.getInt("ConditionalSpeedLead");
+    }
     if (live_toggles_checked && scene.enabled) {
       params_memory.putBool("FrogPilotTogglesUpdated", false);
     }
@@ -276,6 +285,9 @@ void ui_update_live_params(UIState *s) {
   }
 
   // FrogPilot live variables that need to be constantly checked
+  if (scene.conditional_experimental) {
+    scene.conditional_status = params_memory.getInt("ConditionalStatus");
+  }
 }
 
 void UIState::updateStatus() {

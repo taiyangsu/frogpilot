@@ -504,6 +504,7 @@ struct CarParams {
   # FrogPilot CarParams
   accelerationProfile @73 :UInt8;
   alwaysOnLateral @74 :Bool;
+  conditionalExperimental @75 :Bool;
   lateralTune @79 :Bool;
   longitudinalTune @80 :Bool;
   pfeiferjDesiredCurvatures @81 :Bool;
