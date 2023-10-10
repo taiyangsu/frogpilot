@@ -114,6 +114,7 @@ class LongitudinalPlanner:
     self.relaxed_jerk = self.params.get_int("RelaxedJerk") / 10
 
     self.green_light_alert = self.params.get_bool("GreenLightAlert")
+    self.increased_stopping_distance = self.params.get_int("IncreasedStoppingDistance") * (1 if self.is_metric else 0.3048)
 
     self.frogpilot_toggles_updated = False
     self.green_light = False
@@ -145,6 +146,7 @@ class LongitudinalPlanner:
     if self.frogpilot_toggles_updated:
       if self.CP.longitudinalTune:
         self.acceleration_profile = self.params.get_int("AccelerationProfile")
+        self.increased_stopping_distance = self.params.get_int("IncreasedStoppingDistance") * (1 if self.is_metric else 0.3048)
       if self.conditional_experimental_mode:
         self.limit = self.params.get_int("ConditionalSpeed") * (CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS)
         self.limit_lead = self.params.get_int("ConditionalSpeedLead") * (CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS)
@@ -229,7 +231,7 @@ class LongitudinalPlanner:
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
     x, v, a, j = self.parse_model(sm['modelV2'], self.v_model_error)
-    self.mpc.update(sm['radarState'], v_cruise, x, v, a, j, self.custom_personalities, self.aggressive_follow, self.standard_follow, self.relaxed_follow, personality=self.personality)
+    self.mpc.update(sm['radarState'], v_cruise, x, v, a, j, self.increased_stopping_distance, self.custom_personalities, self.aggressive_follow, self.standard_follow, self.relaxed_follow, personality=self.personality)
 
     self.x_desired_trajectory_full = np.interp(T_IDXS, T_IDXS_MPC, self.mpc.x_solution)
     self.v_desired_trajectory_full = np.interp(T_IDXS, T_IDXS_MPC, self.mpc.v_solution)
