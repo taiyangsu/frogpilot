@@ -32,8 +32,12 @@ class CarState(CarStateBase):
     self.params = Params()
     self.params_memory = Params("/dev/shm/params")
     self.driving_personalities_via_wheel = self.CP.drivingPersonalitiesUIWheel
-    self.distance_button_pressed_previously = False
+    self.personality_profile = self.params.get_int('LongitudinalPersonality')
+    self.previous_personality_profile = self.params.get_int('LongitudinalPersonality')
+    self.display_menu = False
+    self.distance_previously_pressed = False
     self.single_pedal_mode = False
+    self.display_timer = 0
 
   def update(self, pt_cp, cam_cp, loopback_cp):
     ret = car.CarState.new_message()
@@ -137,14 +141,33 @@ class CarState(CarStateBase):
       ret.cruiseState.speed = pt_cp.vl["ECMCruiseControl"]["CruiseSetSpeed"] * CV.KPH_TO_MS
       ret.cruiseState.enabled = pt_cp.vl["ECMCruiseControl"]["CruiseActive"] != 0
 
-    # Driving personalities function
-    if self.driving_personalities_via_wheel and ret.cruiseState.available:
-      distance_button_pressed = pt_cp.vl["ASCMSteeringButton"]["DistanceButton"]
-      if distance_button_pressed and not self.distance_button_pressed_previously:
-        personality_profile = self.params.get_int("LongitudinalPersonality")
-        put_int_nonblocking("LongitudinalPersonality", (personality_profile + 1) % 3)
+    # Driving personalities function - Credit goes to Mangomoose!
+    if self.driving_personalities_via_wheel:
+      # Check if the car has a camera
+      has_camera = self.CP.networkLocation == NetworkLocation.fwdCamera and not self.CP.flags & GMFlags.NO_CAMERA.value
+
+      if has_camera:
+        # Need to subtract by 1 to comply with the personality profiles of "0", "1", and "2"
+        self.personality_profile = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCGapLevel"] - 1
+      else:
+        distance_button_pressed = pt_cp.vl["ASCMSteeringButton"]["DistanceButton"]
+        if distance_button_pressed and not self.distance_previously_pressed:
+          if self.display_menu:
+            self.personality_profile = (self.previous_personality_profile + 2) % 3
+          self.display_timer = 350
+        self.distance_previously_pressed = distance_button_pressed
+
+        # Check if the display is open
+        if self.display_timer > 0:
+          self.display_timer -= 1
+          self.display_menu = True
+        else:
+          self.display_menu = False
+
+      if self.personality_profile != self.previous_personality_profile:
+        put_int_nonblocking("LongitudinalPersonality", self.personality_profile)
         self.params_memory.put_bool("FrogPilotTogglesUpdated", True)
-      self.distance_button_pressed_previously = distance_button_pressed
+        self.previous_personality_profile = self.personality_profile
 
     return ret
 
