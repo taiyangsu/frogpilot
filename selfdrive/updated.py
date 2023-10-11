@@ -194,6 +194,7 @@ def finalize_update() -> None:
   # FrogPilot update functions
   params = Params()
   params.put("Updated", datetime.datetime.now().astimezone(ZoneInfo('America/Phoenix')).strftime("%B %d, %Y - %I:%M%p"))
+  params.put_int("Model", 0)                       # Reset the selected model when installing updates
   params.remove("DisableInternetCheck")            # Reset the param since the user has internet connection again
   if os.path.exists("/data/openpilot/prebuilt"):
     os.remove("/data/openpilot/prebuilt")          # Remove the prebuilt file when installing updates
