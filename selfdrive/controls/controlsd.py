@@ -78,6 +78,8 @@ class Controls:
     self.params = Params()
     self.params_memory = Params("/dev/shm/params")
 
+    self.average_desired_curvature = self.params.get_bool("AverageDesiredCurvature")
+
     ignore = self.sensor_packets + ['testJoystick']
     if SIMULATION:
       ignore += ['driverCameraState', 'managerState']
@@ -579,6 +581,7 @@ class Controls:
 
       self.always_on_lateral = self.params.get_bool("AlwaysOnLateral")
       self.always_on_lateral_main = self.params.get_bool("AlwaysOnLateralMain")
+      self.average_desired_curvature = self.params.get_bool("AverageDesiredCurvature")
 
     # Update VehicleModel
     lp = self.sm['liveParameters']
@@ -643,7 +646,9 @@ class Controls:
       self.desired_curvature, self.desired_curvature_rate = get_lag_adjusted_curvature(self.CP, CS.vEgo,
                                                                                        lat_plan.psis,
                                                                                        lat_plan.curvatures,
-                                                                                       lat_plan.curvatureRates)
+                                                                                       lat_plan.curvatureRates,
+                                                                                       long_plan.distances,
+                                                                                       self.average_desired_curvature)
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
                                                                              self.last_actuators, self.steer_limited, self.desired_curvature,
                                                                              self.desired_curvature_rate, self.sm['liveLocationKalman'])
