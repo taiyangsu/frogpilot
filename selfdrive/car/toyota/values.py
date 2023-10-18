@@ -1,39 +1,39 @@
-import re
-from collections import defaultdict
-from dataclasses import dataclass, field
-from enum import Enum, IntFlag, StrEnum
-from typing import Dict, List, Set, Union
+进口再
+从集合导入defaultdict
+从数据类导入数据类、字段
+从枚举导入Enum、IntFlag、StrEnum
+从输入导入Dict、List、Set、Union
 
-from cereal import car
-from openpilot.common.conversions import Conversions as CV
-from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
-from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, CarParts, CarHarness
-from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+从谷物进口车
+from openpilot.common.conversions将转化导入为CV
+从openpilot.selfdrive.car导入AngleRateLimit, dbc_dict
+从openpilot.selfdrive.car.docs_definitions导入CarFootnote、CarInfo、Column、CarParts、CarHarness
+从openpilot.selfdrive.car.fw_query_definitions导入FwQueryConfig、Request、StdQueries
 
-Ecu = car.CarParams.Ecu
-MIN_ACC_SPEED = 19. * CV.MPH_TO_MS
-PEDAL_TRANSITION = 10. * CV.MPH_TO_MS
+ECU=汽车。汽车参数。埃库
+最小加速速度 = 19。* 简历。MPH_TO_MS
+踏板转换 = 10。* 简历。MPH_TO_MS
 
 
-class CarControllerParams:
-  ACCEL_MAX = 1.5  # m/s2, lower than allowed 2.0 m/s2 for tuning reasons
-  ACCEL_MIN = -3.5  # m/s2
-  ACCEL_MAX_SPORT = 2.0  # m/s2
-  ACCEL_MIN_SPORT = -3.5  # m/s2
+类CarControllerParams：
+  ACCEL_MAX = 1.5   # m/s2，出于调整原因低于允许的 2.0 m/s2
+  ACCEL_MIN = - 3.5   # 米/秒2
+  ACCEL_MAX_SPORT = 2.0   # 米/秒2
+  ACCEL_MIN_SPORT = - 3.5   # 米/秒2
 
-  STEER_STEP = 1
-  STEER_MAX = 1500
-  STEER_ERROR_MAX = 350     # max delta between torque cmd and torque motor
+  转向步数 = 1
+  最大转向 = 1500
+  STEER_ERROR_MAX = 350      # 扭矩命令和扭矩电机之间的最大增量
 
-  # Lane Tracing Assist (LTA) control limits
-  # Assuming a steering ratio of 13.7:
-  # Limit to ~2.0 m/s^3 up (7.5 deg/s), ~3.5 m/s^3 down (13 deg/s) at 75 mph
-  # Worst case, the low speed limits will allow ~4.0 m/s^3 up (15 deg/s) and ~4.9 m/s^3 down (18 deg/s) at 75 mph,
-  # however the EPS has its own internal limits at all speeds which are less than that
-  ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.3, 0.15])
-  ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.36, 0.26])
+  # 车道追踪辅助 (LTA) 控制限制
+  # 假设转向比为 13.7：
+  # 75 mph 时限制为向上约 2.0 m/s^3 (7.5 deg/s)，向下约 3.5 m/s^3 (13 deg/s)
+  # 最坏的情况，低速限制将允许以 75 英里/小时的速度向上约 4.0 m/s^3 (15 deg/s) 和向下约 4.9 m/s^3 (18 deg/s)，
+  # 然而，EPS 在所有低于该速度的速度下都有其自己的内部限制
+  ANGLE_RATE_LIMIT_UP =角度速率限制( speed_bp= [ 5 , 25 ] , angle_v= [ 0.3 , 0.15 ] )
+  ANGLE_RATE_LIMIT_DOWN =角度速率限制( speed_bp= [ 5 , 25 ] , angle_v= [ 0.36 , 0.26 ] )
 
-  def __init__(self, CP):
+  def  __init__ (自我 , CP ) :
     if CP.lateralTuning.which == 'torque':
       self.STEER_DELTA_UP = 15       # 1.0s time to peak torque
       self.STEER_DELTA_DOWN = 25     # always lower than 45 otherwise the Rav4 faults (Prius seems ok with 50)
