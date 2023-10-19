@@ -140,6 +140,7 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(QWidget *parent) : FrogPilotPanel
   mainLayout->addWidget(whiteHorizontalLine());
 
   static const std::vector<std::tuple<QString, QString, QString, QString>> toyotaToggles = {
+    {"SNGHack", "SNG Hack", "Enable the SNG Hack for vehicles without stock stop and go.", "../assets/offroad/icon_blank.png"},
   };
 
   for (const auto &[key, label, desc, icon] : toyotaToggles) {
@@ -284,7 +285,7 @@ ParamControl *FrogPilotPanel::createParamControl(const QString &key, const QStri
       ConfirmationDialog::toggleAlert("WARNING: " + parameterWarnings[key], "I understand the risks.", parent);
     }
     static const QSet<QString> parameterReboots = {
-      "FireTheBabysitter", "DisableAllLogging", "MuteDM", "NNFF"
+      "FireTheBabysitter", "DisableAllLogging", "MuteDM", "NNFF", "SNGHack"
     };
     if (parameterReboots.contains(key)) {
       if (ConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", parent)) {
