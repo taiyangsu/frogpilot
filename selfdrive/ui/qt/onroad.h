@@ -87,6 +87,7 @@ private:
   void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
 
   // FrogPilot widgets
+  void drawCompass(QPainter &p);
   void drawLeadInfo(QPainter &p);
   void drawStatusBar(QPainter &p);
   void drawTurnSignals(QPainter &p);
@@ -119,6 +120,7 @@ private:
   bool alwaysOnLateral;
   bool blindSpotLeft;
   bool blindSpotRight;
+  bool compass;
   bool conditionalExperimental;
   bool customRoadUI;
   bool experimentalMode;
@@ -131,6 +133,7 @@ private:
   double maxAcceleration;
   float laneWidthLeft;
   float laneWidthRight;
+  int bearingDeg;
   int conditionalSpeed;
   int conditionalSpeedLead;
   int conditionalStatus;
@@ -142,6 +145,7 @@ private:
   int stoppedEquivalence;
   int stoppedEquivalenceStock;
   int totalFrames = 8;
+  QPixmap compass_inner_img;
   QString theme_path;
   size_t animationFrameIndex;
   std::unordered_map<int, std::pair<QString, std::pair<QColor, std::map<double, QBrush>>>> themeConfiguration;
