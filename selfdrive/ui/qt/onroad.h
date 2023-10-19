@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include <QElapsedTimer>
 #include <QPushButton>
 #include <QStackedLayout>
 #include <QWidget>
@@ -15,6 +16,7 @@ const int btn_size = 192;
 const int img_size = (btn_size / 4) * 3;
 
 // FrogPilot global variables
+static double fps;
 
 
 // ***** onroad widgets *****
@@ -81,6 +83,7 @@ private:
   void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
 
   // FrogPilot widgets
+  void drawLeadInfo(QPainter &p);
   void drawStatusBar(QPainter &p);
 
   QVBoxLayout *main_layout;
@@ -106,13 +109,27 @@ private:
   bool wide_cam_requested = false;
 
   // FrogPilot variables
+  bool accelerationPath;
+  bool adjacentPath;
   bool alwaysOnLateral;
+  bool blindSpotLeft;
+  bool blindSpotRight;
   bool conditionalExperimental;
+  bool customRoadUI;
   bool experimentalMode;
+  bool leadInfo;
   bool toyotaCar;
+  double maxAcceleration;
+  float laneWidthLeft;
+  float laneWidthRight;
   int conditionalSpeed;
   int conditionalSpeedLead;
   int conditionalStatus;
+  int desiredFollow;
+  int obstacleDistance;
+  int obstacleDistanceStock;
+  int stoppedEquivalence;
+  int stoppedEquivalenceStock;
 
 protected:
   void paintGL() override;
@@ -153,7 +170,17 @@ private:
   QHBoxLayout* split;
 
   // FrogPilot variables
+  bool displayFPS;
   bool rightHandDM;
+  double avgFPS;
+  double lastFPS;
+  double maxFPS = 0.0;
+  double minFPS = 99.9;
+  double totalFPS;
+  qint64 frameCount;
+  QElapsedTimer fpsTimer;
+  QPoint timeoutPoint = QPoint(420, 69);
+  QTimer clickTimer;
 
 private slots:
   void offroadTransition(bool offroad);
