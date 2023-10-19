@@ -114,6 +114,7 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(QWidget *parent) : FrogPilotPanel
   mainLayout->addWidget(whiteHorizontalLine());
 
   static const std::vector<std::tuple<QString, QString, QString, QString>> gmToggles = {
+    {"EVTable", "EV Lookup Tables", "Smoothens out the gas and brake controls for EV vehicles.", "../assets/offroad/icon_blank.png"},
     {"LowerVolt", "Lower Volt Enable Speed", "Lowers the Volt's minimum enable speed in order to enable openpilot at any speed.", "../assets/offroad/icon_blank.png"}
   };
 
@@ -292,7 +293,7 @@ ParamControl *FrogPilotPanel::createParamControl(const QString &key, const QStri
       ConfirmationDialog::toggleAlert("WARNING: " + parameterWarnings[key], "I understand the risks.", parent);
     }
     static const QSet<QString> parameterReboots = {
-      "FireTheBabysitter", "DisableAllLogging", "MuteDM", "NNFF", "SNGHack", "TSS2Tune"
+      "FireTheBabysitter", "DisableAllLogging", "EVTable", "MuteDM", "NNFF", "SNGHack", "TSS2Tune"
     };
     if (parameterReboots.contains(key)) {
       if (ConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", parent)) {
