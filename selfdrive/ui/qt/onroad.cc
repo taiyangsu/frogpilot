@@ -489,6 +489,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   laneWidthLeft = s.scene.lane_width_left;
   laneWidthRight = s.scene.lane_width_right;
   leadInfo = s.scene.lead_info;
+  mapOpen = s.scene.map_open;
   obstacleDistance = s.scene.obstacle_distance;
   obstacleDistanceStock = s.scene.obstacle_distance_stock;
   stoppedEquivalence = s.scene.stopped_equivalence;
@@ -1138,7 +1139,7 @@ void AnnotatedCameraWidget::drawLeadInfo(QPainter &p) {
   const double convertAcceleration = conversions[0][is_metric];
   const double convertDistance = conversions[1][is_metric];
   const QString speedMetric = QString::fromUtf8(units[0][is_metric]);
-  const auto &abbreviateUnits = units[1];
+  const auto &abbreviateUnits = units[mapOpen ? 2 : 1];
 
   // Construct text segments
   const auto createText = [&](const QString &title, const double data) {
@@ -1150,13 +1151,13 @@ void AnnotatedCameraWidget::drawLeadInfo(QPainter &p) {
     .arg((isFiveSecondsPassed ? currentAcceleration : maxAcceleration) * convertAcceleration, 0, 'f', 2)
     .arg(speedMetric);
 
-  const QString maxAccSuffix = QString(" - Max: %1%2")
+  const QString maxAccSuffix = mapOpen ? "" : QString(" - Max: %1%2")
     .arg(maxAcceleration * convertAcceleration, 0, 'f', 2)
     .arg(speedMetric);
 
-  const QString obstacleText = createText("  |  Obstacle Factor: ", obstacleDistance);
-  const QString stopText = createText("  -  Stop Factor: ", stoppedEquivalence);
-  const QString followText = " = " + createText("Follow Distance: ", desiredFollow);
+  const QString obstacleText = createText(mapOpen ? " | Obstacle: " : "  |  Obstacle Factor: ", obstacleDistance);
+  const QString stopText = createText(mapOpen ? " - Stop: " : "  -  Stop Factor: ", stoppedEquivalence);
+  const QString followText = " = " + createText(mapOpen ? "Follow: " : "Follow Distance: ", desiredFollow);
 
   // Check if the longitudinal toggles have an impact on the driving logics
   const auto createDiffText = [&](const double data, const double stockData) {
@@ -1213,11 +1214,11 @@ void AnnotatedCameraWidget::drawStatusBar(QPainter &p) {
     {0, "Conditional Experimental Mode ready"},
     {1, "Conditional Experimental overridden"},
     {2, "Experimental Mode manually activated"},
-    {3, "Experimental Mode activated due to" + (" speed being less than " + QString::number(conditionalSpeedLead) + (is_metric ? " kph" : " mph"))},
-    {4, "Experimental Mode activated due to" + (" speed being less than " + QString::number(conditionalSpeed) + (is_metric ? " kph" : " mph"))},
+    {3, "Experimental Mode activated due to" + (mapOpen ? " speed" : " speed being less than " + QString::number(conditionalSpeedLead) + (is_metric ? " kph" : " mph"))},
+    {4, "Experimental Mode activated due to" + (mapOpen ? " speed" : " speed being less than " + QString::number(conditionalSpeed) + (is_metric ? " kph" : " mph"))},
     {5, "Experimental Mode activated for slower lead"},
-    {6, "Experimental Mode activated for turn" + (QString(" / lane change"))},
-    {7, "Experimental Mode activated for stop" + (QString(" sign / stop light"))},
+    {6, "Experimental Mode activated for turn" + (mapOpen ? "" : QString(" / lane change"))},
+    {7, "Experimental Mode activated for stop" + (mapOpen ? "" : QString(" sign / stop light"))},
     {8, "Experimental Mode activated for curve"}
   };
 
@@ -1226,7 +1227,7 @@ void AnnotatedCameraWidget::drawStatusBar(QPainter &p) {
   QString statusText;
 
   if (alwaysOnLateral) {
-    statusText = QString("Always On Lateral active") + (QString(". Press the \"Cruise Control\" button to disable"));
+    statusText = QString("Always On Lateral active") + (mapOpen ? "" : QString(". Press the \"Cruise Control\" button to disable"));
   } else if (conditionalExperimental) {
     statusText = conditionalStatusMap.contains(conditionalStatus) && status != STATUS_DISENGAGED ? conditionalStatusMap[conditionalStatus] : conditionalStatusMap[0];
   }

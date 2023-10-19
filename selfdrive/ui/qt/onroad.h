@@ -121,6 +121,7 @@ private:
   bool customRoadUI;
   bool experimentalMode;
   bool leadInfo;
+  bool mapOpen;
   bool toyotaCar;
   bool turnSignalLeft;
   bool turnSignalRight;
