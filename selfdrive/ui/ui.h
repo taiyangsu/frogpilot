@@ -175,10 +175,11 @@ typedef struct UIScene {
   bool lead_info;
   bool map_open;
   bool mute_dm;
+  bool personalities_via_wheel = true;
   bool right_hand_dm;
   bool rotating_wheel;
   bool show_driver_camera;
-  bool toyota_car = true;
+  bool toyota_car = false;
   bool turn_signal_left;
   bool turn_signal_right;
   bool unlimited_road_ui_length;
@@ -190,6 +191,7 @@ typedef struct UIScene {
   int desired_follow;
   int obstacle_distance;
   int obstacle_distance_stock;
+  int personality_profile;
   int screen_brightness;
   int steering_angle_deg;
   int steering_wheel;

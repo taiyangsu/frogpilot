@@ -310,6 +310,8 @@ void ui_update_params(UIState *s) {
   scene.driver_camera = params.getBool("DriverCamera");
   scene.experimental_mode_via_wheel = params.getBool("ExperimentalModeViaWheel");
   scene.mute_dm = params.getBool("FireTheBabysitter") && params.getBool("MuteDM");
+
+  scene.personalities_via_wheel = params.getBool("PersonalitiesViaWheel") && scene.longitudinal_control && !scene.toyota_car;
   scene.rotating_wheel = params.getBool("RotatingWheel");
   scene.screen_brightness = params.getInt("ScreenBrightness");
   scene.steering_wheel = params.getInt("SteeringWheel");
@@ -390,6 +392,9 @@ void UIState::update() {
     scene.conditional_status = paramsMemory.getInt("ConditionalStatus");
   }
   scene.map_open = paramsMemory.getBool("MapOpen");
+  if (scene.personalities_via_wheel) {
+    scene.personality_profile = params.getInt("LongitudinalPersonality");
+  }
 }
 
 void UIState::setPrimeType(PrimeType type) {
