@@ -131,6 +131,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"CustomSignals", PERSISTENT},
     {"CustomSounds", PERSISTENT},
     {"CustomTheme", PERSISTENT},
+    {"DeviceShutdownTimer", PERSISTENT},
     {"DisableInternetCheck", PERSISTENT},
     {"DisableLogging", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"DisablePowerDown", PERSISTENT},
