@@ -46,6 +46,9 @@ class CarState(CarStateBase):
     self.lkas_hud = {}
 
     # FrogPilot variables
+    self.zss_compute = False
+    self.zss_cruise_active_last = False
+    self.zss_angle_offset = 0.
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
@@ -164,6 +167,21 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint != CAR.PRIUS_V:
       self.lkas_hud = copy.copy(cp_cam.vl["LKAS_HUD"])
 
+    # ZSS Support - Credit goes to the DragonPilot team!
+    if self.CP.hasZss:
+      zorro_steer = cp.vl["SECONDARY_STEER_ANGLE"]["ZORRO_STEER"]
+      # Only compute ZSS offset when acc is active
+      if bool(cp.vl["PCM_CRUISE"]["CRUISE_ACTIVE"]) and not self.zss_cruise_active_last:
+        self.zss_compute = True # Cruise was just activated, so allow offset to be recomputed
+      self.zss_cruise_active_last = bool(cp.vl["PCM_CRUISE"]["CRUISE_ACTIVE"])
+
+      # Compute ZSS offset
+      if self.zss_compute:
+        if abs(ret.steeringAngleDeg) > 1e-3 and abs(zorro_steer) > 1e-3:
+          self.zss_angle_offset = zorro_steer - ret.steeringAngleDeg
+      # Apply offset
+      ret.steeringAngleDeg = zorro_steer - self.zss_angle_offset
+
     # Driving personalities function
     if self.personalities_via_wheel and ret.cruiseState.available:
       # Need to subtract by 1 to comply with the personality profiles of "0", "1", and "2"
@@ -258,6 +276,8 @@ class CarState(CarStateBase):
 
     if CP.flags & ToyotaFlags.SMART_DSU:
       messages.append(("SDSU", 33))
+
+    messages += [("SECONDARY_STEER_ANGLE", 0)]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, 0)
 
