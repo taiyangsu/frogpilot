@@ -7,7 +7,7 @@ import threading
 import requests
 
 import cereal.messaging as messaging
-from cereal import log
+from cereal import car, log
 from openpilot.common.api import Api
 from openpilot.common.params import Params
 from openpilot.common.realtime import Ratekeeper
@@ -47,6 +47,12 @@ class RouteEngine:
     self.ui_pid = None
 
     self.reroute_counter = 0
+
+    # Initialize NoO conditional exp
+    self.stopSignal = []
+    self.stopCoord = []
+    self.navCondition = False
+    self.latch_condition = False
 
     if self.params.get_int("PrimeType") == 0:
       self.mapbox_token = self.params.get("MapboxPublicKey", encoding='utf8')
@@ -161,6 +167,19 @@ class RouteEngine:
         self.route = r['routes'][0]['legs'][0]['steps']
         self.route_geometry = []
 
+        # Iterate through the steps in self.route to find "stop_sign" and "traffic_light"
+        self.stopSignal = []
+        self.stopCoord = []
+        self.latch_condition = False
+        for step in self.route:
+          for intersection in step["intersections"]:
+            if "stop_sign" in intersection or "traffic_signal" in intersection:
+              self.stopSignal.append(intersection["geometry_index"])
+              coord = Coordinate.from_mapbox_tuple(intersection["location"])
+              self.stopCoord.append(coord)
+
+        print("Geometry Indices with Stop Conditions:", self.stopSignal)
+
         maxspeed_idx = 0
         maxspeeds = r['routes'][0]['legs'][0]['annotation']['maxspeed']
 
@@ -274,6 +293,34 @@ class RouteEngine:
 
     if ('maxspeed' in closest.annotations) and self.localizer_valid:
       msg.navInstruction.speedLimit = closest.annotations['maxspeed']
+
+    # Determine the location of the closest upcoming stopSign or trafficLight
+    if any(abs(closest_idx - idx) <= 20 for idx in self.stopSignal if idx >= closest_idx):
+      closest_condition_index = min(
+        (idx for idx in self.stopSignal if idx >= closest_idx),
+        key=lambda idx: abs(closest_idx - idx)
+      )
+
+      index = self.stopSignal.index(closest_condition_index)
+      location = self.stopCoord[index]
+      # vEgo being 45 mph (20 m/s) for testing times 5 sec = 100 meters. Would be actual vEgo * 5
+      v_ego = 20 # self.sm['carState'].vEgo not working for some reason
+      secondstoStop = 5
+      # Calculate the distance to the stopSign or trafficLight
+      distance_to_condition = self.last_position.distance_to(location)
+      time_to_condition = distance_to_condition / v_ego
+      print("Distance to condition:", distance_to_condition)
+
+      if distance_to_condition < (secondstoStop * v_ego):
+        self.navCondition = True
+        print("Time to condition:", time_to_condition)
+        if distance_to_condition < 10:
+          self.latch_condition = True  # Latch the condition when close to intersection
+      elif self.latch_condition and distance_to_condition > 10:
+        self.navCondition = False  # Release the latch to prevent navCondition after leaving intersection
+        self.latch_condition = False
+      else:
+        self.navCondition = False  # Not approaching any stopSign or trafficLight
 
     # Speed limit sign type
     if 'speedLimitSign' in step:
