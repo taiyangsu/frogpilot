@@ -48,11 +48,6 @@ class RouteEngine:
 
     self.reroute_counter = 0
 
-    # Initialize NoO conditional exp
-    self.stopSigns = []
-    self.trafficLight = []
-    self.navCondition = False
-
     if self.params.get_int("PrimeType") == 0:
       self.mapbox_token = self.params.get("MapboxPublicKey", encoding='utf8')
       self.mapbox_host = "https://api.mapbox.com"
@@ -165,19 +160,6 @@ class RouteEngine:
       if len(r['routes']):
         self.route = r['routes'][0]['legs'][0]['steps']
         self.route_geometry = []
-
-        # Iterate through the steps in self.route to find "stop_sign" and "traffic_light"
-        self.stopSigns = []
-        self.trafficLight = []
-        for step in self.route:
-          for intersection in step["intersections"]:
-            if "stop_sign" in intersection:
-              self.stopSigns.append(intersection["geometry_index"])
-            if "traffic_signal" in intersection:
-              self.trafficLight.append(intersection["geometry_index"])
-
-        print("Geometry Indices with Stop Signs:", self.stopSigns)
-        print("Geometry Indices with Traffic Lights:", self.trafficLight)
 
         maxspeed_idx = 0
         maxspeeds = r['routes'][0]['legs'][0]['annotation']['maxspeed']
@@ -292,14 +274,6 @@ class RouteEngine:
 
     if ('maxspeed' in closest.annotations) and self.localizer_valid:
       msg.navInstruction.speedLimit = closest.annotations['maxspeed']
-
-    # Evaluate if current position is equal to any geometry indices stored or the previous 2. Conditional Experimental if approaching
-    if any(idx in (self.stopSigns + self.trafficLight) for idx in (closest_idx, closest_idx + 1, closest_idx + 2)):
-      self.navCondition = True
-    else:
-      self.navCondition = False
-    if self.navCondition == True:
-      print("Approaching stop sign or traffic light")
 
     # Speed limit sign type
     if 'speedLimitSign' in step:
