@@ -232,7 +232,7 @@ class LongitudinalPlanner:
     accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired - 0.05)
 
     # Pfeiferj's Vision Turn Controller
-    if self.vision_turn_controller and prev_accel_constraint and v_ego >= 1 and v_cruise > self.v_target:
+    if self.vision_turn_controller and prev_accel_constraint and v_ego >= 1:
       # Adjust the rate plan with curve sensitivity
       orientation_rate = np.array(np.abs(sm['modelV2'].orientationRate.z)) * self.curve_sensitivity
       velocity = np.array(sm['modelV2'].velocity.x)
