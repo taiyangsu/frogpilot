@@ -143,6 +143,8 @@ class Controls:
 
     car_recognized = self.CP.carName != 'mock'
 
+    is_ford_vehicle = "ford" in self.CP.carName
+
     controller_available = self.CI.CC is not None and not passive and not self.CP.dashcamOnly
     self.read_only = not car_recognized or not controller_available or self.CP.dashcamOnly
     if self.read_only:
@@ -702,7 +704,7 @@ class Controls:
 
     # Send a "steering required alert" if saturation count has reached the limit
     if lac_log.active and not recent_steer_pressed and not self.CP.notCar:
-      if False:
+      if self.CP.lateralTuning.which() == 'torque' and not self.joystick_mode and not is_ford_vehicle:
         undershooting = abs(lac_log.desiredLateralAccel) / abs(1e-3 + lac_log.actualLateralAccel) > 1.2
         turning = abs(lac_log.desiredLateralAccel) > 1.0
         good_speed = CS.vEgo > 5
