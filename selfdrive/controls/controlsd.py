@@ -143,7 +143,7 @@ class Controls:
 
     car_recognized = self.CP.carName != 'mock'
 
-    is_ford_vehicle = "ford" in self.CP.carName
+    is_ford_vehicle = "FORD" in self.CP.carName
 
     controller_available = self.CI.CC is not None and not passive and not self.CP.dashcamOnly
     self.read_only = not car_recognized or not controller_available or self.CP.dashcamOnly
