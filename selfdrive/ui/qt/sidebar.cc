@@ -93,24 +93,24 @@ void Sidebar::mousePressEvent(QMouseEvent *event) {
     displayChip = (displayChip + 1) % 3;
     isCPU = (displayChip == 1);
     isGPU = (displayChip == 2);
-    params.putBool("DisplayCPU", isCPU);
-    params.putBool("DisplayGPU", isGPU);
+    params.putBoolNonBlocking("DisplayCPU", isCPU);
+    params.putBoolNonBlocking("DisplayGPU", isGPU);
     update();
   } else if (memoryRect.contains(event->pos())) {
     displayMemory = (displayMemory + 1) % 4;
     isMemoryUsage = (displayMemory == 1);
     isStorageLeft = (displayMemory == 2);
     isStorageUsed = (displayMemory == 3);
-    params.putBool("DisplayMemoryUsage", isMemoryUsage);
-    params.putBool("DisplayStorageLeft", isStorageLeft);
-    params.putBool("DisplayStorageUsed", isStorageUsed);
+    params.putBoolNonBlocking("DisplayMemoryUsage", isMemoryUsage);
+    params.putBoolNonBlocking("DisplayStorageLeft", isStorageLeft);
+    params.putBoolNonBlocking("DisplayStorageUsed", isStorageUsed);
     update();
   } else if (tempRect.contains(event->pos())) {
     displayTemp = (displayTemp + 1) % 3;
     isNumericalTemp = (displayTemp != 0);
     isFahrenheit = (displayTemp == 2);
-    params.putBool("Fahrenheit", isFahrenheit);
-    params.putBool("NumericalTemp", isNumericalTemp);
+    params.putBoolNonBlocking("Fahrenheit", isFahrenheit);
+    params.putBoolNonBlocking("NumericalTemp", isNumericalTemp);
     update();
   } else if (onroad && home_btn.contains(event->pos())) {
     flag_pressed = true;

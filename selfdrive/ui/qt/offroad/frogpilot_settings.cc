@@ -280,11 +280,11 @@ void FrogPilotNavigationPanel::updateUI(const bool deviceOnline, const bool mapb
 ParamControl *FrogPilotPanel::createParamControl(const QString &key, const QString &label, const QString &desc, const QString &icon, QWidget *parent) {
   ParamControl *control = new ParamControl(key, label, desc, icon);
   connect(control, &ParamControl::toggleFlipped, [=](bool state) {
-    paramsMemory.putBool("FrogPilotTogglesUpdated", true);
+    paramsMemory.putBoolNonBlocking("FrogPilotTogglesUpdated", true);
     if (key == "NNFF") {
       if (params.getBool("NNFF")) {
         const bool addSSH = ConfirmationDialog::yesorno("Would you like to grant 'twilsonco' SSH access to improve NNFF? This won't affect any added SSH keys.", parent);
-        params.putBool("TwilsoncoSSH", addSSH);
+        params.putBoolNonBlocking("TwilsoncoSSH", addSSH);
         if (addSSH) {
           ConfirmationDialog::toggleAlert("Message 'twilsonco' on Discord to get your device properly configured.", "Acknowledge", parent);
         }

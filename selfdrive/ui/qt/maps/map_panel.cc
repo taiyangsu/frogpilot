@@ -44,5 +44,5 @@ void MapPanel::toggleMapSettings() {
 
 void MapPanel::setVisible(bool visible) {
   QFrame::setVisible(visible);
-  Params("/dev/shm/params").putBool("MapOpen", visible);
+  Params("/dev/shm/params").putBoolNonBlocking("MapOpen", visible);
 }

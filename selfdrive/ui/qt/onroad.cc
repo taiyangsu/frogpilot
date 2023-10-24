@@ -181,12 +181,12 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
     // Check if the click was within the max speed area
     } else if (isMaxSpeedClicked) {
       reverseCruiseIncrease = !params.getBool("ReverseCruiseIncrease");
-      params.putBool("ReverseCruiseIncrease", reverseCruiseIncrease);
-      paramsMemory.putBool("FrogPilotTogglesUpdated", true);
+      params.putBoolNonBlocking("ReverseCruiseIncrease", reverseCruiseIncrease);
+      paramsMemory.putBoolNonBlocking("FrogPilotTogglesUpdated", true);
     // Check if the click was within the speed text area
     } else {
       speedHidden = !params.getBool("HideSpeed");
-      params.putBool("HideSpeed", speedHidden);
+      params.putBoolNonBlocking("HideSpeed", speedHidden);
     }
     widgetClicked = true;
   // If the click wasn't for anything specific, change the value of "ExperimentalMode"
@@ -195,10 +195,10 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
       clickTimer.stop();
       if (scene.conditional_experimental) {
         const int override_value = (scene.conditional_status == 1 || scene.conditional_status == 2) ? 0 : scene.conditional_status >= 2 ? 1 : 2;
-        paramsMemory.putInt("ConditionalStatus", override_value);
+        paramsMemory.putIntNonBlocking("ConditionalStatus", override_value);
       } else {
         const bool experimentalMode = params.getBool("ExperimentalMode");
-        params.putBool("ExperimentalMode", !experimentalMode);
+        params.putBoolNonBlocking("ExperimentalMode", !experimentalMode);
       }
     } else {
       clickTimer.start(500);
@@ -221,7 +221,7 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
   if (!widgetClicked) {
     QWidget::mousePressEvent(e);
     const bool sidebarVisible = geometry().x() > 0;
-    params.putBool("Sidebar", !sidebarVisible);
+    params.putBoolNonBlocking("Sidebar", !sidebarVisible);
   }
 }
 
@@ -1168,7 +1168,7 @@ void AnnotatedCameraWidget::paintGL() {
       // for replay of old routes, never go to widecam
       wide_cam_requested = wide_cam_requested && s->scene.calibration_wide_valid;
     }
-    Params("/dev/shm/params").putBool("WideCamera", wide_cam_requested);
+    Params("/dev/shm/params").putBoolNonBlocking("WideCamera", wide_cam_requested);
     CameraWidget::setStreamType(s->scene.show_driver_camera ? VISION_STREAM_DRIVER : wide_cam_requested ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
 
     s->scene.wide_cam = CameraWidget::getStreamType() == VISION_STREAM_WIDE_ROAD;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <future>
 #include <map>
 #include <string>
 #include <vector>
@@ -52,6 +53,12 @@ public:
   }
   inline int putInt(const std::string &key, int val) {
     return put(key.c_str(), std::to_string(val).c_str(), std::to_string(val).size());
+  }
+  inline void putBoolNonBlocking(const std::string &key, bool val) {
+    std::async(std::launch::async, [this, &key, val] { put(key, val ? "1" : "0"); }).get();
+  }
+  inline void putIntNonBlocking(const std::string &key, int val) {
+    std::async(std::launch::async, [this, &key, val] { put(key, std::to_string(val)); }).get();
   }
 
 private:

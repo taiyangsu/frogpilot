@@ -1272,7 +1272,7 @@ void cameras_run(MultiCameraState *s) {
 
     if (elapsed_time > 1.0) {
       fps = frame_count / elapsed_time;
-      paramsMemory.putInt("CameraFPS", fps);
+      paramsMemory.putIntNonBlocking("CameraFPS", fps);
       frame_count = 0;
       prev_time_point = current_time_point;
     }

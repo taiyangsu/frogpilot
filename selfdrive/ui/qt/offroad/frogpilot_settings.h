@@ -42,8 +42,8 @@ public:
     setText(label);
 
     QObject::connect(this, &QPushButton::toggled, this, [=](bool checked) {
-      params.putBool(key, checked);
-      paramsMemory.putBool("FrogPilotTogglesUpdated", true);
+      params.putBoolNonBlocking(key, checked);
+      paramsMemory.putBoolNonBlocking("FrogPilotTogglesUpdated", true);
     });
   }
 
@@ -197,8 +197,8 @@ private: \
   void updateValue(int delta) override { \
     int value = params.getInt(paramName); \
     value = newValue(value + delta); \
-    params.putInt(paramName, value); \
-    paramsMemory.putBool("FrogPilotTogglesUpdated", true); \
+    params.putIntNonBlocking(paramName, value); \
+    paramsMemory.putBoolNonBlocking("FrogPilotTogglesUpdated", true); \
     if (std::string(#className) == "Model") { \
       params.remove("CalibrationParams"); \
       params.remove("LiveTorqueParameters"); \
