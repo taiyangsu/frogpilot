@@ -42,8 +42,8 @@ class CarState(CarStateBase):
    
     #Forwarded BSM message
     
-    ret.leftBlindspot = pt_cp.vl["left_blindspot"]["leftbsmlight"] == 1
-    ret.rightBlindspot = pt_cp.vl["right_blindspot"]["rightbsmlight"] == 1
+    ret.leftBlindspot = pt_cp.vl.get("left_blindspot", {}).get("leftbsmlight", 0) == 1
+    ret.rightBlindspot = pt_cp.vl.get("right_blindspot", {}).get("rightbsmlight", 0) == 1
       
     # Variables used for avoiding LKAS faults
     self.loopback_lka_steering_cmd_updated = len(loopback_cp.vl_all["ASCMLKASteeringCmd"]["RollingCounter"]) > 0
