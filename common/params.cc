@@ -287,6 +287,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"OSMDownloadLocations", PERSISTENT},
     {"PathEdgeWidth", PERSISTENT},
     {"PathWidth", PERSISTENT},
+    {"PauseLateralOnSignal", PERSISTENT},
     {"RelaxedFollow", PERSISTENT},
     {"RelaxedJerk", PERSISTENT},
     {"ReverseCruise", PERSISTENT},
