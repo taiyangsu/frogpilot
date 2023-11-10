@@ -192,6 +192,9 @@ public: \
     if (std::string(#className) == "SLCFallback" || std::string(#className) == "SLCPriority") { \
       label.setFixedWidth(750); \
     } \
+    if (std::string(#className) == "AdjustablePersonalities") { \
+      label.setFixedWidth(300); \
+    } \
     if (std::string(#className) == "CameraView" || std::string(#className) == "DeviceShutdown" || std::string(#className) == "StoppingDistance" || std::string(#className) == "WheelIcon") { \
       label.setFixedWidth(225); \
     } \
@@ -228,6 +231,11 @@ ParamController(AccelerationProfile, "AccelerationProfile", "   Acceleration Pro
 ParamController(CameraView, "CameraView", "Camera View (Cosmetic Only)", "Set your preferred camera view for the onroad UI. This toggle is purely cosmetic and will not affect openpilot's use of the other cameras.", "../assets/offroad/icon_camera.png",
   const int camera = params.getInt("CameraView");
   return camera == 0 ? "Auto" : camera == 1 ? "Standard" : camera == 2 ? "Wide" : "Driver";,
+)
+
+ParamController(AdjustablePersonalities, "AdjustablePersonalities", "Adjustable Personalities", "Switch personalities using the 'Distance' button on the steering wheel (GM/Lexus/Toyota Only) or via the onroad UI for other makes.\n\n1 bar = Aggressive\n2 bars = Standard\n3 bars = Relaxed", "../assets/offroad/icon_distance.png",
+  const int selection = params.getInt("AdjustablePersonalities");
+  return selection == 0 ? "None" : selection == 1 ? "Wheel" : selection == 2 ? "UI" : "Wheel + UI";,
   return v >= 0 ? v % 4 : 3;
 )
 
