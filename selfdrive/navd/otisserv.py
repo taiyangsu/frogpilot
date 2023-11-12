@@ -117,17 +117,9 @@ class OtisServ(BaseHTTPRequestHandler):
     use_gmap = not use_amap and params.get_bool('EnableGmap')
 
     postvars = self.parse_POST()
-    # set_destination endpoint
-    if self.path == '/set_destination':
-      self.send_response(200)
-      self.send_header("Content-type", "application/json")
-      self.end_headers()
-      response_data = {'success': True}
-      self.wfile.write(json.dumps(response_data).encode('utf-8'))
-    else:
-      self.send_response(200)
-      self.send_header("Content-type", "text/html")
-      self.end_headers()
+    self.send_response(200)
+    self.send_header("Content-type", "text/html")
+    self.end_headers()
 
     if use_amap:
       # amap token
@@ -182,16 +174,6 @@ class OtisServ(BaseHTTPRequestHandler):
           lng, lat = self.gcj02towgs84(lng, lat)
         params.put('NavDestination', "{\"latitude\": %f, \"longitude\": %f, \"place_name\": \"%s\"}" % (lat, lng, name))
         self.to_json(lat, lng, save_type, name)
-    if postvars is not None:
-      latitude_value = postvars.get("latitude")
-      longitude_value = postvars.get("longitude")
-      if latitude_value is not None and latitude_value != "" and longitude_value is not None and longitude_value != "":
-        lat = float(latitude_value)
-        lng = float(longitude_value)
-        save_type = "recent"
-        name = postvars.get("place_name", [""])
-        params.put('NavDestination', "{\"latitude\": %f, \"longitude\": %f, \"place_name\": \"%s\"}" % (lat, lng, name))
-        self.to_json(lat, lng, save_type, name)
       # favorites
       if not use_gmap and "fav_val" in postvars:
         addr = postvars.get("fav_val")[0]
@@ -228,13 +210,12 @@ class OtisServ(BaseHTTPRequestHandler):
           else:
             self.display_page_addr_input("Place Not Found")
             return
-    if self.path != '/set_destination':
-      if use_amap:
-        self.display_page_amap()
-      elif use_gmap:
-        self.display_page_gmap()
-      else:
-        self.display_page_addr_input()
+    if use_amap:
+      self.display_page_amap()
+    elif use_gmap:
+      self.display_page_gmap()
+    else:
+      self.display_page_addr_input()
 
   def get_logo(self):
     self.send_response(200)
@@ -370,16 +351,7 @@ class OtisServ(BaseHTTPRequestHandler):
       length = int(self.headers['content-length'])
       postvars = parse_qs(
         self.rfile.read(length).decode('utf-8'),
-        keep_blank_values=1
-      )
-    elif ctype == 'application/json':
-      length = int(self.headers['content-length'])
-      post_data = self.rfile.read(length).decode('utf-8')
-      try:
-        postvars = json.loads(post_data)
-      except json.JSONDecodeError:
-        self.send_error(400, 'Invalid JSON data')
-        return None
+        keep_blank_values=1)
     else:
       postvars = {}
     return postvars
