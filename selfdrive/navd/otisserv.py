@@ -44,8 +44,8 @@ ee = 0.00669342162296594323
 
 class OtisServ(BaseHTTPRequestHandler):
   def do_GET(self):
-    use_amap = params.get_bool('EnableAmap')
-    use_gmap = not use_amap and params.get_bool('EnableGmap')
+    use_amap = params.get_int("RouteInput") == 1
+    use_gmap = params.get_int("RouteInput") == 2
 
     if self.path == '/logo.png':
       self.get_logo()
@@ -127,8 +127,8 @@ class OtisServ(BaseHTTPRequestHandler):
         self.display_page_addr_input()
 
   def do_POST(self):
-    use_amap = params.get_bool('EnableAmap')
-    use_gmap = not use_amap and params.get_bool('EnableGmap')
+    use_amap = params.get_int("RouteInput") == 1
+    use_gmap = params.get_int("RouteInput") == 2
 
     postvars = self.parse_POST()
     # set_destination endpoint
@@ -151,8 +151,8 @@ class OtisServ(BaseHTTPRequestHandler):
                 ("amap_key_val_2" not in postvars or postvars.get("amap_key_val_2")[0] == ""):
           self.display_page_amap_key()
           return
-        params.put('AppleMapsKey1', postvars.get("amap_key_val")[0])
-        params.put('AppleMapsKey2', postvars.get("amap_key_val_2")[0])
+        params.put("AppleMapsKey1", postvars.get("amap_key_val")[0])
+        params.put("AppleMapsKey2", postvars.get("amap_key_val_2")[0])
 
     elif use_gmap:
       # gmap token
@@ -160,7 +160,7 @@ class OtisServ(BaseHTTPRequestHandler):
         if postvars is None or "gmap_key_val" not in postvars or postvars.get("gmap_key_val")[0] == "":
           self.display_page_gmap_key()
           return
-        params.put('GmapKey', postvars.get("gmap_key_val")[0])
+        params.put("GmapKey", postvars.get("gmap_key_val")[0])
 
     else:
       # mapbox public key
@@ -172,7 +172,7 @@ class OtisServ(BaseHTTPRequestHandler):
         if "pk." not in token:
           self.display_page_public_token("Your token was incorrect!")
           return
-        params.put('MapboxPublicKey', token)
+        params.put("MapboxPublicKey", token)
 
     # app key
     if self.get_app_token() is None:
@@ -183,7 +183,7 @@ class OtisServ(BaseHTTPRequestHandler):
       if "sk." not in token:
         self.display_page_app_token("Your token was incorrect!")
         return
-      params.put('MapboxSecretKey', token)
+      params.put("MapboxSecretKey", token)
 
     # nav confirmed
     if postvars is not None:
@@ -194,7 +194,7 @@ class OtisServ(BaseHTTPRequestHandler):
         name = postvars.get("name")[0] if postvars.get("name") is not None else ""
         if use_amap:
           lng, lat = self.gcj02towgs84(lng, lat)
-        params.put('NavDestination', "{\"latitude\": %f, \"longitude\": %f, \"place_name\": \"%s\"}" % (lat, lng, name))
+        params.put("NavDestination", "{\"latitude\": %f, \"longitude\": %f, \"place_name\": \"%s\"}" % (lat, lng, name))
         self.to_json(lat, lng, save_type, name)
     if postvars is not None:
       latitude_value = postvars.get("latitude")
@@ -204,7 +204,7 @@ class OtisServ(BaseHTTPRequestHandler):
         lng = float(longitude_value)
         save_type = "recent"
         name = postvars.get("place_name", [""])
-        params.put('NavDestination', "{\"latitude\": %f, \"longitude\": %f, \"place_name\": \"%s\"}" % (lat, lng, name))
+        params.put("NavDestination", "{\"latitude\": %f, \"longitude\": %f, \"place_name\": \"%s\"}" % (lat, lng, name))
         self.to_json(lat, lng, save_type, name)
       # favorites
       if not use_gmap and "fav_val" in postvars:
