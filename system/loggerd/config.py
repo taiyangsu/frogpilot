@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from openpilot.common.params import Params
 from openpilot.system.hardware import PC
 from openpilot.system.hardware.hw import Paths
 
@@ -40,6 +41,14 @@ def get_used_bytes(default=None):
     total_bytes = statvfs.f_blocks * statvfs.f_frsize
     available_bytes = statvfs.f_bavail * statvfs.f_frsize
     used_bytes = total_bytes - available_bytes
+
+    total_map_size = 0
+    for dirpath, _, filenames in os.walk("/data/media/0/osm/offline"):
+      for filename in filenames:
+        filepath = os.path.join(dirpath, filename)
+        if os.path.isfile(filepath):
+          total_map_size += os.path.getsize(filepath)
+    Params("/dev/shm/params").put_int("OfflineMapsSize", int(total_map_size / 1e6))
   except OSError:
     used_bytes = default
 

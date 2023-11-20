@@ -152,15 +152,21 @@ protected:
 
 private:
   void createMapboxKeyControl(ButtonControl *&control, const QString &label, const std::string &paramKey, const QString &prefix);
-  void displayInstructions();
+  void displaySetup();
   void refresh(ButtonControl *control, const std::string &paramKey);
+  void removeOfflineMaps(QWidget *parent);
+  void selectMaps();
 
   QVBoxLayout *mainLayout = new QVBoxLayout(this);
   QVBoxLayout *primelessLayout = new QVBoxLayout();
   ButtonControl *publicMapboxKeyControl = nullptr;
+  ButtonControl *removeOfflineMapsButton = nullptr;
   ButtonControl *secretMapboxKeyControl = nullptr;
+  ButtonControl *selectMapsButton  = nullptr;
+  LabelControl *offlineMapsSize;
+  LabelControl *offlineMapsStatus;
   QLabel *imageLabel = new QLabel(this);
-  QLabel *instructionsStep = new QLabel(this);
+  QLabel *setupStep = new QLabel(this);
   QLabel *mapboxSettingsLabel = new QLabel("Device Offline. Connect to the internet to use Navigation.", this);
   QTimer *updateTimer = new QTimer(this);
   WifiManager *wifi = new WifiManager(this);
@@ -199,7 +205,7 @@ public: \
     if (std::string(#className) == "AdjustablePersonalities") { \
       label.setFixedWidth(300); \
     } \
-    if (std::string(#className) == "CameraView" || std::string(#className) == "DeviceShutdown" || std::string(#className) == "StoppingDistance" || std::string(#className) == "WheelIcon" || std::string(#className) == "RouteInput") { \
+    if (std::string(#className) == "CameraView" || std::string(#className) == "DeviceShutdown" || std::string(#className) == "SearchInput" || std::string(#className) == "StoppingDistance" || std::string(#className) == "WheelIcon") { \
       label.setFixedWidth(225); \
     } \
     if (std::string(#className) == "CESpeed" || std::string(#className) == "CESpeedLead" || std::string(#className) == "Offset1" || std::string(#className) == "Offset2" || std::string(#className) == "Offset3" || std::string(#className) == "Offset4") { \
@@ -232,12 +238,6 @@ ParamController(AccelerationProfile, "AccelerationProfile", "   Acceleration Pro
   return std::clamp(v, 1, 3);
 )
 
-ParamController(CameraView, "CameraView", "Camera View (Cosmetic Only)", "Set your preferred camera view for the onroad UI. This toggle is purely cosmetic and will not affect openpilot's use of the other cameras.", "../assets/offroad/icon_camera.png",
-  const int camera = params.getInt("CameraView");
-  return camera == 0 ? "Auto" : camera == 1 ? "Standard" : camera == 2 ? "Wide" : "Driver";,
-  return v >= 0 ? v % 4 : 3;
-)
-
 ParamController(AdjustablePersonalities, "AdjustablePersonalities", "Adjustable Personalities", "Switch personalities using the 'Distance' button on the steering wheel (GM/Lexus/Toyota Only) or via the onroad UI for other makes.\n\n1 bar = Aggressive\n2 bars = Standard\n3 bars = Relaxed", "../assets/offroad/icon_distance.png",
   const int selection = params.getInt("AdjustablePersonalities");
   return selection == 0 ? "None" : selection == 1 ? "Wheel" : selection == 2 ? "UI" : "Wheel + UI";,
@@ -252,6 +252,12 @@ ParamController(AggressiveJerk, "AggressiveJerk", "Jerk Value", "Set the jerk va
 ParamController(AggressiveFollow, "AggressiveFollow", "Time", "Set the following distance for the 'Aggressive Personality'.\n\nValue represents the time (in seconds) to follow the lead vehicle.\n\nStock has a value of 1.25.", "../assets/aggressive.png",
   return QString::number(params.getInt("AggressiveFollow") / 10.0) + " sec";,
   return std::clamp(v, 10, 50);
+)
+
+ParamController(CameraView, "CameraView", "Camera View (Cosmetic Only)", "Set your preferred camera view for the onroad UI. This toggle is purely cosmetic and will not affect openpilot's use of the other cameras.", "../assets/offroad/icon_camera.png",
+  const int camera = params.getInt("CameraView");
+  return camera == 0 ? "Auto" : camera == 1 ? "Standard" : camera == 2 ? "Wide" : "Driver";,
+  return v >= 0 ? v % 4 : 3;
 )
 
 ParamController(CESpeed, "CESpeed", "Below", "Switch to 'Experimental Mode' below this speed when there is no lead vehicle.", "../assets/offroad/icon_blank.png",
@@ -312,7 +318,7 @@ ParamController(LaneLinesWidth, "LaneLinesWidth", "Lanes", "Customize the lane l
   return std::clamp(v, 0, isMetric ? 60 : 24);
 )
 
-ParamController(Model, "Model", "Model Selector (Requires Reboot)", "Select your preferred openpilot model.\n\nFV = Farmville(Default)\nNLP = New Lemon Pie\nBD = Bad Dragon", "../assets/offroad/icon_calibration.png",
+ParamController(Model, "Model", "Model Selector (Requires Reboot)", "Select your preferred openpilot model.\n\nFV = Farmville(Default)\nNLP = New Lemon Pie\nBD = Blue Diamond", "../assets/offroad/icon_calibration.png",
   const int model = params.getInt("Model");
   return model == 0 ? "FV" : model == 1 ? "NLP" : "BD";,
   return v >= 0 ? v % 3 : 2;
@@ -383,8 +389,8 @@ ParamController(RoadEdgesWidth, "RoadEdgesWidth", "Road Edges", "Customize the r
   return std::clamp(v, 0, isMetric ? 60 : 24);
 )
 
-ParamController(RouteInput, "RouteInput", "Route Input", "Choose between either MapBox (recommended), Apple, or Google for input destinations when using Navigate On Openpilot.", "",
-  const int api = params.getInt("RouteInput");
+ParamController(SearchInput, "SearchInput", "Search Input", "Choose between either MapBox (recommended), Apple, or Google search for destinations when using Navigate On Openpilot.", "",
+  const int api = params.getInt("SearchInput");
   return api == 0 ? "MapBox" : api == 1 ? "Apple" : "Google";,
   return v >= 0 ? v % 3 : 2;
 )
@@ -449,4 +455,3 @@ ParamController(TurnAggressiveness, "TurnAggressiveness", "   Turn Speed Aggress
   return QString::number(params.getInt("TurnAggressiveness")) + "%";,
   return std::clamp(v, 1, 200);
 )
-
