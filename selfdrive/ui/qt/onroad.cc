@@ -462,8 +462,11 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
   main_layout->addLayout(top_right_layout, 0);
   main_layout->setAlignment(top_right_layout, Qt::AlignTop | Qt::AlignRight);
 
+  main_layout->addStretch(1);
   map_settings_btn = new MapSettingsButton(this);
   main_layout->addWidget(map_settings_btn, 0, Qt::AlignBottom | Qt::AlignRight);
+  QSpacerItem *spacer = new QSpacerItem(0, 25, QSizePolicy::Minimum, QSizePolicy::Fixed);
+  main_layout->addSpacerItem(spacer);
 
   dm_img = loadPixmap("../assets/img_driver_face.png", {img_size + 5, img_size + 5});
 
