@@ -140,46 +140,6 @@ public:
   explicit FrogPilotControlsPanel(QWidget *parent = nullptr);
 };
 
-class FrogPilotNavigationPanel : public FrogPilotPanel {
-  Q_OBJECT
-
-public:
-  explicit FrogPilotNavigationPanel(QWidget *parent = nullptr);
-
-protected:
-  void hideEvent(QHideEvent *event) override;
-  void showEvent(QShowEvent *event) override;
-
-private:
-  void createMapboxKeyControl(ButtonControl *&control, const QString &label, const std::string &paramKey, const QString &prefix);
-  void displaySetup();
-  void refresh(ButtonControl *control, const std::string &paramKey);
-  void removeOfflineMaps(QWidget *parent);
-  void selectMaps();
-
-  QVBoxLayout *mainLayout = new QVBoxLayout(this);
-  QVBoxLayout *primelessLayout = new QVBoxLayout();
-  ButtonControl *publicMapboxKeyControl = nullptr;
-  ButtonControl *removeOfflineMapsButton = nullptr;
-  ButtonControl *secretMapboxKeyControl = nullptr;
-  ButtonControl *selectMapsButton  = nullptr;
-  LabelControl *offlineMapsSize;
-  LabelControl *offlineMapsStatus;
-  QLabel *imageLabel = new QLabel(this);
-  QLabel *setupStep = new QLabel(this);
-  QLabel *mapboxSettingsLabel = new QLabel("Device Offline. Connect to the internet to use Navigation.", this);
-  QTimer *updateTimer = new QTimer(this);
-  WifiManager *wifi = new WifiManager(this);
-
-  static constexpr const char *imagePath = "../assets/images/";
-  static constexpr const char *ipFormat = "Manage your mapbox settings at %1:8082";
-
-  bool mapboxPublicKeySet = false;
-  bool mapboxSecretKeySet = false;
-  bool setupCompleted = false;
-  QString currentStep = "no_keys_set.png";
-};
-
 class FrogPilotVehiclesPanel : public FrogPilotPanel {
   Q_OBJECT
 
