@@ -217,7 +217,7 @@ class LongitudinalPlanner:
       # Set the max speed to the manual set speed
       if carstate.gasPressed:
         self.overridden_speed = np.clip(v_ego, desired_speed_limit, v_cruise)
-      self.overridden_speed *= not carstate.brakePressed
+      self.overridden_speed *= sm['controlsState'].enabled
 
       # Use the speed limit if its not being overridden
       SpeedLimitController.update_current_max_velocity(carstate.cruiseState.speedLimit, v_cruise)
