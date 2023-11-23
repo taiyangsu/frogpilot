@@ -133,6 +133,20 @@ class CarState(CarStateBase):
       if ret.cruiseState.speed > 90:
         ret.cruiseState.speed = 0
 
+     # Driving personalities function
+    if self.personalities_via_wheel:
+        self.personality_profile = self.params.get_int("LongitudinalPersonality")
+        self.previous_personality_profile = self.personality_profile
+        self.params_memory.put_bool("PersonalityChangedViaUI", False)
+        self.distance_button = pt_cp.vl["GRA_ACC_01"]["GRA_Verstellung_Zeitluecke"]
+        if self.distance_button and not self.distance_previously_pressed:
+          self.personality_profile = (self.previous_personality_profile + 2) % 3
+        self.distance_previously_pressed = self.distance_button
+        if self.personality_profile != self.previous_personality_profile:
+          put_int_nonblocking("LongitudinalPersonality", self.personality_profile)
+          self.params_memory.put_bool("PersonalityChangedViaWheel", True)
+          self.previous_personality_profile = self.personality_profile
+
     # Update button states for turn signals and ACC controls, capture all ACC button state/config for passthrough
     ret.leftBlinker = bool(pt_cp.vl["Blinkmodi_02"]["Comfort_Signal_Left"])
     ret.rightBlinker = bool(pt_cp.vl["Blinkmodi_02"]["Comfort_Signal_Right"])
