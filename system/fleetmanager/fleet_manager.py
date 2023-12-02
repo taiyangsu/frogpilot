@@ -4,39 +4,70 @@ import random
 import secrets
 import threading
 import time
-from flask import Flask, render_template, Response, request, send_from_directory, session, redirect, url_for
+
+from flask import Flask, render_template, Response, request, send_from_directory, session, redirect, url_for, jsonify
+import requests
+from requests.exceptions import ConnectionError
 from openpilot.common.realtime import set_core_affinity
 import openpilot.system.fleetmanager.helpers as fleet
 from openpilot.system.hardware.hw import Paths
 from openpilot.system.swaglog import cloudlog
 
 app = Flask(__name__)
+target_server_base_url = 'http://127.0.0.1:8282/'
 
+def make_request_with_retry(method, url, data=None, headers=None):
+  retries = 3  # Adjust the number of retries as needed
+  for attempt in range(retries):
+    try:
+      response = requests.request(method, url, data=data, headers=headers, stream=True)
+      return response
+    except ConnectionError as e:
+      print(f"Error: {e}. Retrying...")
+
+  # If all retries fail, raise the last encountered exception
+  raise e
+
+def build_target_url(subpath=''):
+  return f'{target_server_base_url}/{subpath}' if subpath else target_server_base_url
+
+def handle_request(method, subpath=''):
+  target_url = build_target_url(subpath)
+  if request.is_json:
+    data = request.data
+  else:
+    data = request.form.to_dict()
+  response = make_request_with_retry(method, target_url, data=data, headers=request.headers)
+  
+  return Response(response.iter_content(chunk_size=128), content_type=response.headers.get('Content-type'))
 
 @app.route("/")
-@app.route("/index")
 def home_page():
   return render_template("index.html")
 
+@app.route("/otisserv", methods=['GET', 'POST'])
+def otisserv_proxy():
+  return handle_request(request.method)
 
-@app.route("/login", methods=["POST"])
-def login():
-  inputted_pin = request.form.get("pin")
-  with open(fleet.PIN_PATH + "otp.conf", "r") as file:
-    correct_pin = file.read().strip()
+@app.route("/otisserv/<path:subpath>", methods=['GET', 'POST'])
+def reverse_proxy(subpath):
+  return handle_request(request.method, subpath)
 
-  if inputted_pin == correct_pin:
-    session["logged_in"] = True
-    if "previous_page" in session:
-      previous_page = session["previous_page"]
-      session.pop("previous_page", None)
-      return redirect(previous_page)
-    else:
-      return redirect(url_for("home_page"))
-  else:
-    error_message = "Incorrect PIN. Please try again."
-    return render_template("login.html", error=error_message)
+@app.route("/navdirections.json", methods=['GET'])
+def otisserv_navdirections():
+  return handle_request(request.method, "navdirections.json")
 
+@app.route("/CurrentStep.json", methods=['GET'])
+def otisserv_CurrentStep():
+  return handle_request(request.method, "CurrentStep.json")
+
+@app.route("/locations", methods=['GET'])
+def otisserv_locations():
+  return handle_request(request.method, "locations")
+
+@app.route("/set_destination", methods=['POST'])
+def otisserv_set_destination():
+  return handle_request(request.method, "set_destination")
 
 @app.route("/footage/full/<cameratype>/<route>")
 def full(cameratype, route):
@@ -127,33 +158,13 @@ def open_error_log(file_name):
   return render_template("error_log.html", file_name=file_name, file_content=error)
 
 
-def generate_pin():
-  if not os.path.exists(fleet.PIN_PATH):
-    os.makedirs(fleet.PIN_PATH)
-  pin = str(random.randint(100000, 999999))
-  with open(fleet.PIN_PATH + "otp.conf", "w") as file:
-    file.write(pin)
-
-
-def schedule_pin_generate():
-  pin_thread = threading.Thread(target=update_pin)
-  pin_thread.start()
-
-
-def update_pin():
-  while True:
-    generate_pin()
-    time.sleep(30)
-
-
 def main():
   try:
     set_core_affinity([0, 1, 2, 3])
   except Exception:
     cloudlog.exception("fleet_manager: failed to set core affinity")
   app.secret_key = secrets.token_hex(32)
-  schedule_pin_generate()
-  app.run(host="0.0.0.0", port=5050)
+  app.run(host="0.0.0.0", port=8082)
 
 
 if __name__ == '__main__':

@@ -34,7 +34,7 @@ from common.i18n import supported_languages
 params = Params()
 
 hostName = ""
-serverPort = 8082
+serverPort = 8282
 
 pi = 3.1415926535897932384626
 x_pi = 3.14159265358979324 * 3000.0 / 180.0
@@ -196,12 +196,9 @@ class OtisServ(BaseHTTPRequestHandler):
           lng, lat = self.gcj02towgs84(lng, lat)
         params.put("NavDestination", "{\"latitude\": %f, \"longitude\": %f, \"place_name\": \"%s\"}" % (lat, lng, name))
         self.to_json(lat, lng, save_type, name)
-    if postvars is not None:
-      latitude_value = postvars.get("latitude")
-      longitude_value = postvars.get("longitude")
-      if latitude_value is not None and latitude_value != "" and longitude_value is not None and longitude_value != "":
-        lat = float(latitude_value)
-        lng = float(longitude_value)
+      if "latitude" in postvars and postvars.get("latitude") != "" and "longitude" in postvars and postvars.get("longitude") != "":
+        lat = float(postvars.get("latitude"))
+        lng = float(postvars.get("longitude"))
         save_type = "recent"
         name = postvars.get("place_name", [""])
         params.put('NavDestination', "{\"latitude\": %f, \"longitude\": %f, \"place_name\": \"%s\"}" % (lat, lng, name))
