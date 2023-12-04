@@ -4,7 +4,10 @@ import random
 import secrets
 import threading
 import time
+
 from flask import Flask, render_template, Response, request, send_from_directory, session, redirect, url_for
+import requests
+from requests.exceptions import ConnectionError
 from openpilot.common.realtime import set_core_affinity
 import openpilot.system.fleetmanager.helpers as fleet
 from openpilot.system.hardware.hw import Paths
@@ -12,30 +15,9 @@ from openpilot.system.swaglog import cloudlog
 
 app = Flask(__name__)
 
-
 @app.route("/")
-@app.route("/index")
 def home_page():
   return render_template("index.html")
-
-
-@app.route("/login", methods=["POST"])
-def login():
-  inputted_pin = request.form.get("pin")
-  with open(fleet.PIN_PATH + "otp.conf", "r") as file:
-    correct_pin = file.read().strip()
-
-  if inputted_pin == correct_pin:
-    session["logged_in"] = True
-    if "previous_page" in session:
-      previous_page = session["previous_page"]
-      session.pop("previous_page", None)
-      return redirect(previous_page)
-    else:
-      return redirect(url_for("home_page"))
-  else:
-    error_message = "Incorrect PIN. Please try again."
-    return render_template("login.html", error=error_message)
 
 
 @app.route("/footage/full/<cameratype>/<route>")
@@ -126,24 +108,112 @@ def open_error_log(file_name):
   error = f.read()
   return render_template("error_log.html", file_name=file_name, file_content=error)
 
+@app.route("/addr_input", methods=['GET', 'POST'])
+def addr_input():
+  SearchInput = fleet.get_SearchInput()
+  token = fleet.get_public_token()
+  s_token = fleet.get_app_token()
+  gmap_key = fleet.get_gmap_key()
+  PrimeType = fleet.get_PrimeType()
+  lon = float(0.0)
+  lat = float(0.0)
+  if request.method == 'POST':
+    valid_addr = False
+    postvars = request.form.to_dict()
+    addr, lon, lat, valid_addr, token = fleet.parse_addr(postvars, lon, lat, valid_addr, token)
+    if not valid_addr:
+      # If address is not found, try searching
+      postvars = request.form.to_dict()
+      addr = request.form.get('addr_val')
+      addr, lon, lat, valid_addr, token = fleet.search_addr(postvars, lon, lat, valid_addr, token)
+    if valid_addr:
+      # If a valid address is found, redirect to nav_confirmation
+      return redirect(url_for('nav_confirmation', addr=addr, lon=lon, lat=lat))
+    else:
+      return render_template("error.html")
+  elif PrimeType != 0:
+    return render_template("prime.html")
+  elif fleet.get_nav_active():
+    return render_template("nonprime.html", gmap_key=gmap_key, lon=lon, lat=lat)
+  elif token == "" or token is None:
+    return redirect(url_for('public_token_input'))
+  elif s_token == "" or s_token is None:
+    return redirect(url_for('app_token_input'))
+  elif SearchInput == 2:
+    lon, lat = fleet.get_last_lon_lat()
+    if gmap_key == "" or gmap_key is None:
+      return redirect(url_for('gmap_key_input'))
+    else:
+      return render_template("addr.html", gmap_key=gmap_key, lon=lon, lat=lat)
+  else:
+      return render_template("addr.html", gmap_key=gmap_key, lon=lon, lat=lat)
 
-def generate_pin():
-  if not os.path.exists(fleet.PIN_PATH):
-    os.makedirs(fleet.PIN_PATH)
-  pin = str(random.randint(100000, 999999))
-  with open(fleet.PIN_PATH + "otp.conf", "w") as file:
-    file.write(pin)
+@app.route("/nav_confirmation", methods=['GET', 'POST'])
+def nav_confirmation():
+  token = fleet.get_public_token()
+  lon = request.args.get('lon')
+  lat = request.args.get('lat')
+  addr = request.args.get('addr')
+  if request.method == 'POST':
+    postvars = request.form.to_dict()
+    fleet.nav_confirmed(postvars)
+    return redirect(url_for('addr_input'))
+  else:
+    return render_template("nav_confirmation.html", addr=addr, lon=lon, lat=lat, token=token)
 
+@app.route("/public_token_input", methods=['GET', 'POST'])
+def public_token_input():
+  if request.method == 'POST':
+    postvars = request.form.to_dict()
+    fleet.public_token_input(postvars)
+    return redirect(url_for('addr_input'))
+  else:
+    return render_template("public_token_input.html")
 
-def schedule_pin_generate():
-  pin_thread = threading.Thread(target=update_pin)
-  pin_thread.start()
+@app.route("/app_token_input", methods=['GET', 'POST'])
+def app_token_input():
+  if request.method == 'POST':
+    postvars = request.form.to_dict()
+    fleet.app_token_input(postvars)
+    return redirect(url_for('addr_input'))
+  else:
+    return render_template("app_token_input.html")
 
+@app.route("/gmap_key_input", methods=['GET', 'POST'])
+def gmap_key_input():
+  if request.method == 'POST':
+    postvars = request.form.to_dict()
+    fleet.gmap_key_input(postvars)
+    return redirect(url_for('addr_input'))
+  else:
+    return render_template("gmap_key_input.html")
 
-def update_pin():
-  while True:
-    generate_pin()
-    time.sleep(30)
+@app.route("/CurrentStep.json", methods=['GET'])
+def find_CurrentStep():
+  directory = "/data/openpilot/selfdrive/manager/"
+  filename = "CurrentStep.json"
+  return send_from_directory(directory, filename, as_attachment=True)
+
+@app.route("/navdirections.json", methods=['GET'])
+def find_nav_directions():
+  directory = "/data/openpilot/selfdrive/manager/" 
+  filename = "navdirections.json"
+  return send_from_directory(directory, filename, as_attachment=True)
+
+@app.route("/locations", methods=['GET'])
+def get_locations():
+  data = fleet.get_locations()
+  return Response(data, content_type="application/json")
+
+@app.route("/set_destination", methods=['POST'])
+def set_destination():
+  valid_addr = False
+  postvars = request.get_json()
+  data, valid_addr = fleet.set_destination(postvars, valid_addr)
+  if valid_addr:
+    return Response('{"success": true}', content_type='application/json')
+  else:
+    return Response('{"success": false}', content_type='application/json')
 
 
 def main():
@@ -152,8 +222,7 @@ def main():
   except Exception:
     cloudlog.exception("fleet_manager: failed to set core affinity")
   app.secret_key = secrets.token_hex(32)
-  schedule_pin_generate()
-  app.run(host="0.0.0.0", port=5050)
+  app.run(host="0.0.0.0", port=8082)
 
 
 if __name__ == '__main__':
