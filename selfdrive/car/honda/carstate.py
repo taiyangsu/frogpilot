@@ -105,6 +105,7 @@ class CarState(CarStateBase):
     self.brake_switch_active = False
     self.cruise_setting = 0
     self.v_cruise_pcm_prev = 0
+    self.personality_profile = self.params.get_int("LongitudinalPersonality")
 
     # When available we use cp.vl["CAR_SPEED"]["ROUGH_CAR_SPEED_2"] to populate vEgoCluster
     # However, on cars without a digital speedometer this is not always present (HRV, FIT, CRV 2016, ILX and RDX)
@@ -187,6 +188,21 @@ class CarState(CarStateBase):
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_stalk(
       250, cp.vl["SCM_FEEDBACK"]["LEFT_BLINKER"], cp.vl["SCM_FEEDBACK"]["RIGHT_BLINKER"])
     ret.brakeHoldActive = cp.vl["VSA_STATUS"]["BRAKE_HOLD_ACTIVE"] == 1
+
+        # Driving personalities function
+    if self.personalities_via_wheel and ret.cruiseState.available:
+      # Sync with the onroad UI button
+      if self.params_memory.get_bool("PersonalityChangedViaUI"):
+        self.personality_profile = self.params.get_int("LongitudinalPersonality")
+        self.params_memory.put_bool("PersonalityChangedViaUI", False)
+
+      # Change personality upon steering wheel button press
+      if self.prev_cruise_setting == 3:
+        print(self.prev_cruise_setting)
+        print(self.cruise_setting)
+        if self.cruise_setting == 0:
+          self.personality_profile = (self.personality_profile + 1) % 3
+          self.params_memory.put_bool("PersonalityChangedViaWheel", True)
 
     # TODO: set for all cars
     if self.CP.carFingerprint in (HONDA_BOSCH | {CAR.CIVIC, CAR.ODYSSEY, CAR.ODYSSEY_CHN, CAR.CLARITY}):
