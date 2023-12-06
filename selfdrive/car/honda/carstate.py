@@ -196,11 +196,10 @@ class CarState(CarStateBase):
         self.params_memory.put_bool("PersonalityChangedViaUI", False)
 
       # Change personality upon steering wheel button press
-      if self.prev_cruise_setting == 3:
-        if self.cruise_setting == 0:
-          self.personality_profile = (self.personality_profile + 1) % 3
-          self.params_memory.put_bool("PersonalityChangedViaWheel", True)
-          self.params.put_int("LongitudinalPersonality", self.personality_profile)
+      if self.prev_cruise_setting == 3 and self.cruise_setting == 0:
+        self.personality_profile = (self.personality_profile + 1) % 3
+        self.params_memory.put_bool("PersonalityChangedViaWheel", True)
+        self.params.put_int("LongitudinalPersonality", self.personality_profile)
 
     # TODO: set for all cars
     if self.CP.carFingerprint in (HONDA_BOSCH | {CAR.CIVIC, CAR.ODYSSEY, CAR.ODYSSEY_CHN, CAR.CLARITY}):
