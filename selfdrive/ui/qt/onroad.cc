@@ -484,6 +484,7 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
   main_layout->addWidget(map_settings_btn, 0, Qt::AlignBottom | Qt::AlignRight);
 
   dm_img = loadPixmap("../assets/img_driver_face.png", {img_size + 5, img_size + 5});
+  ic_regenPaddle = loadPixmap("../assets/images/img_regen.png", {img_size + 5, img_size + 5});
 
   // Initialize FrogPilot widgets
   initializeFrogPilotWidgets();
@@ -679,6 +680,8 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   }
 
   p.restore();
+  // regen paddle working
+  drawBrakeRegen(p);
 }
 
 void AnnotatedCameraWidget::drawText(QPainter &p, int x, int y, const QString &text, int alpha) {
@@ -1696,4 +1699,24 @@ void AnnotatedCameraWidget::drawTurnSignals(QPainter &p) {
     drawSignal(turnSignalLeft, leftSignalXPosition, false, blindSpotLeft);
     drawSignal(turnSignalRight, rightSignalXPosition, true, blindSpotRight);
   }
+}
+void AnnotatedCameraWidget::drawBrakeRegen(QPainter &p){
+  p.save();
+  const SubMaster &sm = *(uiState()->sm);
+  const auto car_control = sm["carControl"].getCarControl();
+
+  int offset = UI_BORDER_SIZE + btn_size / 2;  //UI_BORDER_SIZE = 30, btn_size = 192
+  offset += alwaysOnLateral || conditionalExperimental || roadNameUI ? 25 : 0;
+  int x = rightHandDM ? width() - offset : offset;
+  x += onroadAdjustableProfiles ? 250 : 0;
+  x += !muteDM ? 250 : 0;
+  int y = height() - offset;
+
+  //regen Paddle
+  bool regen_valid = car_control.getActuators().getRegenPaddle();
+  float img_alpha = regen_valid ? 1.0 : 0.15;
+  float bg_alpha = regen_valid ? 0.3 : 0.1;
+  drawIcon(p, QPoint(x, y), ic_regenPaddle, QColor(0, 0, 0, (255 * bg_alpha)), img_alpha);
+
+  p.restore();
 }
