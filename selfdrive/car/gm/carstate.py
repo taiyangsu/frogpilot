@@ -173,7 +173,7 @@ class CarState(CarStateBase):
         self.personality_profile = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCGapLevel"] - 1
       else:
         if self.CP.carFingerprint in SDGM_CAR:
-          self.distance_button_pressed = cam_cp.vl["ASCMSteeringButton"]["DistanceButton"] != 0
+          self.distance_button = cam_cp.vl["ASCMSteeringButton"]["DistanceButton"]
         else:
           self.distance_button = pt_cp.vl["ASCMSteeringButton"]["DistanceButton"]
 
@@ -197,7 +197,10 @@ class CarState(CarStateBase):
 
     # Toggle Experimental Mode from steering wheel function
     if self.experimental_mode_via_press and ret.cruiseState.available:
-      lkas_pressed = pt_cp.vl["ASCMSteeringButton"]["LKAButton"]
+      if self.CP.carFingerprint in SDGM_CAR:
+        lkas_pressed = cam_cp.vl["ASCMSteeringButton"]["LKAButton"]
+      else:
+        lkas_pressed = pt_cp.vl["ASCMSteeringButton"]["LKAButton"]
       if lkas_pressed and not self.lkas_previously_pressed:
         if self.conditional_experimental_mode:
           # Set "CEStatus" to work with "Conditional Experimental Mode"
