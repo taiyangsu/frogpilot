@@ -7,12 +7,12 @@ import numpy as np
 import cereal.messaging as messaging
 from cereal import car
 from cereal import log
-from openpilot.common.params import Params, put_nonblocking
+from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, DT_MDL
 from openpilot.common.numpy_fast import clip
 from openpilot.selfdrive.locationd.models.car_kf import CarKalman, ObservationKind, States
 from openpilot.selfdrive.locationd.models.constants import GENERATED_DIR
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 
 
 MAX_ANGLE_OFFSET_DELTA = 20 * DT_MDL  # Max 20 deg/s
@@ -26,6 +26,7 @@ OFFSET_LOWERED_MAX = 8.0
 MIN_ACTIVE_SPEED = 1.0
 LOW_ACTIVE_SPEED = 10.0
 
+params_memory = Params("/dev/shm/params")
 
 class ParamsLearner:
   def __init__(self, CP, steer_ratio, stiffness_factor, angle_offset, P_initial=None):
@@ -191,6 +192,12 @@ def main():
           learner.handle_log(t, which, sm[which])
 
     if sm.updated['liveLocationKalman']:
+      location = sm['liveLocationKalman']
+      if (location.status == log.LiveLocationKalman.Status.valid) and location.positionGeodetic.valid and location.gpsOK:
+        bearing = math.degrees(location.calibratedOrientationNED.value[2])
+        lat = location.positionGeodetic.value[0]
+        lon = location.positionGeodetic.value[1]
+        params_memory.put("LastGPSPosition", json.dumps({ "latitude": lat, "longitude": lon, "bearing": bearing }))
       x = learner.kf.x
       P = np.sqrt(learner.kf.P.diagonal())
       if not all(map(math.isfinite, x)):
@@ -251,7 +258,7 @@ def main():
           'stiffnessFactor': liveParameters.stiffnessFactor,
           'angleOffsetAverageDeg': liveParameters.angleOffsetAverageDeg,
         }
-        put_nonblocking("LiveParameters", json.dumps(params))
+        params_reader.put_nonblocking("LiveParameters", json.dumps(params))
 
       pm.send('liveParameters', msg)
 

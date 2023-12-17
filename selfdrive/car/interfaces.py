@@ -233,8 +233,8 @@ class CarInterfaceBase(ABC):
       eps_firmware = str(next((fw.fwVersion for fw in car_fw if fw.ecu == "eps"), ""))
       model, similarity_score = get_nn_model_path(candidate, eps_firmware)
       if model is not None:
-        ret.lateralTuning.torque.nnModelName = candidate
-        ret.lateralTuning.torque.nnModelFuzzyMatch = (similarity_score < 0.99)
+        Params("/dev/shm/params").put_bool("NNFFModelFuzzyMatch", similarity_score < 0.99)
+        Params("/dev/shm/params").put("NNFFModelName", candidate)
 
     # Vehicle mass is published curb weight plus assumed payload such as a human driver; notCars have no assumed payload
     if not ret.notCar:
@@ -487,19 +487,19 @@ class CarStateBase(ABC):
     self.v_ego_kf = KF1D(x0=x0, A=A, C=C[0], K=K)
 
     # FrogPilot variables
-    self.params = Params()
-    self.params_memory = Params("/dev/shm/params")
+    self.param = Params()
+    self.param_memory = Params("/dev/shm/params")
 
     self.display_menu = False
     self.distance_previously_pressed = False
-    self.enable_cruise = self.params_memory.get_bool("EnableCruise", False)
     self.lkas_previously_pressed = False
+    self.main_enabled = False
     self.profile_restored = False
 
     self.display_timer = 0
     self.distance_button = 0
-    self.personality_profile = self.params.get_int("LongitudinalPersonality")
-    self.previous_personality_profile = self.params.get_int("LongitudinalPersonality")
+    self.personality_profile = self.param.get_int("LongitudinalPersonality")
+    self.previous_personality_profile = self.param.get_int("LongitudinalPersonality")
 
   def update_speed_kf(self, v_ego_raw):
     if abs(v_ego_raw - self.v_ego_kf.x[0][0]) > 2.0:  # Prevent large accelerations when car starts at non zero speed

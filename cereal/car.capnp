@@ -118,14 +118,6 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     paramsdTemporaryError @50;
     paramsdPermanentError @119;
 
-    # FrogPilot Events
-    frogSteerSaturated @120;
-    greenLight @121;
-    pedalInterceptorNoBrake @122;
-    torqueNNLoad @123;
-    turningLeft @124;
-    turningRight @125;
-
     radarCanErrorDEPRECATED @15;
     communityFeatureDisallowedDEPRECATED @62;
     radarCommIssueDEPRECATED @67;
@@ -243,7 +235,6 @@ struct CarState {
     speedOffset @3 :Float32;
     standstill @4 :Bool;
     nonAdaptive @5 :Bool;
-    speedLimit @7 :Float32;
   }
 
   enum GearShifter {
@@ -335,11 +326,6 @@ struct CarControl {
   leftBlinker @15: Bool;
   rightBlinker @16: Bool;
 
-  # FrogPilot CarControls
-  alwaysOnLateral @17: Bool;
-  drivingGear @18: Bool;
-  reverseCruise @19: Bool;
-
   # Any car specific rate limits or quirks applied by
   # the CarController are reflected in actuatorsOutput
   # and matches what is sent to the car
@@ -421,6 +407,8 @@ struct CarControl {
       prompt @6;
       promptRepeat @7;
       promptDistracted @8;
+
+      firefox @9;
     }
   }
 
@@ -498,6 +486,7 @@ struct CarParams {
   openpilotLongitudinalControl @37 :Bool; # is openpilot doing the longitudinal control?
   carVin @38 :Text; # VIN number queried during fingerprinting
   dashcamOnly @41: Bool;
+  passive @73: Bool;   # is openpilot in control?
   transmissionType @43 :TransmissionType;
   carFw @44 :List(CarFw);
 
@@ -536,8 +525,6 @@ struct CarParams {
     steeringAngleDeadzoneDeg @5 :Float32;
     latAccelFactor @6 :Float32;
     latAccelOffset @7 :Float32;
-    nnModelName @8 :Text;
-    nnModelFuzzyMatch @9 :Bool;
   }
 
   struct LongitudinalPIDTuning {

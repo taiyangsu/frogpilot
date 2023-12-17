@@ -14,8 +14,6 @@
 #include "common/watchdog.h"
 #include "common/util.h"
 #include "system/hardware/hw.h"
-#include "selfdrive/ui/qt/frogpilot/frogpilot_navigation_settings.h"
-#include "selfdrive/ui/qt/offroad/frogpilot_settings.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
@@ -24,6 +22,11 @@
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
+
+#include "selfdrive/frogpilot/ui/frogpilot_settings.h"
+#include "selfdrive/frogpilot/ui/vehicle_settings.h"
+#include "selfdrive/frogpilot/ui/visual_settings.h"
+#include "selfdrive/frogpilot/navigation/ui/navigation_settings.h"
 
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   // param, title, desc, icon
@@ -106,7 +109,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     toggles[param.toStdString()] = toggle;
 
     // insert longitudinal personality after NDOG toggle
-    if (param == "DisengageOnAccelerator" && !params.getInt("PersonalitiesViaWheel")) {
+    if (param == "DisengageOnAccelerator" && !params.getInt("AdjustablePersonalities")) {
       addItem(long_personality_setting);
     }
   }
@@ -249,8 +252,20 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   });
   addItem(translateBtn);
 
+  // Delete driving footage button
+  const auto deleteFootageBtn = new ButtonControl(tr("Delete Driving Data"), tr("DELETE"), tr("This button provides a swift and secure way to permanently delete all "
+    "stored driving footage and data from your device. Ideal for maintaining privacy or freeing up space.")
+  );
+  connect(deleteFootageBtn, &ButtonControl::clicked, [this]() {
+    if (!ConfirmationDialog::confirm(tr("Are you sure you want to permanently delete all of your driving footage and data?"), tr("Delete"), this)) return;
+    std::thread([&] {
+      std::system("rm -rf /data/media/0/realdata");
+    }).detach();
+  });
+  addItem(deleteFootageBtn);
+
   // Panda flashing button
-  const auto flashPandaBtn = new ButtonControl(tr("Flash Panda"), tr("FLASH"), "");
+  const auto flashPandaBtn = new ButtonControl(tr("Flash Panda"), tr("FLASH"), "Use this button to troubleshoot and update the Panda device's firmware.");
   connect(flashPandaBtn, &ButtonControl::clicked, [this]() {
     if (!ConfirmationDialog::confirm(tr("Are you sure you want to flash the Panda?"), tr("Flash"), this)) return;
     QProcess process;

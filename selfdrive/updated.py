@@ -19,7 +19,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.time import system_time_valid
 from openpilot.system.hardware import AGNOS, HARDWARE
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
 from openpilot.system.version import is_tested_branch
 
@@ -446,6 +446,9 @@ def main() -> None:
   # invalidate old finalized update
   set_consistent_flag(False)
 
+  # wait a bit before first cycle
+  wait_helper.sleep(60)
+
   # Run the update loop
   while True:
     wait_helper.ready_event.clear()
@@ -498,7 +501,7 @@ def main() -> None:
 
     # infrequent attempts if we successfully updated recently
     wait_helper.only_check_for_update = False
-    wait_helper.sleep(5*60 if update_failed_count > 0 else 1.5*60*60)
+    wait_helper.sleep(5*60 if update_failed_count > 0 and params.get_int("UpdateSchedule") else 1.5*60*60)
 
 
 if __name__ == "__main__":

@@ -4,9 +4,11 @@
 #include <sys/file.h>
 
 #include <algorithm>
+#include <cassert>
 #include <csignal>
 #include <unordered_map>
 
+#include "common/queue.h"
 #include "common/swaglog.h"
 #include "common/util.h"
 #include "system/hardware/hw.h"
@@ -114,7 +116,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"DoReboot", CLEAR_ON_MANAGER_START},
     {"DoShutdown", CLEAR_ON_MANAGER_START},
     {"DoUninstall", CLEAR_ON_MANAGER_START},
-    {"ExperimentalLongitudinalEnabled", PERSISTENT},
+    {"ExperimentalLongitudinalEnabled", PERSISTENT | DEVELOPMENT_ONLY},
     {"ExperimentalMode", PERSISTENT},
     {"ExperimentalModeConfirmed", PERSISTENT},
     {"FirmwareQueryDone", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
@@ -192,6 +194,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"SshEnabled", PERSISTENT},
     {"SubscriberInfo", PERSISTENT},
     {"TermsVersion", PERSISTENT},
+    {"TetheringEnabled", PERSISTENT},
     {"Timezone", PERSISTENT},
     {"TrainingVersion", PERSISTENT},
     {"UbloxAvailable", PERSISTENT},
@@ -219,14 +222,16 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"AggressiveJerk", PERSISTENT},
     {"AlwaysOnLateral", PERSISTENT},
     {"AlwaysOnLateralMain", PERSISTENT},
-    {"AppleMapsKey1", PERSISTENT},
-    {"AppleMapsKey2", PERSISTENT},
+    {"AMapKey1", PERSISTENT},
+    {"AMapKey2", PERSISTENT},
+    {"ApiCache_DriveStats", PERSISTENT},
     {"AverageCurvature", PERSISTENT},
     {"BlindSpotPath", PERSISTENT},
     {"CameraFPS", PERSISTENT},
     {"CameraView", PERSISTENT},
+    {"CarBrand", PERSISTENT},
     {"CarModel", PERSISTENT},
-    {"CarModels", PERSISTENT},
+    {"CarStateSpeedLimit", PERSISTENT},
     {"CECurves", PERSISTENT},
     {"CECurvesLead", PERSISTENT},
     {"CENavigation", PERSISTENT},
@@ -238,6 +243,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"CEStopLights", PERSISTENT},
     {"Compass", PERSISTENT},
     {"ConditionalExperimental", PERSISTENT},
+    {"CurrentRandomEvent", PERSISTENT},
     {"CurveSensitivity", PERSISTENT},
     {"CustomColors", PERSISTENT},
     {"CustomIcons", PERSISTENT},
@@ -249,40 +255,44 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"DeviceShutdown", PERSISTENT},
     {"DisableOnroadUploads", PERSISTENT},
     {"DriverCamera", PERSISTENT},
-    {"EnableCruise", PERSISTENT},
     {"ExperimentalModeViaPress", PERSISTENT},
     {"EVTable", PERSISTENT},
     {"Fahrenheit", PERSISTENT},
     {"FireTheBabysitter", PERSISTENT},
     {"FrogPilotTogglesUpdated", PERSISTENT},
-    {"GmapKey", PERSISTENT},
+    {"GMapKey", PERSISTENT},
     {"GreenLightAlert", PERSISTENT},
     {"HideSpeed", PERSISTENT},
     {"LaneChangeTime", PERSISTENT},
     {"LaneDetection", PERSISTENT},
     {"LaneLinesWidth", PERSISTENT},
-    {"LastMapDownload", PERSISTENT},
+    {"LastMapsUpdate", PERSISTENT},
     {"LateralTune", PERSISTENT},
     {"LeadInfo", PERSISTENT},
     {"LockDoors", PERSISTENT},
     {"LongitudinalTune", PERSISTENT},
+    {"LongPitch", PERSISTENT},
     {"LowerVolt", PERSISTENT},
     {"MapboxPublicKey", PERSISTENT},
     {"MapboxSecretKey", PERSISTENT},
     {"MapsSelected", PERSISTENT},
     {"MapSpeedLimit", PERSISTENT},
     {"MapSpeedLimitControl", PERSISTENT},
+    {"MapTargetVelocities", PERSISTENT},
     {"Model", PERSISTENT},
     {"ModelList", PERSISTENT},
+    {"ModelUI", PERSISTENT},
+    {"MTSCEnabled", PERSISTENT},
     {"MuteDM", PERSISTENT},
     {"MuteDoor", PERSISTENT},
     {"MuteOverheated", PERSISTENT},
     {"MuteSeatbelt", PERSISTENT},
     {"NavEnable", PERSISTENT},
-    {"NavigationConditionMet", PERSISTENT},
     {"NavSpeedLimit", PERSISTENT},
     {"NavSpeedLimitControl", PERSISTENT},
     {"NNFF", PERSISTENT},
+    {"NNFFModelFuzzyMatch", PERSISTENT},
+    {"NNFFModelName", PERSISTENT},
     {"NoLogging", PERSISTENT},
     {"NudgelessLaneChange", PERSISTENT},
     {"NumericalTemp", PERSISTENT},
@@ -302,6 +312,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"PersonalityChangedViaWheel", PERSISTENT},
     {"PreferredSchedule", PERSISTENT},
     {"PreviousSpeedLimit", PERSISTENT},
+    {"RandomEvents", PERSISTENT},
     {"RelaxedFollow", PERSISTENT},
     {"RelaxedJerk", PERSISTENT},
     {"ReverseCruise", PERSISTENT},
@@ -336,6 +347,8 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"TwilsoncoSSH", PERSISTENT},
     {"UnlimitedLength", PERSISTENT},
     {"Updated", PERSISTENT},
+    {"UpdateSchedule", PERSISTENT},
+    {"UpdateTime", PERSISTENT},
     {"VisionTurnControl", PERSISTENT},
     {"WheelIcon", PERSISTENT},
     {"WideCamera", PERSISTENT},
@@ -345,8 +358,15 @@ std::unordered_map<std::string, uint32_t> keys = {
 
 
 Params::Params(const std::string &path) {
-  prefix = "/" + util::getenv("OPENPILOT_PREFIX", "d");
-  params_path = ensure_params_path(prefix, path);
+  params_prefix = "/" + util::getenv("OPENPILOT_PREFIX", "d");
+  params_path = ensure_params_path(params_prefix, path);
+}
+
+Params::~Params() {
+  if (future.valid()) {
+    future.wait();
+  }
+  assert(queue.empty());
 }
 
 std::vector<std::string> Params::allKeys() const {
@@ -458,4 +478,21 @@ void Params::clearAll(ParamKeyType key_type) {
   }
 
   fsync_dir(getParamPath());
+}
+
+void Params::putNonBlocking(const std::string &key, const std::string &val) {
+   queue.push(std::make_pair(key, val));
+  // start thread on demand
+  if (!future.valid() || future.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
+    future = std::async(std::launch::async, &Params::asyncWriteThread, this);
+  }
+}
+
+void Params::asyncWriteThread() {
+  // TODO: write the latest one if a key has multiple values in the queue.
+  std::pair<std::string, std::string> p;
+  while (queue.try_pop(p, 0)) {
+    // Params::put is Thread-Safe
+    put(p.first, p.second);
+  }
 }
