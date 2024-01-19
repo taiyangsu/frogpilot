@@ -1,0 +1,29 @@
+name: 'compile openpilot'
+
+on:
+  workflow_dispatch:
+
+inputs:
+  cache_key_prefix:
+    description: 'Prefix for caching key'
+    required: false
+    default: 'scons'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build openpilot with all flags
+        run: |
+          scons -j$(nproc)
+          release/check-dirty.sh
+      - name: Cleanup scons cache and rebuild
+        run: |
+          rm -rf /tmp/scons_cache/*
+          scons -j$(nproc) --cache-populate
+      - name: Save scons cache
+        uses: actions/cache/save@v3
+        if: github.ref == 'refs/heads/master'
+        with:
+          path: .ci_cache/scons_cache
+          key: ${{ inputs.cache_key_prefix }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
