@@ -21,7 +21,7 @@ jobs:
           git fetch origin
           git checkout MAKE-PRS-HERE
           git checkout FrogPilot -- .
-          DATE_STR=$(date -u +"%B %d, %Y Update")
+          DATE_STR=$(TZ="America/Phoenix" date +"%B %d, %Y Update")
           git commit -am "${DATE_STR}"
           git push origin MAKE-PRS-HERE
         env:
