@@ -16,6 +16,7 @@ public:
 private:
   void setModels();
   void setToggles();
+  void updateToggles();
 
   ButtonControl *selectMakeButton;
   ButtonControl *selectModelButton;

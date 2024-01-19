@@ -11,8 +11,6 @@ from openpilot.selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerP
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, FRICTION_THRESHOLD
 from openpilot.selfdrive.controls.lib.drive_helpers import get_friction
 
-params = Params()
-
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 FrogPilotEventName = custom.FrogPilotEvents
@@ -23,10 +21,10 @@ BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.D
                 CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}
 
 ACCELERATOR_POS_MSG = 0xbe
+BSM_MSG = 0x142
 CAM_MSG = 0x320  # AEBCmd
                  # TODO: Is this always linked to camera presence?
 PEDAL_MSG = 0x201
-BSM_MSG = 0x142
 
 NON_LINEAR_TORQUE_PARAMS = {
   CAR.BOLT_EUV: [2.6531724862969748, 1.0, 0.1919764879840985, 0.009054123646805178],
@@ -82,13 +80,18 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
+    # FrogPilot variables
+    params = Params()
+    useGasRegenCmd = params.get_bool("GasRegenCmd")
+
     ret.carName = "gm"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
     ret.autoResumeSng = False
-    ret.enableGasInterceptor = PEDAL_MSG in fingerprint[0]
+    if PEDAL_MSG in fingerprint[0]:
+      ret.enableGasInterceptor = True
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_GAS_INTERCEPTOR
 
-    useGasRegenCmd = params.get_bool("GasRegenCmd")
-    useEVTables = params.get_bool("EVTable")
+    useEVTables = Params().get_bool("EVTable")
 
     if candidate in EV_CAR:
       ret.transmissionType = TransmissionType.direct
@@ -162,7 +165,7 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalActuatorDelayUpperBound = 0.5  # large delay to initially start braking
 
     if candidate in (CAR.VOLT, CAR.VOLT_CC):
-      ret.minEnableSpeed = -1 if Params().get_bool("LowerVolt") else ret.minEnableSpeed
+      ret.minEnableSpeed = -1 if params.get_bool("LowerVolt") else ret.minEnableSpeed
       ret.mass = 1607.
       ret.wheelbase = 2.69
       ret.steerRatio = 17.7  # Stock 15.7, LiveParameters
@@ -174,14 +177,15 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP = [0.]
       ret.lateralTuning.pid.kiV = [0.]
       ret.lateralTuning.pid.kf = 1.  # get_steer_feedforward_volt()
-      ret.steerActuatorDelay = 0.18 if useEVTables else 0.2
+      ret.steerActuatorDelay = 0.2
 
       # softer long tune for ev table
-      if useEVTables: 
+      if useEVTables:
         ret.longitudinalTuning.kpBP = [5., 15., 35.]
         ret.longitudinalTuning.kpV = [0.65, .9, 0.8]
         ret.longitudinalTuning.kiBP = [5., 15.]
         ret.longitudinalTuning.kiV = [0.04, 0.1]
+        ret.steerActuatorDelay = 0.18
         ret.stoppingDecelRate = 0.02  # brake_travel/s while trying to stop
         ret.stopAccel = -0.5
         ret.startAccel = 0.8
@@ -287,7 +291,7 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.4
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    elif candidate == CAR.TRAILBLAZER:
+    elif candidate in (CAR.TRAILBLAZER, CAR.TRAILBLAZER_CC):
       ret.mass = 1345.
       ret.wheelbase = 2.64
       ret.steerRatio = 16.8
@@ -429,14 +433,14 @@ class CarInterface(CarInterfaceBase):
     if self.belowSteerSpeed_shown and ret.vEgo > self.CP.minSteerSpeed:
       self.disable_belowSteerSpeed = True
 
+    if (self.CP.flags & GMFlags.CC_LONG.value) and ret.vEgo < self.CP.minEnableSpeed and ret.cruiseState.enabled:
+      events.add(EventName.speedTooLow)
+
     if (self.CP.flags & GMFlags.PEDAL_LONG.value) and \
       self.CP.transmissionType == TransmissionType.direct and \
       not self.CS.single_pedal_mode and \
       c.longActive:
-      events.add(FrogPilotEventName.pedalInterceptorNoBrake)
-
-    if (self.CP.flags & GMFlags.CC_LONG.value) and ret.vEgo < self.CP.minEnableSpeed and ret.cruiseState.enabled:
-      events.add(EventName.speedTooLow)
+      events.add(EventName.pedalInterceptorNoBrake)
 
     ret.events = events.to_msg()
 

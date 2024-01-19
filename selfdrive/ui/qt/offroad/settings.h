@@ -108,9 +108,9 @@ private:
   // FrogPilot variables
   void automaticUpdate();
 
+  ButtonControl *updateTime;
+
   int deviceShutdown;
   int schedule;
   int time;
-
-  ButtonControl *updateTime;
 };

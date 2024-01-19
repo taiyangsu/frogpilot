@@ -4,7 +4,6 @@ from cereal import car
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import mean
 from openpilot.common.filter_simple import FirstOrderFilter
-from openpilot.common.params import Params
 from openpilot.common.realtime import DT_CTRL
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
@@ -51,7 +50,8 @@ class CarState(CarStateBase):
     # FrogPilot variables
     self.zss_compute = False
     self.zss_cruise_active_last = False
-    self.zss_angle_offset = 0.
+
+    self.zss_angle_offset = 0
     self.zss_threshold_count = 0
 
     self.traffic_signals = {}
@@ -208,7 +208,7 @@ class CarState(CarStateBase):
           self.previous_personality_profile = self.personality_profile
 
     # Toggle Experimental Mode from steering wheel function
-    if self.experimental_mode_via_press and ret.cruiseState.available and self.CP.carFingerprint != CAR.PRIUS_V:
+    if self.experimental_mode_via_lkas and ret.cruiseState.available and self.CP.carFingerprint != CAR.PRIUS_V:
       message_keys = ["LDA_ON_MESSAGE", "SET_ME_X02"]
       lkas_pressed = any(self.lkas_hud.get(key) == 1 for key in message_keys)
       if lkas_pressed and not self.lkas_previously_pressed:

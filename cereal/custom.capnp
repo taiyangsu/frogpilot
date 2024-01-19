@@ -10,7 +10,6 @@ $Cxx.namespace("cereal");
 # you can rename the struct, but don't change the identifier
 struct FrogPilotCarControl @0x81c2f05a394cf4af {
   alwaysOnLateral @0: Bool;
-  drivingGear @1: Bool;
 }
 
 struct FrogPilotDeviceState @0xaedffd8f31e7b55d {
@@ -25,6 +24,9 @@ enum FrogPilotEvents @0xf35cc4560bbf6ec2 {
   torqueNNLoad @3;
   turningLeft @4;
   turningRight @5;
+
+  # Random Events
+  firefoxSteerSaturated @6;
 }
 
 struct FrogPilotLateralPlan @0xda96579883444c35 {

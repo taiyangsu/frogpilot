@@ -1,6 +1,7 @@
 import math
 import numpy as np
 import time
+import threading
 import wave
 
 from typing import Dict, Optional, Tuple
@@ -40,6 +41,8 @@ sound_list: Dict[int, Tuple[str, Optional[int], float]] = {
 
   AudibleAlert.warningSoft: ("warning_soft.wav", None, MAX_VOLUME),
   AudibleAlert.warningImmediate: ("warning_immediate.wav", None, MAX_VOLUME),
+
+  AudibleAlert.firefox: ("firefox.wav", None, MAX_VOLUME),
 }
 
 def check_controls_timeout_alert(sm):
@@ -155,7 +158,7 @@ class Soundd:
 
         if sm.updated['microphone'] and self.current_alert == AudibleAlert.none: # only update volume filter when not playing alert
           self.spl_filter_weighted.update(sm["microphone"].soundPressureWeightedDb)
-          self.current_volume = max(self.calculate_volume(float(self.spl_filter_weighted.x)) - self.silent_mode, 0)
+          self.current_volume = self.calculate_volume(float(self.spl_filter_weighted.x)) if not self.silent_mode else 0
 
         self.get_audible_alert(sm)
 
@@ -165,7 +168,8 @@ class Soundd:
 
     # Update FrogPilot parameters
     if self.params_memory.get_bool("FrogPilotTogglesUpdated"):
-      self.update_frogpilot_params()
+      updateFrogPilotParams = threading.Thread(target=self.update_frogpilot_params)
+      updateFrogPilotParams.start()
 
   def update_frogpilot_params(self):
     self.silent_mode = self.params.get_bool("SilentMode")

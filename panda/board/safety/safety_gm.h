@@ -68,7 +68,8 @@ const uint16_t GM_PARAM_CC_LONG = 8;
 const uint16_t GM_PARAM_HW_ASCM_LONG = 16;
 const uint16_t GM_PARAM_NO_CAMERA = 32;
 const uint16_t GM_PARAM_NO_ACC = 64;
-const uint16_t GM_PARAM_PEDAL_LONG = 128;
+const uint16_t GM_PARAM_PEDAL_LONG = 128;  // TODO: this can be inferred
+const uint16_t GM_PARAM_PEDAL_INTERCEPTOR = 256;
 
 enum {
   GM_BTN_UNPRESS = 1,
@@ -138,10 +139,6 @@ static void gm_rx_hook(CANPacket_t *to_push) {
       brake_pressed = GET_BYTE(to_push, 1) >= 8U;
     }
 
-    if ((addr == 0xBE) && (gm_hw == GM_ASCM)) {
-      brake_pressed = GET_BYTE(to_push, 1) >= 8U;
-    }
-
     if ((addr == 0xC9) && ((gm_hw == GM_CAM) || (gm_hw == GM_SDGM))) {
       brake_pressed = GET_BIT(to_push, 40U) != 0U;
     }
@@ -177,8 +174,7 @@ static void gm_rx_hook(CANPacket_t *to_push) {
     }
 
     // Pedal Interceptor
-    if (addr == 0x201) {
-      enable_gas_interceptor = 1;
+    if ((addr == 0x201) && enable_gas_interceptor) {
       int gas_interceptor = GM_GET_INTERCEPTOR(to_push);
       gas_pressed = gas_interceptor > GM_GAS_INTERCEPTOR_THRESHOLD;
       gas_interceptor_prev = gas_interceptor;
@@ -310,6 +306,7 @@ static safety_config gm_init(uint16_t param) {
   gm_pcm_cruise = ((gm_hw == GM_CAM) && (!gm_cam_long || gm_cc_long) && !gm_force_ascm && !gm_pedal_long) || (gm_hw == GM_SDGM);
   gm_skip_relay_check = GET_FLAG(param, GM_PARAM_NO_CAMERA);
   gm_has_acc = !GET_FLAG(param, GM_PARAM_NO_ACC);
+  enable_gas_interceptor = GET_FLAG(param, GM_PARAM_PEDAL_INTERCEPTOR);
 
   safety_config ret = BUILD_SAFETY_CFG(gm_rx_checks, GM_ASCM_TX_MSGS);
   if (gm_hw == GM_CAM) {

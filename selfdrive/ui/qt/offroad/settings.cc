@@ -24,10 +24,10 @@
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
 
+#include "selfdrive/frogpilot/navigation/ui/navigation_settings.h"
 #include "selfdrive/frogpilot/ui/control_settings.h"
 #include "selfdrive/frogpilot/ui/vehicle_settings.h"
 #include "selfdrive/frogpilot/ui/visual_settings.h"
-#include "selfdrive/frogpilot/navigation/ui/navigation_settings.h"
 
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   // param, title, desc, icon
@@ -258,7 +258,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   addItem(translateBtn);
 
   // Delete driving footage button
-  const auto deleteFootageBtn = new ButtonControl(tr("Delete Driving Data"), tr("DELETE"), tr("This button provides a swift and secure way to permanently delete all "
+  auto deleteFootageBtn = new ButtonControl(tr("Delete Driving Data"), tr("DELETE"), tr("This button provides a swift and secure way to permanently delete all "
     "stored driving footage and data from your device. Ideal for maintaining privacy or freeing up space.")
   );
   connect(deleteFootageBtn, &ButtonControl::clicked, [this]() {
@@ -270,19 +270,19 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   addItem(deleteFootageBtn);
 
   // Panda flashing button
-  const auto flashPandaBtn = new ButtonControl(tr("Flash Panda"), tr("FLASH"), "Use this button to troubleshoot and update the Panda device's firmware.");
+  auto flashPandaBtn = new ButtonControl(tr("Flash Panda"), tr("FLASH"), "Use this button to troubleshoot and update the Panda device's firmware.");
   connect(flashPandaBtn, &ButtonControl::clicked, [this]() {
     if (!ConfirmationDialog::confirm(tr("Are you sure you want to flash the Panda?"), tr("Flash"), this)) return;
     QProcess process;
     // Get Panda type
-    const SubMaster &sm = *(uiState()->sm);
-    const auto pandaStates = sm["pandaStates"].getPandaStates();
+    SubMaster &sm = *(uiState()->sm);
+    auto pandaStates = sm["pandaStates"].getPandaStates();
     // Choose recovery script based on Panda type
     if (pandaStates.size() != 0) {
-      const auto pandaType = pandaStates[0].getPandaType();
-      const bool isRedPanda = (pandaType == cereal::PandaState::PandaType::RED_PANDA ||
+      auto pandaType = pandaStates[0].getPandaType();
+      bool isRedPanda = (pandaType == cereal::PandaState::PandaType::RED_PANDA ||
                                pandaType == cereal::PandaState::PandaType::RED_PANDA_V2);
-      const QString recoveryScript = isRedPanda ? "./recover.sh" : "./recover.py";
+      QString recoveryScript = isRedPanda ? "./recover.sh" : "./recover.py";
       // Run recovery script and flash Panda
       process.setWorkingDirectory("/data/openpilot/panda/board");
       process.start("/bin/sh", QStringList{"-c", recoveryScript});
@@ -435,23 +435,23 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QObject::connect(this, &SettingsWindow::expandToggleDescription, toggles, &TogglesPanel::expandToggleDescription);
   QObject::connect(toggles, &TogglesPanel::updateMetric, this, &SettingsWindow::updateMetric);
 
-  FrogPilotControlsPanel *controls = new FrogPilotControlsPanel(this);
-  QObject::connect(controls, &FrogPilotControlsPanel::closeParentToggle, this, [this]() {frogPilotTogglesOpen = false;});
-  QObject::connect(controls, &FrogPilotControlsPanel::openParentToggle, this, [this]() {frogPilotTogglesOpen = true;});
+  FrogPilotControlsPanel *frogpilotControls = new FrogPilotControlsPanel(this);
+  QObject::connect(frogpilotControls, &FrogPilotControlsPanel::closeParentToggle, this, [this]() {frogPilotTogglesOpen = false;});
+  QObject::connect(frogpilotControls, &FrogPilotControlsPanel::openParentToggle, this, [this]() {frogPilotTogglesOpen = true;});
 
-  FrogPilotVisualsPanel *visuals = new FrogPilotVisualsPanel(this);
-  QObject::connect(visuals, &FrogPilotVisualsPanel::closeParentToggle, this, [this]() {frogPilotTogglesOpen = false;});
-  QObject::connect(visuals, &FrogPilotVisualsPanel::openParentToggle, this, [this]() {frogPilotTogglesOpen = true;});
+  FrogPilotVisualsPanel *frogpilotVisuals = new FrogPilotVisualsPanel(this);
+  QObject::connect(frogpilotVisuals, &FrogPilotVisualsPanel::closeParentToggle, this, [this]() {frogPilotTogglesOpen = false;});
+  QObject::connect(frogpilotVisuals, &FrogPilotVisualsPanel::openParentToggle, this, [this]() {frogPilotTogglesOpen = true;});
 
   QList<QPair<QString, QWidget *>> panels = {
     {tr("Device"), device},
     {tr("Network"), new Networking(this)},
     {tr("Toggles"), toggles},
     {tr("Software"), new SoftwarePanel(this)},
-    {tr("Controls"), controls},
+    {tr("Controls"), frogpilotControls},
     {tr("Navigation"), new FrogPilotNavigationPanel(this)},
     {tr("Vehicles"), new FrogPilotVehiclesPanel(this)},
-    {tr("Visuals"), visuals},
+    {tr("Visuals"), frogpilotVisuals},
   };
 
   nav_btns = new QButtonGroup(this);

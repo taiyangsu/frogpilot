@@ -19,10 +19,12 @@ private:
   void hideEvent(QHideEvent *event);
   void hideSubToggles();
   void parentToggleClicked();
+  void updateCarToggles();
   void updateMetric();
   void updateToggles();
 
   ButtonControl *slscPriorityButton;
+
   FrogPilotButtonIconControl *modelSelectorButton;
 
   FrogPilotDualParamControl *aggressiveProfile;
@@ -36,6 +38,8 @@ private:
   std::set<QString> laneChangeKeys;
   std::set<QString> lateralTuneKeys;
   std::set<QString> longitudinalTuneKeys;
+  std::set<QString> mtscKeys;
+  std::set<QString> qolKeys;
   std::set<QString> speedLimitControllerKeys;
   std::set<QString> visionTurnControlKeys;
 
@@ -45,4 +49,5 @@ private:
   Params paramsMemory{"/dev/shm/params"};
 
   bool isMetric = params.getBool("IsMetric");
+  int steerRatioStock = params.getFloat("SteerRatioStock");
 };

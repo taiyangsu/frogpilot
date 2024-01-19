@@ -147,8 +147,9 @@ class CarState(CarStateBase):
       aeb_src = "FCA11" if self.CP.flags & HyundaiFlags.USE_FCA.value else "SCC12"
       aeb_sig = "FCA_CmdAct" if self.CP.flags & HyundaiFlags.USE_FCA.value else "AEB_CmdAct"
       aeb_warning = cp_cruise.vl[aeb_src]["CF_VSM_Warn"] != 0
+      scc_warning = cp_cruise.vl["SCC12"]["TakeOverReq"] == 1  # sometimes only SCC system shows an FCW
       aeb_braking = cp_cruise.vl[aeb_src]["CF_VSM_DecCmdAct"] != 0 or cp_cruise.vl[aeb_src][aeb_sig] != 0
-      ret.stockFcw = aeb_warning and not aeb_braking
+      ret.stockFcw = (aeb_warning or scc_warning) and not aeb_braking
       ret.stockAeb = aeb_warning and aeb_braking
 
     if self.CP.enableBsm:
@@ -183,7 +184,7 @@ class CarState(CarStateBase):
         self.previous_personality_profile = self.personality_profile
 
     # Toggle Experimental Mode from steering wheel function
-    if self.experimental_mode_via_press and ret.cruiseState.available:
+    if self.experimental_mode_via_lkas and ret.cruiseState.available:
       lkas_pressed = cp.vl["BCM_PO_11"]["LFA_Pressed"]
       if lkas_pressed and not self.lkas_previously_pressed:
         if self.conditional_experimental_mode:
@@ -299,7 +300,7 @@ class CarState(CarStateBase):
         self.previous_personality_profile = self.personality_profile
 
     # Toggle Experimental Mode from steering wheel function
-    if self.experimental_mode_via_press and ret.cruiseState.available:
+    if self.experimental_mode_via_lkas and ret.cruiseState.available:
       lkas_pressed = cp.vl[self.cruise_btns_msg_canfd]["LKAS_BTN"]
       if lkas_pressed and not self.lkas_previously_pressed:
         if self.conditional_experimental_mode:
