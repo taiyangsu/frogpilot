@@ -1,0 +1,19 @@
+name: Build Release
+
+on:
+  push:
+    branches:
+      - FrogPilot-Compile
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Run build_release script
+        run: |
+          chmod +x ./release/build_release.sh
+          ./release/build_release.sh
