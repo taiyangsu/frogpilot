@@ -13,8 +13,6 @@ Table of Contents
 * [Credits](#credits)
 * [Licensing](#licensing)
 
-Might need to change some code
-
 ---
 
 What is openpilot?
