@@ -440,7 +440,7 @@ class CarInterface(CarInterfaceBase):
       self.CP.transmissionType == TransmissionType.direct and \
       not self.CS.single_pedal_mode and \
       c.longActive:
-      events.add(EventName.pedalInterceptorNoBrake)
+      events.add(FrogPilotEventName.pedalInterceptorNoBrake)
 
     ret.events = events.to_msg()
 
