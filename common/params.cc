@@ -295,6 +295,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"MuteDoor", PERSISTENT},
     {"MuteOverheated", PERSISTENT},
     {"MuteSeatbelt", PERSISTENT},
+    {"NavChill", PERSISTENT},
     {"NavEnable", PERSISTENT},
     {"NavSpeedLimit", PERSISTENT},
     {"NavSpeedLimitControl", PERSISTENT},
