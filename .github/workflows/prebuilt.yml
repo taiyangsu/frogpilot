@@ -1,0 +1,104 @@
+name: Build Openpilot
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: 'Branch to build'
+        required: true
+        default: 'main'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      BUILD_DIR: /data/openpilot
+      SOURCE_DIR: ${{ github.workspace }}
+      FILES_SRC: release/files_common
+      RELEASE_BRANCH: ${{ github.event.inputs.target_branch }}
+      PYTHONPATH: ${{ github.workspace }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.inputs.target_branch }}
+
+      - name: Set git identity
+        run: |
+          source ${{ env.SOURCE_DIR }}/identity.sh
+
+      - name: Initialize and configure git
+        run: |
+          rm -rf ${{ env.BUILD_DIR }}
+          mkdir -p ${{ env.BUILD_DIR }}
+          cd ${{ env.BUILD_DIR }}
+          git init
+          git remote add origin git@github.com:FrogAi/openpilot.git
+          git checkout --orphan ${{ env.RELEASE_BRANCH }}
+
+      - name: Copy files
+        run: |
+          cd ${{ env.SOURCE_DIR }}
+          cp -pR --parents $(cat release/files_common) ${{ env.BUILD_DIR }}/
+          cp -pR --parents $(cat ${{ env.FILES_SRC }}) ${{ env.BUILD_DIR }}/
+
+      - name: Prepare for release
+        run: |
+          cd ${{ env.BUILD_DIR }}
+          rm -f panda/board/obj/panda.bin.signed
+          rm -f panda/board/obj/panda_h7.bin.signed
+          VERSION=$(cat common/version.h | awk -F[\"-] '{print $2}')
+          echo "#define COMMA_VERSION \"$VERSION-release\"" > common/version.h
+          git add -f .
+          git commit -a -m "openpilot v$VERSION release"
+
+      - name: Build openpilot
+        run: |
+          cd ${{ env.BUILD_DIR }}
+          scons -j$(nproc)
+
+      - name: Release panda firmware
+        run: |
+          CERT=/data/pandaextra/certs/release RELEASE=1 scons -j$(nproc) panda/
+
+      - name: Check for submodules
+        run: |
+          if test "$(git submodule--helper list | wc -l)" -gt "0"; then
+            echo "submodules found:"
+            git submodule--helper list
+            exit 1
+          fi
+          git submodule status
+
+      - name: Cleanup
+        run: |
+          cd ${{ env.BUILD_DIR }}
+          find . -name '*.a' -delete
+          find . -name '*.o' -delete
+          find . -name '*.os' -delete
+          find . -name '*.pyc' -delete
+          find . -name 'moc_*' -delete
+          find . -name '__pycache__' -delete
+          rm -rf .sconsign.dblite Jenkinsfile release/
+          rm selfdrive/modeld/models/supercombo.onnx
+          git checkout third_party/
+          touch prebuilt
+          git add -f .
+          git commit --amend -m "openpilot v$VERSION"
+
+      - name: Run tests
+        run: |
+          TEST_FILES="tools/"
+          cd ${{ env.SOURCE_DIR }}
+          cp -pR -n --parents $TEST_FILES ${{ env.BUILD_DIR }}/
+          cd ${{ env.BUILD_DIR }}
+          RELEASE=1 selfdrive/test/test_onroad.py
+          selfdrive/car/tests/test_car_interfaces.py
+          rm -rf $TEST_FILES
+
+      - name: Push release
+        if: ${{ github.event.inputs.target_branch }} != ''
+        run: |
+          cd ${{ env.BUILD_DIR }}
+          git push -f origin ${{ env.RELEASE_BRANCH }}:${{ env.RELEASE_BRANCH }}
