@@ -27,7 +27,12 @@ jobs:
         run: |
           git fetch origin
           git checkout MAKE-PRS-HERE
-          git merge origin/FrogPilot --no-ff --allow-unrelated-histories -m "$CURRENT_TIME"
+          git merge origin/FrogPilot --no-ff --allow-unrelated-histories -m "$CURRENT_TIME" || true
+          if [[ `git status --porcelain` ]]; then
+            git checkout --ours .github/workflows/update-pr-branch.yml
+            git add .github/workflows/update-pr-branch.yml
+            git commit -m "Resolve merge conflict in .github/workflows/update-pr-branch.yml"
+          fi
           git push origin MAKE-PRS-HERE
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
