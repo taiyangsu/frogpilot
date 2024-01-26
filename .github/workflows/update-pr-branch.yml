@@ -21,7 +21,7 @@ jobs:
       - name: Merge changes from FrogPilot to MAKE-PRS-HERE
         run: |
           git config user.name "FrogsGoMoo's Little Helper"
-          git config user.email "91348155+FrogAi@users.noreply.github.com"
+          git config user.email "frogsgomooslittlehelper@frogpilot.download"
           git fetch origin
           git checkout MAKE-PRS-HERE
           set +e
