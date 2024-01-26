@@ -13,6 +13,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
+          persist-credentials: true
 
       - name: Apply changes from FrogPilot to MAKE-PRS-HERE
         run: |
@@ -21,12 +22,7 @@ jobs:
           git fetch origin
           git checkout MAKE-PRS-HERE
           git checkout FrogPilot -- .
-          DATE_STR=$(TZ="America/Phoenix" date +"%B %d, %Y Update")
-          git commit -am "${DATE_STR}"
+          git commit -am "$(TZ="America/Phoenix" date +"%B %d, %Y Update")" || echo "No changes to commit"
           git push origin MAKE-PRS-HERE
         env:
-          GIT_AUTHOR_NAME: FrogAi
-          GIT_AUTHOR_EMAIL: 91348155+FrogAi@users.noreply.github.com
-          GIT_COMMITTER_NAME: FrogAi
-          GIT_COMMITTER_EMAIL: 91348155+FrogAi@users.noreply.github.com
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
