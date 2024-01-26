@@ -21,14 +21,13 @@ jobs:
           git config user.email "91348155+FrogAi@users.noreply.github.com"
 
       - name: Get current time
-        id: current_time
         run: echo "CURRENT_TIME=$(TZ='America/Phoenix' date +'%B %d, %Y Update')" >> $GITHUB_ENV
 
       - name: Merge changes from FrogPilot to MAKE-PRS-HERE
         run: |
           git fetch origin
           git checkout MAKE-PRS-HERE
-          git merge origin/FrogPilot --no-ff -m "$CURRENT_TIME"
+          git merge origin/FrogPilot --no-ff --allow-unrelated-histories -m "$CURRENT_TIME"
           git push origin MAKE-PRS-HERE
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
