@@ -11,6 +11,7 @@ from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.frogpilot.functions.conditional_experimental_mode import ConditionalExperimentalMode
 from openpilot.selfdrive.frogpilot.functions.map_turn_speed_controller import MapTurnSpeedController
 from openpilot.selfdrive.frogpilot.functions.speed_limit_controller import SpeedLimitController
+from openpilot.common.params import Params
 
 # VTSC variables
 MIN_TARGET_V = 5    # m/s
@@ -56,6 +57,8 @@ def calculate_lane_width(lane, current_lane, road_edge):
 
 class FrogPilotPlanner:
   def __init__(self, params, params_memory):
+    self.params_memory = Params("/dev/shm/params")
+    self.toggle_params = Params()
     self.cem = ConditionalExperimentalMode()
     self.mtsc = MapTurnSpeedController()
 
@@ -101,6 +104,8 @@ class FrogPilotPlanner:
       self.mtsc_target = v_cruise
       self.vtsc_target = v_cruise
       self.v_cruise = v_cruise
+
+    self.params_memory.put_int("CSLCSpeed", int(round(self.v_cruise * CV.MS_TO_MPH)))
 
     self.x_desired_trajectory_full = np.interp(ModelConstants.T_IDXS, T_IDXS_MPC, mpc.x_solution)
     self.x_desired_trajectory = self.x_desired_trajectory_full[:CONTROL_N]
@@ -168,7 +173,10 @@ class FrogPilotPlanner:
     else:
       self.vtsc_target = v_cruise
 
-    v_ego_diff = max(carState.vEgoRaw - carState.vEgoCluster, 0)
+    if self.toggle_params.get_bool("CSLCEnabled"):
+      v_ego_diff = 0
+    else:
+      v_ego_diff = max(carState.vEgoRaw - carState.vEgoCluster, 0)
     return min(v_cruise, self.mtsc_target, self.slc_target, self.vtsc_target) - v_ego_diff
 
   def publish_lateral(self, sm, pm, DH):

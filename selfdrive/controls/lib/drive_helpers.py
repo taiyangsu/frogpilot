@@ -5,6 +5,7 @@ from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import clip, interp
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.modeld.constants import ModelConstants
+from openpilot.common.params import Params
 
 # WARNING: this value was determined based on the model's training distribution,
 #          model predictions above this speed can be unpredictable
@@ -38,6 +39,7 @@ CRUISE_INTERVAL_SIGN = {
   ButtonType.decelCruise: -1,
 }
 
+params = Params()
 
 class VCruiseHelper:
   def __init__(self, CP):
@@ -56,7 +58,7 @@ class VCruiseHelper:
     self.v_cruise_kph_last = self.v_cruise_kph
 
     if CS.cruiseState.available:
-      if not self.CP.pcmCruise:
+      if not self.CP.pcmCruise or params.get_bool("CSLCEnabled"):
         # if stock cruise is completely disabled, then we can use our own set speed logic
         self._update_v_cruise_non_pcm(CS, enabled, is_metric, reverse_cruise_increase, set_speed_offset)
         self.v_cruise_cluster_kph = self.v_cruise_kph
@@ -136,7 +138,12 @@ class VCruiseHelper:
 
   def initialize_v_cruise(self, CS, experimental_mode: bool, conditional_experimental_mode) -> None:
     # initializing is handled by the PCM
-    if self.CP.pcmCruise:
+    if self.CP.pcmCruise and not params.get_bool("CSLCEnabled"):
+      return
+    
+    if params.get_bool("CSLCEnabled"):
+      self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
+      self.v_cruise_cluster_kph = self.v_cruise_kph
       return
 
     initial = V_CRUISE_INITIAL_EXPERIMENTAL_MODE if experimental_mode and not conditional_experimental_mode else V_CRUISE_INITIAL
