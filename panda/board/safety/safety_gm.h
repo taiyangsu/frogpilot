@@ -244,7 +244,7 @@ static bool gm_tx_hook(CANPacket_t *to_send) {
 
     bool allowed_btn = (button == GM_BTN_CANCEL) && cruise_engaged_prev;
     // For standard CC, allow spamming of SET / RESUME
-    if (gm_cc_long || (gm_hw == GM_SDGM)) {
+    if (gm_cc_long || (gm_hw == GM_SDGM) || (gm_hw == GM_CAM && gm_pcm_cruise)) {
       allowed_btn |= cruise_engaged_prev && (button == GM_BTN_SET || button == GM_BTN_RESUME || button == GM_BTN_UNPRESS);
     }
 

@@ -6,7 +6,7 @@ from openpilot.common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import apply_driver_steer_torque_limits, create_gas_interceptor_command
 from openpilot.selfdrive.car.gm import gmcan
-from openpilot.selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButtons, GMFlags, CC_ONLY_CAR, EV_CAR, SDGM_CAR
+from openpilot.selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButtons, GMFlags, CC_ONLY_CAR, EV_CAR, SDGM_CAR, CAMERA_ACC_CAR
 from openpilot.selfdrive.controls.lib.drive_helpers import apply_deadzone, V_CRUISE_MAX
 from openpilot.selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from openpilot.common.params import Params
@@ -244,10 +244,11 @@ class CarController:
             can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.CAMERA, CS.buttons_counter, CruiseButtons.CANCEL))
       
       # ACC Spam
-      if self.CP.carFingerprint in SDGM_CAR and toggle_params.get_bool("CSLCEnabled"):
+      if (self.CP.carFingerprint in SDGM_CAR or self.CP.carFingerprint in CAMERA_ACC_CAR)and toggle_params.get_bool("CSLCEnabled"):
         if CC.enabled and self.frame % 3 == 0 and CS.cruise_buttons == CruiseButtons.UNPRESS and not CS.out.gasPressed:
+          bus = CanBus.CAMERA if self.CP.carFingerprint in SDGM_CAR else CanBus.POWERTRAIN
           slcSet = get_set_speed(self, hud_v_cruise)
-          can_sends.extend(gmcan.create_gm_acc_spam_command(self.packer_pt, self, CS, slcSet))
+          can_sends.extend(gmcan.create_gm_acc_spam_command(self.packer_pt, self, CS, slcSet, bus))
 
     if self.CP.networkLocation == NetworkLocation.fwdCamera:
       # Silence "Take Steering" alert sent by camera, forward PSCMStatus with HandsOffSWlDetectionStatus=1
