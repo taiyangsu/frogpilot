@@ -17,7 +17,7 @@ const LongitudinalLimits GM_ASCM_LONG_LIMITS = {
 };
 
 const LongitudinalLimits GM_CAM_LONG_LIMITS = {
-  .max_gas = 9674,
+  .max_gas = 8848,
   .min_gas = 5610,
   .inactive_gas = 5650,
   .max_brake = 400,
