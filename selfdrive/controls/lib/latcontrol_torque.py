@@ -70,9 +70,11 @@ class LatControlTorque(LatControl):
     self.torque_from_lateral_accel = CI.torque_from_lateral_accel()
     self.use_steering_angle = self.torque_params.useSteeringAngle
     self.steering_angle_deadzone_deg = self.torque_params.steeringAngleDeadzoneDeg
-    self.lowspeed_factor_factor = 1.0 # in [0, 1] in 0.1 increments.
     
     self.use_lateral_jerk = True # TODO: make this a parameter in the UI
+    
+    # Twilsonco's Lateral Neural Network Feedforward
+    self.use_nn = CI.has_lateral_torque_nn
 
     if self.use_nn or self.use_lateral_jerk:
       # Instantaneous lateral jerk changes very rapidly, making it not useful on its own,
@@ -94,8 +96,6 @@ class LatControlTorque(LatControl):
       self.t_diffs = np.diff(ModelConstants.T_IDXS)
       self.desired_lat_jerk_time = CP.steerActuatorDelay + 0.3
 
-    # Twilsonco's Lateral Neural Network Feedforward
-    self.use_nn = CI.has_lateral_torque_nn
     if self.use_nn:
       self.pitch = FirstOrderFilter(0.0, 0.5, 0.01)
       # NN model takes current v_ego, lateral_accel, lat accel/jerk error, roll, and past/future/planned data
