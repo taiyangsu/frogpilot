@@ -33,7 +33,7 @@ class CarState(CarStateBase):
 
   def update(self, pt_cp, cam_cp, ext_cp, trans_type, conditional_experimental_mode, frogpilot_variables):
     if self.CP.carFingerprint in PQ_CARS:
-      return self.update_pq(pt_cp, cam_cp, ext_cp, trans_type, frogpilot_variables)
+      return self.update_pq(pt_cp, cam_cp, ext_cp, trans_type, conditional_experimental_mode, frogpilot_variables)
 
     ret = car.CarState.new_message()
     # Update vehicle speed and acceleration from ABS wheel speeds.
