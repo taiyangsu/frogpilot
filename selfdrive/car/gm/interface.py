@@ -299,6 +299,14 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 1.0
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+    elif candidate == CAR.TRAX:
+      ret.mass = 1365.
+      ret.wheelbase = 2.7
+      ret.steerRatio = 16.4
+      ret.centerToFront = ret.wheelbase * 0.4
+      ret.tireStiffnessFactor = 1.0
+      ret.steerActuatorDelay = 0.2
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate in (CAR.SUBURBAN, CAR.SUBURBAN_CC):
       ret.mass = 2731.
