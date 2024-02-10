@@ -13,6 +13,12 @@ from common.params import Params
 from urllib.parse import parse_qs, quote
 import json
 import requests
+import math
+
+pi = 3.1415926535897932384626
+x_pi = 3.14159265358979324 * 3000.0 / 180.0
+a = 6378245.0
+ee = 0.00669342162296594323
 
 params = Params()
 
@@ -145,6 +151,11 @@ def get_gmap_key():
   token = params.get("GMapKey", encoding='utf8')
   return token.strip() if token is not None else None
 
+def get_amap_key():
+  token = params.get("AMapKey1", encoding='utf8')
+  token2 = params.get("AMapKey2", encoding='utf8')
+  return (token.strip() if token is not None else None, token2.strip() if token2 is not None else None)
+
 def get_SearchInput():
   SearchInput = params.get_int("SearchInput")
   return SearchInput
@@ -155,7 +166,10 @@ def get_PrimeType():
 
 def get_last_lon_lat():
   last_pos = params.get("LastGPSPosition")
-  l = json.loads(last_pos)
+  if last_pos:
+    l = json.loads(last_pos)
+  else:
+    return 0.0, 0.0
   return l["longitude"], l["latitude"]
 
 def get_locations():
@@ -235,6 +249,8 @@ def nav_confirmed(postvars):
     lng = float(postvars.get("lon"))
     save_type = postvars.get("save_type")
     name = postvars.get("name") if postvars.get("name") is not None else ""
+    if params.get_int("SearchInput") == 1:
+      lng, lat = gcj02towgs84(lng, lat)
     params.put("NavDestination", "{\"latitude\": %f, \"longitude\": %f, \"place_name\": \"%s\"}" % (lat, lng, name))
     if name == "":
       name =  str(lat) + "," + str(lng)
@@ -298,3 +314,40 @@ def gmap_key_input(postvars):
     token = postvars.get("gmap_key_val").strip()
     params.put("GMapKey", token)
   return token
+
+def amap_key_input(postvars):
+  if postvars is None or "amap_key_val" not in postvars or postvars.get("amap_key_val")[0] == "":
+    return postvars
+  else:
+    token = postvars.get("amap_key_val").strip()
+    token2 = postvars.get("amap_key_val_2").strip()
+    params.put("AMapKey1", token)
+    params.put("AMapKey2", token2)
+  return token
+
+def gcj02towgs84(lng, lat):
+  dlat = transform_lat(lng - 105.0, lat - 35.0)
+  dlng = transform_lng(lng - 105.0, lat - 35.0)
+  radlat = lat / 180.0 * pi
+  magic = math.sin(radlat)
+  magic = 1 - ee * magic * magic
+  sqrtmagic = math.sqrt(magic)
+  dlat = (dlat * 180.0) / ((a * (1 - ee)) / (magic * sqrtmagic) * pi)
+  dlng = (dlng * 180.0) / (a / sqrtmagic * math.cos(radlat) * pi)
+  mglat = lat + dlat
+  mglng = lng + dlng
+  return [lng * 2 - mglng, lat * 2 - mglat]
+
+def transform_lat(lng, lat):
+  ret = -100.0 + 2.0 * lng + 3.0 * lat + 0.2 * lat * lat + 0.1 * lng * lat + 0.2 * math.sqrt(abs(lng))
+  ret += (20.0 * math.sin(6.0 * lng * pi) + 20.0 * math.sin(2.0 * lng * pi)) * 2.0 / 3.0
+  ret += (20.0 * math.sin(lat * pi) + 40.0 * math.sin(lat / 3.0 * pi)) * 2.0 / 3.0
+  ret += (160.0 * math.sin(lat / 12.0 * pi) + 320 * math.sin(lat * pi / 30.0)) * 2.0 / 3.0
+  return ret
+
+def transform_lng(lng, lat):
+  ret = 300.0 + lng + 2.0 * lat + 0.1 * lng * lng + 0.1 * lng * lat + 0.1 * math.sqrt(abs(lng))
+  ret += (20.0 * math.sin(6.0 * lng * pi) + 20.0 * math.sin(2.0 * lng * pi)) * 2.0 / 3.0
+  ret += (20.0 * math.sin(lng * pi) + 40.0 * math.sin(lng / 3.0 * pi)) * 2.0 / 3.0
+  ret += (150.0 * math.sin(lng / 12.0 * pi) + 300.0 * math.sin(lng / 30.0 * pi)) * 2.0 / 3.0
+  return ret
