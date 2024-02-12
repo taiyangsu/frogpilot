@@ -144,9 +144,16 @@ class VCruiseHelper:
 
     # 250kph or above probably means we never had a set speed
     if any(b.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for b in CS.buttonEvents) and self.v_cruise_kph_last < 250:
+      # Start accelerating from, or resume to, last set speed
       self.v_cruise_kph = self.v_cruise_kph_last
     else:
-      self.v_cruise_kph = int(round(clip(CS.vEgo * CV.MS_TO_KPH, initial, V_CRUISE_MAX)))
+      # Initial set speed
+      if self.slc.desired_speed_limit != 0 and frogpilot_variables.set_speed_limit:
+        # If there's a known speed limit and the corresponding FP toggle is set, push it to the car
+        self.v_cruise_kph = self.slc.desired_speed_limit * CV.MS_TO_KPH
+      else:
+        # Use fixed initial set speed from mode etc.
+        self.v_cruise_kph = int(round(clip(CS.vEgo * CV.MS_TO_KPH, initial, V_CRUISE_MAX)))
 
     self.v_cruise_cluster_kph = self.v_cruise_kph
 
