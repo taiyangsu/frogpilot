@@ -112,6 +112,7 @@ class CAR(StrEnum):
   TRAILBLAZER_CC = "CHEVROLET TRAILBLAZER 2024 NO ACC"
   XT4 = "CADILLAC XT4 2023"
   TAHOE_2019 = "CHEVROLET TAHOE 2019"
+  TRAX = "CHEVROLET TRAX 2024"
 
 
 class Footnote(Enum):
@@ -165,6 +166,7 @@ CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
   CAR.TRAILBLAZER_CC: GMCarInfo("Chevrolet Trailblazer 2024 No ACC"),
   CAR.XT4: GMCarInfo("Cadillac XT4 2023", "Driver Assist Package"),
   CAR.TAHOE_2019: GMCarInfo("Chevrolet Tahoe 2019", "Adaptive Cruise Control (ACC) & LKAS"),
+  CAR.TRAX: GMCarInfo("Chevrolet TRAX 2024"),
 }
 
 
@@ -213,7 +215,7 @@ SDGM_CAR = {CAR.XT4}
 SLOW_ACC = {CAR.SILVERADO} if Params().get_bool("GasRegenCmd") else set()
 
 # We're integrated at the camera with VOACC on these cars (instead of ASCM w/ OBD-II harness)
-CAMERA_ACC_CAR = {CAR.BOLT_EUV, CAR.SILVERADO, CAR.EQUINOX, CAR.TRAILBLAZER, CAR.TAHOE_2019}
+CAMERA_ACC_CAR = {CAR.BOLT_EUV, CAR.SILVERADO, CAR.EQUINOX, CAR.TRAILBLAZER, CAR.TAHOE_2019, CAR.TRAX}
 CAMERA_ACC_CAR.update({CAR.VOLT_CC, CAR.BOLT_CC, CAR.EQUINOX_CC, CAR.YUKON_CC, CAR.CT6_CC, CAR.TRAILBLAZER_CC})
 
 # Alt ASCMActiveCruiseControlStatus

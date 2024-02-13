@@ -299,6 +299,104 @@ class CarInterface(CarInterfaceBase):
       ret.tireStiffnessFactor = 1.0
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+      
+    elif candidate == CAR.TRAX:
+      ret.mass = 1365.
+      ret.wheelbase = 2.7
+      ret.steerRatio = 16.4
+      ret.centerToFront = ret.wheelbase * 0.4
+      ret.tireStiffnessFactor = 1.0
+      ret.steerActuatorDelay = 0.2
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
+    elif candidate in (CAR.SUBURBAN, CAR.SUBURBAN_CC):
+      ret.mass = 2731.
+      ret.wheelbase = 3.302
+      ret.steerRatio = 17.3 # COPIED FROM SILVERADO
+      ret.centerToFront = ret.wheelbase * 0.49
+      ret.steerActuatorDelay = 0.075
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
+    elif candidate == CAR.YUKON_CC:
+      ret.minSteerSpeed = -1 * CV.MPH_TO_MS
+      ret.mass = 5602. * CV.LB_TO_KG  # (3849+3708)/2
+      ret.wheelbase = 2.95  # 116 inches in meters
+      ret.steerRatio = 16.3  # guess for tourx
+      ret.steerRatioRear = 0.  # unknown online
+      ret.centerToFront = 2.59  # ret.wheelbase * 0.4 # wild guess
+      ret.steerActuatorDelay = 0.2
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
+    elif candidate == CAR.XT4:
+      ret.mass = 3660. * CV.LB_TO_KG
+      ret.wheelbase = 2.78
+      ret.steerRatio = 14.4
+      ret.centerToFront = ret.wheelbase * 0.4
+      ret.steerActuatorDelay = 0.2
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
+    elif candidate == CAR.CT6_CC:
+      ret.wheelbase = 3.11
+      ret.mass = 5198. * CV.LB_TO_KG
+      ret.centerToFront = ret.wheelbase * 0.4
+      ret.steerRatio = 17.7
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
+    if ret.enableGasInterceptor:
+      ret.networkLocation = NetworkLocation.fwdCamera
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
+      ret.minEnableSpeed = -1
+      ret.pcmCruise = False
+      ret.openpilotLongitudinalControl = True
+      ret.stoppingControl = True
+      ret.autoResumeSng = True
+
+      if candidate in CC_ONLY_CAR:
+        ret.flags |= GMFlags.PEDAL_LONG.value
+        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_PEDAL_LONG
+        # Note: Low speed, stop and go not tested. Should be fairly smooth on highway
+        ret.longitudinalTuning.kpBP = [5., 35.]
+        ret.longitudinalTuning.kpV = [0.35, 0.5]
+        ret.longitudinalTuning.kiBP = [0., 35.0]
+        ret.longitudinalTuning.kiV = [0.1, 0.1]
+        ret.longitudinalTuning.kf = 0.15
+        ret.stoppingDecelRate = 0.8
+      else:  # Pedal used for SNG, ACC for longitudinal control otherwise
+        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM_LONG
+        ret.startingState = True
+        ret.vEgoStopping = 0.25
+        ret.vEgoStarting = 0.25
+
+    elif candidate in CC_ONLY_CAR:
+      ret.flags |= GMFlags.CC_LONG.value
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_CC_LONG
+      ret.radarUnavailable = True
+      ret.experimentalLongitudinalAvailable = False
+      ret.minEnableSpeed = 24 * CV.MPH_TO_MS
+      ret.openpilotLongitudinalControl = True
+      ret.pcmCruise = False
+
+      ret.longitudinalTuning.deadzoneBP = [0.]
+      ret.longitudinalTuning.deadzoneV = [0.56]  # == 2 km/h/s, 1.25 mph/s
+      ret.stoppingDecelRate = 11.18  # == 25 mph/s (.04 rate)
+      ret.longitudinalActuatorDelayLowerBound = 1.  # TODO: measure this
+      ret.longitudinalActuatorDelayUpperBound = 2.
+
+      ret.longitudinalTuning.kpBP = [10.7, 10.8, 28.]  # 10.7 m/s == 24 mph
+      ret.longitudinalTuning.kpV = [0., 20., 20.]  # set lower end to 0 since we can't drive below that speed
+      ret.longitudinalTuning.kiBP = [0.]
+      ret.longitudinalTuning.kiV = [0.1]
+
+    if candidate in CC_ONLY_CAR:
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_NO_ACC
+
+    # Exception for flashed cars, or cars whose camera was removed
+    if (ret.networkLocation == NetworkLocation.fwdCamera or candidate in CC_ONLY_CAR) and CAM_MSG not in fingerprint[CanBus.CAMERA] and not candidate in SDGM_CAR:
+      ret.flags |= GMFlags.NO_CAMERA.value
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_NO_CAMERA
+
+    if ACCELERATOR_POS_MSG not in fingerprint[CanBus.POWERTRAIN]:
+      ret.flags |= GMFlags.NO_ACCELERATOR_POS_MSG.value
 
     elif candidate in (CAR.SUBURBAN, CAR.SUBURBAN_CC):
       ret.mass = 2731.
