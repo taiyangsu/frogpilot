@@ -7,7 +7,7 @@ from openpilot.common.conversions import Conversions as CV
 from openpilot.common.params import Params
 from openpilot.selfdrive.car import create_button_events, get_safety_config
 from openpilot.selfdrive.car.gm.radar_interface import RADAR_HEADER_MSG
-from openpilot.selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, CanBus, GMFlags, CC_ONLY_CAR, SDGM_CAR, SLOW_ACC
+from openpilot.selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, CanBus, GMFlags, CC_ONLY_CAR, SDGM_CAR, SLOW_ACC, ALT_ACCS
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, FRICTION_THRESHOLD
 from openpilot.selfdrive.controls.lib.drive_helpers import get_friction
 
@@ -332,6 +332,22 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.4
       ret.steerRatio = 17.7
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
+    elif candidate == CAR.TAHOE_2019:
+      ret.mass = 5490. * CV.LB_TO_KG # average of tahoe and yukon
+      ret.wheelbase = 2.94
+      ret.steerRatio = 17.3
+      ret.centerToFront = ret.wheelbase * 0.5
+      ret.tireStiffnessFactor = 1.0
+      ret.steerActuatorDelay = 0.5
+      # On the Bolt, the ECM and camera independently check that you are either above 5 kph or at a stop
+      # with foot on brake to allow engagement, but this platform only has that check in the camera.
+      # TODO: check if this is split by EV/ICE with more platforms in the future
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
+    if candidate in ALT_ACCS:
+      ret.experimentalLongitudinalAvailable = False
+      ret.minEnableSpeed = -1.  # engage speed is decided by PCM
 
     if ret.enableGasInterceptor:
       ret.networkLocation = NetworkLocation.fwdCamera
