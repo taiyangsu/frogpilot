@@ -145,7 +145,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
                                                                                     10, 50, std::map<int, QString>(), this, false, " sec", 10);
       FrogPilotParamValueControl *aggressiveJerk = new FrogPilotParamValueControl("AggressiveJerk", " Jerk",
                                                                                   "Configure brake/gas pedal responsiveness for the 'Aggressive' personality. "
-                                                                                  "Higher values yield a more 'relaxed' response.\n\nStock: 0.5.",
+                                                                                  "Higher jerk value = smoother rides.\nLower jerk value = faster response.\n\nStock: 0.5.",
                                                                                   "",
                                                                                   1, 50, std::map<int, QString>(), this, false, "", 10);
       aggressiveProfile = new FrogPilotDualParamControl(aggressiveFollow, aggressiveJerk, this, true);
@@ -158,7 +158,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
                                                                                   10, 50, std::map<int, QString>(), this, false, " sec", 10);
       FrogPilotParamValueControl *standardJerk = new FrogPilotParamValueControl("StandardJerk", " Jerk",
                                                                                 "Adjust brake/gas pedal responsiveness for the 'Standard' personality. "
-                                                                                "Higher values yield a more 'relaxed' response.\n\nStock: 1.0.",
+                                                                                "Higher jerk value = smoother rides.\nLower jerk value = faster response.\n\nStock: 1.0.",
                                                                                 "",
                                                                                 1, 50, std::map<int, QString>(), this, false, "", 10);
       standardProfile = new FrogPilotDualParamControl(standardFollow, standardJerk, this, true);
@@ -171,7 +171,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
                                                                                  10, 50, std::map<int, QString>(), this, false, " sec", 10);
       FrogPilotParamValueControl *relaxedJerk = new FrogPilotParamValueControl("RelaxedJerk", " Jerk",
                                                                                "Set brake/gas pedal responsiveness for the 'Relaxed' personality. "
-                                                                               "Higher values yield a more 'relaxed' response.\n\nStock: 1.0.",
+                                                                               "Higher jerk value = smoother rides.\nLower jerk value = faster response.\n\nStock: 1.0.",
                                                                                "", 1, 50,
                                                                                std::map<int, QString>(), this, false, "", 10);
       relaxedProfile = new FrogPilotDualParamControl(relaxedFollow, relaxedJerk, this, true);
