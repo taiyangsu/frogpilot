@@ -37,9 +37,9 @@ AbstractAlert::AbstractAlert(bool hasRebootBtn, QWidget *parent) : QFrame(parent
   disable_check_btn->setFixedSize(625, 125);
   footer_layout->addWidget(disable_check_btn, 1, Qt::AlignBottom | Qt::AlignCenter);
   QObject::connect(disable_check_btn, &QPushButton::clicked, [=]() {
-    params.putBool("QOLControls", true);
+    params.putBool("SnoozeUpdate", true);
     params.putBool("OfflineMode", true);
-    Hardware::reboot();
+    params.putBool("FiredTheBabysitter", true);
   });
   QObject::connect(disable_check_btn, &QPushButton::clicked, this, &AbstractAlert::dismiss);
   disable_check_btn->setStyleSheet(R"(color: white; background-color: #4F4F4F;)");

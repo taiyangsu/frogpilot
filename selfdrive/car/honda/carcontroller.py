@@ -94,7 +94,7 @@ def process_hud_alert(hud_alert):
 
 
 HUDData = namedtuple("HUDData",
-                     ["pcm_accel", "v_cruise", "lead_visible", "distance_lines",
+                     ["pcm_accel", "v_cruise", "lead_visible", "personality_profile",
                       "lanes_visible", "fcw", "acc_alert", "steer_required"])
 
 

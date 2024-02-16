@@ -7,7 +7,6 @@ from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, HYBRID_CARS, CanBus, SubaruFlags
 from openpilot.selfdrive.car import CanSignalRateCalculator
 
-from openpilot.selfdrive.frogpilot.functions.frogpilot_functions import FrogPilotFunctions
 
 class CarState(CarStateBase):
   def __init__(self, CP):

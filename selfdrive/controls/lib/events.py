@@ -227,7 +227,7 @@ def user_soft_disable_alert(alert_text_2: str) -> AlertCallbackType:
   return func
 
 def startup_master_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
-  branch = get_short_branch("")  # Ensure get_short_branch is cached to avoid lags on startup
+  branch = get_short_branch()  # Ensure get_short_branch is cached to avoid lags on startup
   if "REPLAY" in os.environ:
     branch = "replay"
 
@@ -350,6 +350,15 @@ def joystick_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster,
   vals = f"Gas: {round(gb * 100.)}%, Steer: {round(steer * 100.)}%"
   return NormalPermanentAlert("Joystick Mode", vals)
 
+
+def no_lane_available_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
+  lane_width = sm['frogpilotPlan'].laneWidthLeft if CS.leftBlinker else sm['frogpilotPlan'].laneWidthRight
+  lane_width_msg = f"{lane_width:.1f} meters" if metric else f"{lane_width * CV.METER_TO_FOOT:.1f} feet"
+  return Alert(
+    "No lane available",
+    f"Detected lane width is only {lane_width_msg}",
+    AlertStatus.normal, AlertSize.mid,
+    Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .2)
 
 
 EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
@@ -989,7 +998,27 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
       "Light turned green",
       "",
       AlertStatus.frogpilot, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.prompt, 3.),
+      Priority.MID, VisualAlert.none, AudibleAlert.prompt, 3.),
+  },
+
+  EventName.laneChangeBlockedLoud: {
+    ET.WARNING: Alert(
+      "Car Detected in Blindspot",
+      "",
+      AlertStatus.userPrompt, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.warningSoft, .1),
+  },
+
+  EventName.leadDeparting: {
+    ET.PERMANENT: Alert(
+      "Lead departed",
+      "",
+      AlertStatus.frogpilot, AlertSize.small,
+      Priority.MID, VisualAlert.none, AudibleAlert.prompt, 3.),
+  },
+
+  EventName.noLaneAvailable : {
+    ET.PERMANENT: no_lane_available_alert,
   },
 
   EventName.openpilotCrashed: {
@@ -1006,6 +1035,14 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
       "Shift to L",
       AlertStatus.userPrompt, AlertSize.mid,
       Priority.HIGH, VisualAlert.wrongGear, AudibleAlert.promptRepeat, 4.),
+  },
+
+  EventName.speedLimitChanged: {
+    ET.PERMANENT: Alert(
+      "Speed Limit Changed",
+      "",
+      AlertStatus.frogpilot, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.prompt, 3.),
   },
 
   EventName.torqueNNLoad: {
@@ -1043,6 +1080,14 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
       "Please post the error log in the FrogPilot Discord!",
       AlertStatus.normal, AlertSize.mid,
       Priority.HIGHEST, VisualAlert.none, AudibleAlert.fart, 4.),
+  },
+
+  EventName.vCruise69: {
+    ET.PERMANENT: Alert(
+      "Lol 69",
+      "",
+      AlertStatus.frogpilot, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.noice, 2.),
   },
 }
 

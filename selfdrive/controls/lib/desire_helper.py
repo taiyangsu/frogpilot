@@ -68,15 +68,12 @@ class DesireHelper:
     one_blinker = carstate.leftBlinker != carstate.rightBlinker
     below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN
 
-    # Calculate the desired lane width for nudgeless lane change with lane detection
     if not (self.lane_detection and one_blinker) or below_lane_change_speed:
       lane_available = True
     else:
-      # Set the minimum lane threshold to 2.8 meters
-      min_lane_threshold = 2.8
       desired_lane = frogpilotPlan.laneWidthLeft if carstate.leftBlinker else frogpilotPlan.laneWidthRight
       # Check if the lane width exceeds the threshold
-      lane_available = desired_lane >= min_lane_threshold
+      lane_available = desired_lane >= self.lane_detection_width
 
     if not lateral_active or self.lane_change_timer > LANE_CHANGE_TIME_MAX:
       self.lane_change_state = LaneChangeState.off
@@ -109,7 +106,7 @@ class DesireHelper:
         blindspot_detected = ((carstate.leftBlindspot and self.lane_change_direction == LaneChangeDirection.left) or
                               (carstate.rightBlindspot and self.lane_change_direction == LaneChangeDirection.right))
 
-        # Conduct a nudgeless lane change if all the conditions are true
+        # Conduct a nudgeless lane change if all the conditions are met
         self.lane_change_wait_timer += DT_MDL
         if self.nudgeless and lane_available and not self.lane_change_completed and self.lane_change_wait_timer >= self.lane_change_delay:
           self.lane_change_wait_timer = 0
@@ -177,9 +174,12 @@ class DesireHelper:
       updateFrogPilotParams.start()
 
   def update_frogpilot_params(self):
+    is_metric = self.params.get_bool("IsMetric")
+
     self.nudgeless = self.params.get_bool("NudgelessLaneChange")
     self.lane_change_delay = self.params.get_int("LaneChangeTime") if self.nudgeless else 0
     self.lane_detection = self.params.get_bool("LaneDetection") and self.nudgeless
+    self.lane_detection_width = self.params.get_int("LaneDetectionWidth") * (1 if is_metric else CV.FOOT_TO_METER) / 10 if self.lane_detection else 0
     self.one_lane_change = self.params.get_bool("OneLaneChange") and self.nudgeless
 
     self.turn_desires = self.params.get_bool("TurnDesires")

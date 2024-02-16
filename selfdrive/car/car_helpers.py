@@ -190,7 +190,7 @@ def fingerprint(logcan, sendcan, num_pandas):
 
   cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint, source=source, fuzzy=not exact_match, cached=cached,
                  fw_count=len(car_fw), ecu_responses=list(ecu_rx_addrs), vin_rx_addr=vin_rx_addr, vin_rx_bus=vin_rx_bus,
-                 fingerprints=finger, fw_query_time=fw_query_time, error=True)
+                 fingerprints=repr(finger), fw_query_time=fw_query_time, error=True)
   return car_fingerprint, finger, vin, car_fw, source, exact_match
 
 def chunk_data(data, size):
@@ -211,24 +211,26 @@ def crash_log(candidate):
 
   control_keys, vehicle_keys, visual_keys = [
     "AdjustablePersonalities", "PersonalitiesViaWheel", "PersonalitiesViaScreen", "AlwaysOnLateral", "AlwaysOnLateralMain",
-    "ConditionalExperimental", "CESpeed", "CESpeedLead", "CECurves", "CECurvesLead", "CENavigation", "CESlowerLead", "CEStopLights",
-    "CEStopLightsLead", "CESignal", "CustomPersonalities", "AggressiveFollow", "AggressiveJerk", "StandardFollow", "StandardJerk",
-    "RelaxedFollow", "RelaxedJerk", "DeviceShutdown", "ExperimentalModeActivation", "ExperimentalModeViaLKAS", "ExperimentalModeViaScreen",
-    "FireTheBabysitter", "NoLogging", "MuteDM", "MuteDoor", "MuteSeatbelt", "MuteOverheated", "OfflineMode", "LateralTune", "NNFF", "SteerRatio",
-    "LongitudinalTune", "AccelerationProfile", "AggressiveAcceleration", "StoppingDistance", "SmoothBraking", "Model", "MTSCEnabled",
-    "MTSCAggressiveness", "NudgelessLaneChange", "LaneChangeTime", "LaneDetection", "OneLaneChange", "QOLControls", "DisableOnroadUploads",
-    "HigherBitrate", "NavChill", "PauseLateralOnSignal", "ReverseCruise", "ReverseCruiseUI", "SetSpeedOffset", "SpeedLimitController", "Offset1",
-    "Offset2", "Offset3", "Offset4", "SLCFallback", "SLCPriority1", "SLCPriority2", "SLCPriority3", "SLCOverride", "TurnDesires", "VisionTurnControl",
-    "CurveSensitivity", "TurnAggressiveness"
+    "ConditionalExperimental", "CESpeed", "CESpeedLead", "CECurves", "CECurvesLead", "CENavigation", "CENavigationIntersections",
+    "CENavigationLead", "CENavigationTurns", "CESlowerLead", "CEStopLights", "CEStopLightsLead", "CESignal", "CustomPersonalities",
+    "AggressiveFollow", "AggressiveJerk", "StandardFollow", "StandardJerk", "RelaxedFollow", "RelaxedJerk", "DeviceShutdown",
+    "ExperimentalModeActivation", "ExperimentalModeViaLKAS", "ExperimentalModeViaScreen", "FireTheBabysitter", "NoLogging", "MuteOverheated",
+    "OfflineMode", "LateralTune", "ForceAutoTune", "NNFF", "SteerRatio", "UseLateralJerk", "LongitudinalTune", "AccelerationProfile",
+    "AggressiveAcceleration", "StoppingDistance", "SmoothBraking", "Model", "MTSCEnabled", "DisableMTSCSmoothing", "MTSCAggressiveness",
+    "MTSCLimit", "NudgelessLaneChange", "LaneChangeTime", "LaneDetection", "LaneDetectionWidth", "OneLaneChange", "QOLControls",
+    "DisableOnroadUploads", "HigherBitrate", "NavChill", "PauseLateralOnSignal", "ReverseCruise", "ReverseCruiseUI", "SetSpeedLimit",
+    "SetSpeedOffset",  "SpeedLimitController", "Offset1", "Offset2", "Offset3", "Offset4", "SLCFallback", "SLCPriority1", "SLCPriority2",
+    "SLCPriority3", "SLCOverride", "TurnDesires", "VisionTurnControl", "DisableVTSCSmoothing", "CurveSensitivity", "TurnAggressiveness"
   ], [
-    "EVTable", "GasRegenCmd", "LongPitch", "LowerVolt", "LockDoors", "SNGHack", "TSS2Tune"
+    "EVTable", "GasRegenCmd", "LongPitch", "LowerVolt", "CrosstrekTorque", "CydiaTune", "DragonPilotTune", "FrogsGoMooTune", "LockDoors", "SNGHack"
   ], [
-    "CustomTheme", "CustomColors", "CustomIcons", "CustomSignals", "CustomSounds", "GoatScream", "CameraView", "Compass", "CustomUI",
-    "AdjacentPath", "AdjacentPathMetrics", "BlindSpotPath", "FPSCounter", "LeadInfo", "UseSI", "RoadNameUI", "UseVienna", "DriverCamera",
-    "GreenLightAlert", "ModelUI", "AccelerationPath", "LaneLinesWidth", "PathEdgeWidth", "PathWidth", "RoadEdgesWidth", "UnlimitedLength",
-    "QOLVisuals", "DriveStats", "FullMap", "HideSpeed", "HideSpeedUI", "ShowSLCOffset", "RandomEvents", "ScreenBrightness", "SilentMode",
-    "WheelIcon", "RotatingWheel", "NumericalTemp", "Fahrenheit", "ShowCPU", "ShowGPU", "ShowMemoryUsage", "ShowStorageLeft", "ShowStorageUsed",
-    "Sidebar"
+    "CustomTheme", "CustomColors", "CustomIcons", "CustomSignals", "CustomSounds", "GoatScream", "AlertVolumeControl", "DisengageVolume",
+    "EngageVolume", "PromptVolume", "PromptDistractedVolume", "RefuseVolume", "WarningSoftVolume", "WarningImmediateVolume", "CameraView",
+    "Compass", "CustomAlerts", "GreenLightAlert", "LeadDepartingAlert", "LoudBlindspotAlert", "SpeedLimitChangedAlert", "CustomUI", "AdjacentPath",
+    "AdjacentPathMetrics", "BlindSpotPath", "FPSCounter", "LeadInfo", "UseSI", "RoadNameUI", "UseVienna", "DriverCamera", "ModelUI", "AccelerationPath",
+    "LaneLinesWidth", "PathEdgeWidth", "PathWidth", "RoadEdgesWidth", "UnlimitedLength", "QOLVisuals", "DriveStats", "FullMap", "HideSpeed", "HideSpeedUI",
+    "ShowSLCOffset", "SpeedLimitChangedAlert", "WheelSpeed", "RandomEvents", "ScreenBrightness", "WheelIcon", "RotatingWheel", "NumericalTemp",
+    "Fahrenheit", "ShowCPU", "ShowGPU", "ShowIP", "ShowMemoryUsage", "ShowStorageLeft", "ShowStorageUsed", "Sidebar"
   ]
 
   control_params, vehicle_params, visual_params = map(lambda keys: get_frogpilot_params(params, keys), [control_keys, vehicle_keys, visual_keys])
@@ -254,7 +256,7 @@ def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
     if car_model is not None:
       candidate = car_model
     else:
-      cloudlog.event("Car doesn't match any fingerprints", fingerprints=fingerprints, error=True)
+      cloudlog.event("car doesn't match any fingerprints", fingerprints=repr(fingerprints), error=True)
       candidate = "mock"
   elif car_model is None:
     params.put("CarMake", candidate.split(' ')[0].title())
@@ -267,7 +269,7 @@ def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
   setFingerprintLog.start()
 
   CarInterface, CarController, CarState = interfaces[candidate]
-  CP = CarInterface.get_params(candidate, fingerprints, car_fw, experimental_long_allowed, docs=False)
+  CP = CarInterface.get_params(params, candidate, fingerprints, car_fw, experimental_long_allowed, docs=False)
   CP.carVin = vin
   CP.carFw = car_fw
   CP.fingerprintSource = source

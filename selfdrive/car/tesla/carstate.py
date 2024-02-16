@@ -7,8 +7,6 @@ from openpilot.selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
 
-from openpilot.selfdrive.frogpilot.functions.frogpilot_functions import FrogPilotFunctions
-
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)

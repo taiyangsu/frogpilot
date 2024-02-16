@@ -197,6 +197,7 @@ private:
   bool turnSignalLeft;
   bool turnSignalRight;
   bool useViennaSLCSign;
+  bool vtscControllingCurve;
 
   float cruiseAdjustment;
   float distanceConversion;
@@ -222,7 +223,7 @@ private:
 
   size_t animationFrameIndex;
 
-  std::unordered_map<int, std::pair<QString, std::pair<QColor, std::map<double, QBrush>>>> themeConfiguration;
+  std::unordered_map<int, std::tuple<QString, int, QColor, std::map<double, QBrush>>> themeConfiguration;
   std::vector<QPixmap> signalImgVector;
 
   QTimer *animationTimer;

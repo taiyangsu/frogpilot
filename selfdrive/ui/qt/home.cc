@@ -163,7 +163,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
 
     left_widget->setCurrentIndex(params.getBool("DriveStats") ? 2 : uiState()->hasPrime() ? 0 : 1);
     connect(uiState(), &UIState::primeChanged, [=](bool prime) {
-      left_widget->setCurrentIndex(prime ? 0 : 1);
+      left_widget->setCurrentIndex(params.getBool("DriveStats") ? 2 : uiState()->hasPrime() ? 0 : 1);
     });
 
     home_layout->addWidget(left_widget, 1);
@@ -222,6 +222,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   // Set the model name
   std::map<int, QString> MODEL_NAME {
     {0, "Los Angeles"},
+    {1, "Certified Herbalist"},
   };
 
   modelName = MODEL_NAME[params.getInt("Model")];

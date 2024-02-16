@@ -116,15 +116,22 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     locationdPermanentError @118;
     paramsdTemporaryError @50;
     paramsdPermanentError @119;
-    openpilotCrashedRandomEvents @120;
+
+    # FrogPilot events
+    firefoxSteerSaturated @120;
     frogSteerSaturated @121;
     greenLight @122;
-    openpilotCrashed @123;
-    pedalInterceptorNoBrake @124;
-    torqueNNLoad @125;
-    turningLeft @126;
-    turningRight @127;
-    firefoxSteerSaturated @128;
+    laneChangeBlockedLoud @123;
+    leadDeparting @124;
+    noLaneAvailable @125;
+    openpilotCrashed @126;
+    openpilotCrashedRandomEvents @127;
+    pedalInterceptorNoBrake @128;
+    speedLimitChanged @129;
+    torqueNNLoad @130;
+    turningLeft @131;
+    turningRight @132;
+    vCruise69 @133;
 
     radarCanErrorDEPRECATED @15;
     communityFeatureDisallowedDEPRECATED @62;
@@ -389,6 +396,7 @@ struct CarControl {
     leftLaneVisible @7: Bool;
     rightLaneDepart @8: Bool;
     leftLaneDepart @9: Bool;
+    leadVelocity @10: Float32;
 
     enum VisualAlert {
       # these are the choices from the Honda
@@ -417,8 +425,10 @@ struct CarControl {
       promptRepeat @7;
       promptDistracted @8;
 
+      # Random Events
       fart @9;
       firefox @10;
+      noice @11;
     }
   }
 

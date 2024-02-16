@@ -101,6 +101,9 @@ void FrogPilotNavigationPanel::updateStatuses() {
   if (paramsMemory.get("OSMDownloadLocations").empty()) {
     downloadActive = false;
     updateDownloadedLabel();
+    qint64 fileSize = calculateDirectorySize(offlineFolderPath);
+    offlineMapsSize->setText(formatSize(fileSize));
+    previousOSMDownloadProgress = osmDownloadProgress;
   }
 
   if (osmDownloadProgress != previousOSMDownloadProgress && isVisible()) {

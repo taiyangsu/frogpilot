@@ -6,7 +6,6 @@ from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.volkswagen.values import DBC, CANBUS, PQ_CARS, NetworkLocation, TransmissionType, GearShifter, \
                                             CarControllerParams, VolkswagenFlags
 
-from openpilot.selfdrive.frogpilot.functions.frogpilot_functions import FrogPilotFunctions
 
 class CarState(CarStateBase):
   def __init__(self, CP):
@@ -155,20 +154,20 @@ class CarState(CarStateBase):
     # Driving personalities function
     if frogpilot_variables.personalities_via_wheel and ret.cruiseState.available:
       # Sync with the onroad UI button
-      if self.param_memory.get_bool("PersonalityChangedViaUI"):
-        self.personality_profile = self.param.get_int("LongitudinalPersonality")
-        self.param_memory.put_bool("PersonalityChangedViaUI", False)
+      if self.fpf.personality_changed_via_ui:
+        self.personality_profile = self.fpf.current_personality
+        self.previous_personality_profile = self.personality_profile
+        self.fpf.reset_personality_changed_param()
 
       # Change personality upon steering wheel button press
-      self.distance_button = pt_cp.vl["GRA_ACC_01"]["GRA_Verstellung_Zeitluecke"]
+      distance_button = pt_cp.vl["GRA_ACC_01"]["GRA_Verstellung_Zeitluecke"]
 
-      if self.distance_button and not self.distance_previously_pressed:
-        self.param_memory.put_bool("PersonalityChangedViaWheel", True)
+      if distance_button and not self.distance_previously_pressed:
         self.personality_profile = (self.previous_personality_profile + 2) % 3
-      self.distance_previously_pressed = self.distance_button
+      self.distance_previously_pressed = distance_button
 
-      if self.personality_profile != self.previous_personality_profile and self.personality_profile >= 0:
-        self.param.put_int("LongitudinalPersonality", self.personality_profile)
+      if self.personality_profile != self.previous_personality_profile:
+        self.fpf.distance_button_function(self.personality_profile)
         self.previous_personality_profile = self.personality_profile
 
     return ret

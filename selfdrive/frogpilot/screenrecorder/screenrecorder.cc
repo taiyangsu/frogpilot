@@ -102,7 +102,7 @@ void ScreenRecorder::start() {
 }
 
 void ScreenRecorder::encoding_thread_func() {
-  const uint64_t start_time = nanos_since_boot();
+  const uint64_t start_time = nanos_since_boot() - 1;
   while (recording && encoder) {
     QImage popImage;
     if (image_queue.pop_wait_for(popImage, std::chrono::milliseconds(10))) {
@@ -123,12 +123,11 @@ void ScreenRecorder::stop() {
 
   recording = false;
   update();
-
+  closeEncoder();
+  image_queue.clear();
   if (encoding_thread.joinable()) {
     encoding_thread.join();
   }
-  closeEncoder();
-  image_queue.clear();
 }
 
 void ScreenRecorder::update_screen() {

@@ -1,12 +1,12 @@
 import math
 import numpy as np
+import os
 import time
-import threading
 import wave
 
 from typing import Dict, Optional, Tuple
 
-from cereal import car, messaging
+from cereal import car, custom, messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
@@ -42,8 +42,10 @@ sound_list: Dict[int, Tuple[str, Optional[int], float]] = {
   AudibleAlert.warningSoft: ("warning_soft.wav", None, MAX_VOLUME),
   AudibleAlert.warningImmediate: ("warning_immediate.wav", None, MAX_VOLUME),
 
-  AudibleAlert.fart: ("fart.wav", None, MAX_VOLUME),
-  AudibleAlert.firefox: ("firefox.wav", None, MAX_VOLUME),
+  # Random Events
+  AudibleAlert.fart: ("fart.wav", 1, MAX_VOLUME),
+  AudibleAlert.firefox: ("firefox.wav", 1, MAX_VOLUME),
+  AudibleAlert.noice: ("noice.wav", 1, MAX_VOLUME),
 }
 
 def check_controls_timeout_alert(sm):
@@ -61,6 +63,8 @@ class Soundd:
     # FrogPilot variables
     self.params = Params()
     self.params_memory = Params("/dev/shm/params")
+
+    self.random_events_directory = BASEDIR + "/selfdrive/frogpilot/assets/random_events/sounds/"
 
     self.update_frogpilot_params()
 
@@ -81,7 +85,10 @@ class Soundd:
     for sound in sound_list:
       filename, play_count, volume = sound_list[sound]
 
-      wavefile = wave.open(self.sound_directory + filename, 'r')
+      if os.path.exists(os.path.join(self.random_events_directory, filename)):
+        wavefile = wave.open(self.random_events_directory + filename, 'r')
+      else:
+        wavefile = wave.open(self.sound_directory + filename, 'r')
 
       assert wavefile.getnchannels() == 1
       assert wavefile.getsampwidth() == 2
@@ -159,7 +166,10 @@ class Soundd:
 
         if sm.updated['microphone'] and self.current_alert == AudibleAlert.none: # only update volume filter when not playing alert
           self.spl_filter_weighted.update(sm["microphone"].soundPressureWeightedDb)
-          self.current_volume = self.calculate_volume(float(self.spl_filter_weighted.x)) if not self.silent_mode else 0
+          self.current_volume = self.calculate_volume(float(self.spl_filter_weighted.x))
+
+        if self.alert_volume_control and self.current_alert in self.volume_map:
+          self.current_volume = min(self.volume_map[self.current_alert] / 100.0, self.current_volume)
 
         self.get_audible_alert(sm)
 
@@ -167,13 +177,22 @@ class Soundd:
 
         assert stream.active
 
-    # Update FrogPilot parameters
-    if self.params_memory.get_bool("FrogPilotTogglesUpdated"):
-      updateFrogPilotParams = threading.Thread(target=self.update_frogpilot_params)
-      updateFrogPilotParams.start()
+        # Update FrogPilot parameters
+        if self.params_memory.get_bool("FrogPilotTogglesUpdated"):
+          self.update_frogpilot_params()
 
   def update_frogpilot_params(self):
-    self.silent_mode = self.params.get_bool("SilentMode")
+    self.alert_volume_control = self.params.get_bool("AlertVolumeControl")
+
+    self.volume_map = {
+      AudibleAlert.disengage: self.params.get_int("DisengageVolume"),
+      AudibleAlert.engage: self.params.get_int("EngageVolume"),
+      AudibleAlert.prompt: self.params.get_int("PromptVolume"),
+      AudibleAlert.promptRepeat: self.params.get_int("PromptDistractedVolume"),
+      AudibleAlert.promptDistracted: self.params.get_int("RefuseVolume"),
+      AudibleAlert.warningSoft: self.params.get_int("WarningSoftVolume"),
+      AudibleAlert.warningImmediate: self.params.get_int("WarningImmediateVolume")
+    }
 
     custom_theme = self.params.get_bool("CustomTheme")
     custom_sounds = self.params.get_int("CustomSounds") if custom_theme else 0
@@ -186,7 +205,7 @@ class Soundd:
     }
 
     theme_name = theme_configuration.get(custom_sounds, "stock")
-    self.sound_directory = (f"{BASEDIR}/selfdrive/frogpilot/assets/custom_themes/{theme_name}/sounds/" if custom_sounds else f"{BASEDIR}/selfdrive/assets/sounds/")
+    self.sound_directory = BASEDIR + ("/selfdrive/frogpilot/assets/custom_themes/" + theme_name + "/sounds/" if custom_sounds else "/selfdrive/assets/sounds/")
 
     self.load_sounds()
 

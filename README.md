@@ -45,7 +45,7 @@ FrogPilot is a bi-weekly updated and 100% open-sourced fork of openpilot with cl
 FrogPilot was last updated on:
 <img width="10%" align="left" src="./selfdrive/assets/img_spinner_comma.png">
 
-**February 2nd, 2024**
+**February 16th, 2024**
 
 Features
 ------
@@ -84,7 +84,7 @@ FrogPilot offers a wide range of customizable features that can be easily toggle
       - 🟠 Orange - Experimental Mode active
       - 🟡 Yellow - Conditional Experimental overridden
     - Steering wheel icons
-      📢 Request your own steerin wheel icon in the "feature-request" channel!
+      📢 Request your own steering wheel icon in the "feature-request" channel!
     - Steering wheel in the onroad UI rotates alongside your physical steering wheel
     - "Unlimited" road UI that extends out as far as the model can see
 ------

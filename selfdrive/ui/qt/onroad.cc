@@ -373,7 +373,7 @@ ExperimentalButton::ExperimentalButton(QWidget *parent) : experimental_mode(fals
     {4, loadPixmap("../frogpilot/assets/wheel_images/rocket.png", {img_size, img_size})},
     {5, loadPixmap("../frogpilot/assets/wheel_images/hyundai.png", {img_size, img_size})},
     {6, loadPixmap("../frogpilot/assets/wheel_images/stalin.png", {img_size, img_size})},
-    {7, loadPixmap("../frogpilot/assets/wheel_images/firefox.png", {img_size, img_size})}
+    {7, loadPixmap("../frogpilot/assets/random_events/images/firefox.png", {img_size, img_size})}
   };
 }
 
@@ -394,7 +394,7 @@ void ExperimentalButton::changeMode() {
 
 void ExperimentalButton::updateState(const UIState &s, bool leadInfo) {
   const auto cs = (*s.sm)["controlsState"].getControlsState();
-  bool eng = cs.getEngageable() || cs.getEnabled();
+  bool eng = cs.getEngageable() || cs.getEnabled() || scene.always_on_lateral_active;
   if ((cs.getExperimentalMode() != experimental_mode) || (eng != engageable)) {
     engageable = eng;
     experimental_mode = cs.getExperimentalMode();
@@ -509,7 +509,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
 
   // Handle older routes where vEgoCluster is not set
   v_ego_cluster_seen = v_ego_cluster_seen || car_state.getVEgoCluster() != 0.0;
-  float v_ego = v_ego_cluster_seen ? car_state.getVEgoCluster() : car_state.getVEgo();
+  float v_ego = v_ego_cluster_seen && !scene.wheel_speed ? car_state.getVEgoCluster() : car_state.getVEgo();
   speed = cs_alive ? std::max<float>(0.0, v_ego) : 0.0;
   speed *= s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH;
 
@@ -578,7 +578,7 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   if (is_cruise_set && cruiseAdjustment) {
     float transition = qBound(0.0f, 4.0f * (cruiseAdjustment / setSpeed), 1.0f);
     QColor min = whiteColor(75);
-    QColor max = scene.vtsc_controlling_curve ? redColor(75) : greenColor(75);
+    QColor max = vtscControllingCurve ? redColor(75) : greenColor(75);
 
     p.setPen(QPen(QColor::fromRgbF(
       min.redF()   + transition * (max.redF()   - min.redF()),
@@ -726,7 +726,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   // lanelines
   for (int i = 0; i < std::size(scene.lane_line_vertices); ++i) {
     if (customColors != 0) {
-      painter.setBrush(themeConfiguration[customColors].second.first);
+      painter.setBrush(std::get<3>(themeConfiguration[customColors]).begin()->second);
     } else {
       painter.setBrush(QColor::fromRgbF(1.0, 1.0, 1.0, std::clamp<float>(scene.lane_line_probs[i], 0.0, 0.7)));
     }
@@ -736,7 +736,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   // road edges
   for (int i = 0; i < std::size(scene.road_edge_vertices); ++i) {
     if (customColors != 0) {
-      painter.setBrush(themeConfiguration[customColors].second.first);
+      painter.setBrush(std::get<3>(themeConfiguration[customColors]).begin()->second);
     } else {
       painter.setBrush(QColor::fromRgbF(1.0, 0, 0, std::clamp<float>(1.0 - scene.road_edge_stds[i], 0.0, 1.0)));
     }
@@ -766,7 +766,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
 
       // If acceleration is between -0.2 and 0.2, resort to the theme color
       if (std::abs(acceleration[i]) < 0.2 && (customColors != 0)) {
-        const auto &colorMap = themeConfiguration[customColors].second.second;
+        const auto &colorMap = std::get<3>(themeConfiguration[customColors]);
         for (const auto &[position, brush] : colorMap) {
           bg.setColorAt(position, brush.color());
         }
@@ -787,7 +787,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     }
 
   } else if (customColors != 0) {
-    const auto &colorMap = themeConfiguration[customColors].second.second;
+    const auto &colorMap = std::get<3>(themeConfiguration[customColors]);
     for (const auto &[position, brush] : colorMap) {
       bg.setColorAt(position, brush.color());
     }
@@ -824,7 +824,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     pe.setColorAt(0.5, QColor::fromHslF(205 / 360., 0.85, 0.56, 0.5));
     pe.setColorAt(1.0, QColor::fromHslF(205 / 360., 0.85, 0.56, 0.1));
   } else if (customColors != 0) {
-    const auto &colorMap = themeConfiguration[customColors].second.second;
+    const auto &colorMap = std::get<3>(themeConfiguration[customColors]);
     for (const auto &[position, brush] : colorMap) {
       QColor darkerColor = brush.color().darker(120);
       pe.setColorAt(position, darkerColor);
@@ -976,7 +976,7 @@ void AnnotatedCameraWidget::drawLead(QPainter &painter, const cereal::RadarState
   // chevron
   QPointF chevron[] = {{x + (sz * 1.25), y + sz}, {x, y}, {x - (sz * 1.25), y + sz}};
   if (customColors != 0) {
-    painter.setBrush(themeConfiguration[customColors].second.first);
+    painter.setBrush(std::get<3>(themeConfiguration[customColors]).begin()->second);
   } else {
     painter.setBrush(redColor(fillAlpha));
   }
@@ -1086,7 +1086,7 @@ void AnnotatedCameraWidget::paintEvent(QPaintEvent *event) {
   }
 
   // DMoji
-  if (!hideBottomIcons && (sm.rcv_frame("driverStateV2") > s->scene.started_frame) && !scene.mute_dm) {
+  if (!hideBottomIcons && (sm.rcv_frame("driverStateV2") > s->scene.started_frame)) {
     update_dmonitoring(s, sm["driverStateV2"].getDriverStateV2(), dm_fade_state, rightHandDM);
     drawDriverState(painter, s);
   }
@@ -1138,15 +1138,15 @@ void AnnotatedCameraWidget::initializeFrogPilotWidgets() {
 
   // Custom themes configuration
   themeConfiguration = {
-    {1, {QString("frog_theme"), {QColor(23, 134, 68, 242), {{0.0, QBrush(QColor::fromHslF(144 / 360., 0.71, 0.31, 0.9))},
-                                                            {0.5, QBrush(QColor::fromHslF(144 / 360., 0.71, 0.31, 0.5))},
-                                                            {1.0, QBrush(QColor::fromHslF(144 / 360., 0.71, 0.31, 0.1))}}}}},
-    {2, {QString("tesla_theme"), {QColor(0, 72, 255, 255), {{0.0, QBrush(QColor::fromHslF(223 / 360., 1.0, 0.5, 0.9))},
-                                                            {0.5, QBrush(QColor::fromHslF(223 / 360., 1.0, 0.5, 0.5))},
-                                                            {1.0, QBrush(QColor::fromHslF(223 / 360., 1.0, 0.5, 0.1))}}}}},
-    {3, {QString("stalin_theme"), {QColor(255, 0, 0, 255), {{0.0, QBrush(QColor::fromHslF(0 / 360., 1.0, 0.5, 0.9))},
-                                                            {0.5, QBrush(QColor::fromHslF(0 / 360., 1.0, 0.5, 0.5))},
-                                                            {1.0, QBrush(QColor::fromHslF(0 / 360., 1.0, 0.5, 0.1))}}}}}
+    {1, {"frog_theme", 4, QColor(23, 134, 68, 242), {{0.0, QBrush(QColor::fromHslF(144 / 360., 0.71, 0.31, 0.9))},
+                                                      {0.5, QBrush(QColor::fromHslF(144 / 360., 0.71, 0.31, 0.5))},
+                                                      {1.0, QBrush(QColor::fromHslF(144 / 360., 0.71, 0.31, 0.1))}}}},
+    {2, {"tesla_theme", 4, QColor(0, 72, 255, 255), {{0.0, QBrush(QColor::fromHslF(223 / 360., 1.0, 0.5, 0.9))},
+                                                      {0.5, QBrush(QColor::fromHslF(223 / 360., 1.0, 0.5, 0.5))},
+                                                      {1.0, QBrush(QColor::fromHslF(223 / 360., 1.0, 0.5, 0.1))}}}},
+    {3, {"stalin_theme", 6, QColor(255, 0, 0, 255), {{0.0, QBrush(QColor::fromHslF(0 / 360., 1.0, 0.5, 0.9))},
+                                                      {0.5, QBrush(QColor::fromHslF(0 / 360., 1.0, 0.5, 0.5))},
+                                                      {1.0, QBrush(QColor::fromHslF(0 / 360., 1.0, 0.5, 0.1))}}}}
   };
 
   // Initialize the timer for the turn signal animation
@@ -1176,7 +1176,8 @@ void AnnotatedCameraWidget::updateFrogPilotWidgets(QPainter &p) {
   conditionalSpeed = scene.conditional_speed;
   conditionalSpeedLead = scene.conditional_speed_lead;
   conditionalStatus = scene.conditional_status;
-  cruiseAdjustment = fmax((0.1 * fmax(setSpeed - scene.adjusted_cruise, 0) + 0.9 * cruiseAdjustment) - 1, 0);
+  bool disableSmoothing = scene.vtsc_controlling_curve ? scene.disable_smoothing_vtsc : scene.disable_smoothing_mtsc;
+  cruiseAdjustment = disableSmoothing ? fmax(setSpeed - scene.adjusted_cruise, 0) : fmax(0.1 * (setSpeed - scene.adjusted_cruise) + 0.9 * cruiseAdjustment - 1, 0);
   customColors = scene.custom_colors;
   experimentalMode = scene.experimental_mode;
   fullMapOpen = mapOpen && scene.full_map;
@@ -1196,6 +1197,7 @@ void AnnotatedCameraWidget::updateFrogPilotWidgets(QPainter &p) {
   turnSignalLeft = scene.turn_signal_left;
   turnSignalRight = scene.turn_signal_right;
   useViennaSLCSign = scene.use_vienna_slc_sign;
+  vtscControllingCurve = scene.vtsc_controlling_curve;
 
   if (!(showDriverCamera || fullMapOpen)) {
     if (leadInfo) {
@@ -1248,23 +1250,25 @@ void AnnotatedCameraWidget::updateFrogPilotWidgets(QPainter &p) {
     customSignals = scene.custom_signals;
 
     QString theme_path = QString("../frogpilot/assets/custom_themes/%1/images").arg(themeConfiguration.find(customSignals) != themeConfiguration.end() ?
-                                 themeConfiguration[customSignals].first : "stock_theme");
-    QStringList imagePaths = {
-      theme_path + "/turn_signal_1.png",
-      theme_path + "/turn_signal_2.png",
-      theme_path + "/turn_signal_3.png",
-      theme_path + "/turn_signal_4.png"
-    };
+                                 std::get<0>(themeConfiguration[customSignals]) : "");
+
+    QStringList imagePaths;
+    int availableImages = std::get<1>(themeConfiguration[customSignals]);
+
+    for (int i = 1; i <= totalFrames; ++i) {
+      int imageIndex = ((i - 1) % availableImages) + 1;
+      QString imagePath = theme_path + QString("/turn_signal_%1.png").arg(imageIndex);
+      imagePaths.push_back(imagePath);
+    }
 
     signalImgVector.clear();
-    signalImgVector.reserve(4 * imagePaths.size() + 2);  // Reserve space for both regular and flipped images
-    for (int i = 0; i < 2; ++i) {
-      for (const QString &imagePath : imagePaths) {
-        QPixmap pixmap(imagePath);
-        signalImgVector.push_back(pixmap);  // Regular image
-        signalImgVector.push_back(pixmap.transformed(QTransform().scale(-1, 1)));  // Flipped image
-      }
+    signalImgVector.reserve(2 * imagePaths.size());  // Reserve space for both regular and flipped images
+    for (const QString &imagePath : imagePaths) {
+      QPixmap pixmap(imagePath);
+      signalImgVector.push_back(pixmap);  // Regular image
+      signalImgVector.push_back(pixmap.transformed(QTransform().scale(-1, 1)));  // Flipped image
     }
+
     signalImgVector.push_back(QPixmap(theme_path + "/turn_signal_1_red.png"));  // Regular blindspot image
     signalImgVector.push_back(QPixmap(theme_path + "/turn_signal_1_red.png").transformed(QTransform().scale(-1, 1)));  // Flipped blindspot image
   }
@@ -1405,13 +1409,13 @@ void AnnotatedCameraWidget::drawLeadInfo(QPainter &p) {
   leadDistanceUnit = mapOpen ? "m" : "meters";
   leadSpeedUnit = "m/2";
 
+  float accelerationConversion = 1.0f;
   distanceConversion = 1.0f;
   speedConversion = 1.0f;
 
   if (!scene.use_si) {
     if (is_metric) {
       // Metric conversion
-      accelerationUnit = " km/s²";
       leadSpeedUnit = "kph";
       speedConversion = MS_TO_KPH;
     } else {
@@ -1419,6 +1423,8 @@ void AnnotatedCameraWidget::drawLeadInfo(QPainter &p) {
       accelerationUnit = " ft/s²";
       leadDistanceUnit = mapOpen ? "ft" : "feet";
       leadSpeedUnit = "mph";
+
+      accelerationConversion = METER_TO_FOOT;
       distanceConversion = METER_TO_FOOT;
       speedConversion = MS_TO_MPH;
     }
@@ -1443,11 +1449,11 @@ void AnnotatedCameraWidget::drawLeadInfo(QPainter &p) {
 
   // Create segments for insights
   QString accelText = QString("Accel: %1%2")
-    .arg(currentAcceleration * speedConversion, 0, 'f', 2)
+    .arg(currentAcceleration * accelerationConversion, 0, 'f', 2)
     .arg(accelerationUnit);
 
   QString maxAccSuffix = QString(mapOpen ? "" : " - Max: %1%2")
-    .arg(maxAcceleration * speedConversion, 0, 'f', 2)
+    .arg(maxAcceleration * accelerationConversion, 0, 'f', 2)
     .arg(accelerationUnit);
 
   QString obstacleText = createText(mapOpen ? " | Obstacle: " : "  |  Obstacle Factor: ", obstacleDistance);

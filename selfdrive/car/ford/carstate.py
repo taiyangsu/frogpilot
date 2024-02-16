@@ -6,8 +6,6 @@ from openpilot.selfdrive.car.interfaces import CarStateBase
 from openpilot.selfdrive.car.ford.fordcan import CanBus
 from openpilot.selfdrive.car.ford.values import CANFD_CAR, CarControllerParams, DBC
 
-from openpilot.selfdrive.frogpilot.functions.frogpilot_functions import FrogPilotFunctions
-
 GearShifter = car.CarState.GearShifter
 TransmissionType = car.CarParams.TransmissionType
 
