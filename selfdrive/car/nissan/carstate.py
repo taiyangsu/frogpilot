@@ -7,8 +7,6 @@ from openpilot.common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.nissan.values import CAR, DBC, CarControllerParams
 
-from openpilot.selfdrive.frogpilot.functions.frogpilot_functions import FrogPilotFunctions
-
 TORQUE_SAMPLES = 12
 
 class CarState(CarStateBase):

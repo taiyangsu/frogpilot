@@ -19,7 +19,6 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_TRML
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
-from openpilot.selfdrive.manager.manager import PREBUILT_FILE
 from openpilot.system.hardware import HARDWARE, TICI, AGNOS
 from openpilot.system.loggerd.config import get_available_bytes, get_available_percent, get_used_bytes
 from openpilot.selfdrive.statsd import statlog
@@ -27,6 +26,8 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.thermald.power_monitoring import PowerMonitoring
 from openpilot.selfdrive.thermald.fan_controller import TiciFanController
 from openpilot.system.version import terms_version, training_version
+
+PREBUILT_FILE = os.path.join(BASEDIR, 'prebuilt')
 
 ThermalStatus = log.DeviceState.ThermalStatus
 NetworkType = log.DeviceState.NetworkType
@@ -459,8 +460,7 @@ def thermald_thread(end_event, hw_queue) -> None:
 
     # Create the prebuilt file if it doesn't exist
     if not os.path.exists(PREBUILT_FILE):
-      if os.path.exists(os.path.join(BASEDIR, "selfdrive/modeld/models/supercombo.thneed")):
-        os.system(f"touch {PREBUILT_FILE}")
+      os.system(f"touch {PREBUILT_FILE}")
 
 def main():
   hw_queue = queue.Queue(maxsize=1)

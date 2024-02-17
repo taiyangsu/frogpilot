@@ -11,8 +11,6 @@ from openpilot.selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, HOND
                                                  HONDA_BOSCH_RADARLESS
 from openpilot.selfdrive.car.interfaces import CarStateBase
 
-from openpilot.selfdrive.frogpilot.functions.frogpilot_functions import FrogPilotFunctions
-
 TransmissionType = car.CarParams.TransmissionType
 
 
@@ -273,27 +271,27 @@ class CarState(CarStateBase):
     # Driving personalities function
     if frogpilot_variables.personalities_via_wheel and ret.cruiseState.available:
       # Sync with the onroad UI button
-      if self.param_memory.get_bool("PersonalityChangedViaUI"):
-        self.personality_profile = self.param.get_int("LongitudinalPersonality")
-        self.param_memory.put_bool("PersonalityChangedViaUI", False)
+      if self.fpf.personality_changed_via_ui:
+        self.personality_profile = self.fpf.current_personality
+        self.previous_personality_profile = self.personality_profile
+        self.fpf.reset_personality_changed_param()
 
       # Change personality upon steering wheel button press
-      self.distance_button = self.cruise_setting == 3
+      distance_button = self.cruise_setting == 3
 
-      if self.distance_button and not self.distance_previously_pressed:
-        self.param_memory.put_bool("PersonalityChangedViaWheel", True)
+      if distance_button and not self.distance_previously_pressed:
         self.personality_profile = (self.previous_personality_profile + 2) % 3
-      self.distance_previously_pressed = self.distance_button
+      self.distance_previously_pressed = distance_button
 
-      if self.personality_profile != self.previous_personality_profile and self.personality_profile >= 0:
-        self.param.put_int("LongitudinalPersonality", self.personality_profile)
+      if self.personality_profile != self.previous_personality_profile:
+        self.fpf.distance_button_function(self.personality_profile)
         self.previous_personality_profile = self.personality_profile
 
     # Toggle Experimental Mode from steering wheel function
     if frogpilot_variables.experimental_mode_via_lkas and ret.cruiseState.available:
       lkas_pressed = self.cruise_setting == 1
       if lkas_pressed and not self.lkas_previously_pressed:
-        FrogPilotFunctions.lkas_button_function(conditional_experimental_mode)
+        self.fpf.lkas_button_function(conditional_experimental_mode)
       self.lkas_previously_pressed = lkas_pressed
 
     return ret

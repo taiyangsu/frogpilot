@@ -3,7 +3,6 @@
 #include <QTextStream>
 
 #include "selfdrive/frogpilot/ui/vehicle_settings.h"
-#include "selfdrive/ui/ui.h"
 
 QStringList getCarNames(const QString &carMake) {
   QMap<QString, QString> makeMap;
@@ -107,31 +106,56 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : FrogPil
     {"LongPitch", "Long Pitch Compensation", "Reduce speed and acceleration error for greater passenger comfort and improved vehicle efficiency.", ""},
     {"LowerVolt", "Lower Volt Enable Speed", "Lower the Volt's minimum enable speed to enable openpilot at any speed.", ""},
 
+    {"CrosstrekTorque", "Subaru Crosstrek Torque Increase", "Increases the maximum allowed torque for the Subaru Crosstrek.", ""},
+
     {"LockDoors", "Lock Doors In Drive", "Automatically lock the doors when in drive and unlock when in park.", ""},
+    {"LongitudinalTune", "Longitudinal Tune", "Use a custom Toyota longitudinal tune.", ""},
     {"SNGHack", "Stop and Go Hack", "Enable the 'Stop and Go' hack for vehicles without stock stop and go functionality.", ""},
-    {"TSS2Tune", "TSS2 Tune", "Tuning profile based on the tuning profile from DragonPilot for TSS2 vehicles.", ""}
   };
 
-  for (auto &[param, title, desc, icon] : vehicleToggles) {
-    ParamControl *toggle = new ParamControl(param, title, desc, icon, this);
+  for (const auto &[param, title, desc, icon] : vehicleToggles) {
+    ParamControl *toggle;
+
+    if (param == "LongitudinalTune") {
+      std::vector<std::pair<QString, QString>> tuneOptions{
+        {"StockTune", tr("Stock")},
+        {"CydiaTune", tr("Cydia's")},
+        {"DragonPilotTune", tr("DragonPilot's")},
+        {"FrogsGoMooTune", tr("FrogPilot's")},
+      };
+      toggle = new FrogPilotButtonsParamControl(param, title, desc, icon, tuneOptions);
+
+      QObject::connect(static_cast<FrogPilotButtonsParamControl*>(toggle), &FrogPilotButtonsParamControl::buttonClicked, [this]() {
+        if (started) {
+          if (FrogPilotConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", this)) {
+            Hardware::reboot();
+          }
+        }
+      });
+
+    } else {
+      toggle = new ParamControl(param, title, desc, icon, this);
+    }
 
     addItem(toggle);
-    toggle->setVisible(false);
     toggles[param.toStdString()] = toggle;
 
     QObject::connect(toggle, &ToggleControl::toggleFlipped, [this]() {
       updateToggles();
     });
+
+    QObject::connect(toggle, &AbstractControl::showDescriptionEvent, [this]() {
+      update();
+    });
   }
 
-  gmKeys = {"EVTable", "GasRegenCmd", "LongPitch", "LowerVolt"};
-  toyotaKeys = {"LockDoors", "SNGHack", "TSS2Tune"};
-
-  std::set<std::string> rebootKeys = {"GasRegenCmd", "LongPitch", "LowerVolt", "TSS2Tune"};
+  std::set<std::string> rebootKeys = {"CrosstrekTorque", "GasRegenCmd", "LowerVolt"};
   for (const std::string &key : rebootKeys) {
     QObject::connect(toggles[key], &ToggleControl::toggleFlipped, [this]() {
-      if (FrogPilotConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", this)) {
-        Hardware::reboot();
+      if (started) {
+        if (FrogPilotConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", this)) {
+          Hardware::reboot();
+        }
       }
     });
   }
@@ -152,6 +176,12 @@ FrogPilotVehiclesPanel::FrogPilotVehiclesPanel(SettingsWindow *parent) : FrogPil
   if (!carMake.isEmpty()) {
     setModels();
   }
+
+  QObject::connect(uiState(), &UIState::uiUpdate, this, &FrogPilotVehiclesPanel::updateState);
+}
+
+void FrogPilotVehiclesPanel::updateState(const UIState &s) {
+  started = s.scene.started;
 }
 
 void FrogPilotVehiclesPanel::updateToggles() {
@@ -172,15 +202,20 @@ void FrogPilotVehiclesPanel::setToggles() {
   selectModelButton->setVisible(!carMake.isEmpty());
 
   bool gm = carMake == "Buick" || carMake == "Cadillac" || carMake == "Chevrolet" || carMake == "GM" || carMake == "GMC";
+  bool subaru = carMake == "Subaru";
   bool toyota = carMake == "Lexus" || carMake == "Toyota";
 
   for (auto &[key, toggle] : toggles) {
-    toggle->setVisible(false);
+    if (toggle) {
+      toggle->setVisible(false);
 
-    if (gm) {
-      toggle->setVisible(gmKeys.find(key.c_str()) != gmKeys.end());
-    } else if (toyota) {
-      toggle->setVisible(toyotaKeys.find(key.c_str()) != toyotaKeys.end());
+      if (gm) {
+        toggle->setVisible(gmKeys.find(key.c_str()) != gmKeys.end());
+      } else if (subaru) {
+        toggle->setVisible(subaruKeys.find(key.c_str()) != subaruKeys.end());
+      } else if (toyota) {
+        toggle->setVisible(toyotaKeys.find(key.c_str()) != toyotaKeys.end());
+      }
     }
   }
 

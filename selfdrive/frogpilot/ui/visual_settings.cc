@@ -1,5 +1,4 @@
 #include "selfdrive/frogpilot/ui/visual_settings.h"
-#include "selfdrive/ui/ui.h"
 
 FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilotListWidget(parent) {
   const std::vector<std::tuple<QString, QString, QString, QString>> visualToggles {
@@ -9,8 +8,23 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
     {"CustomSignals", "Turn Signals", "Add custom animations for your turn signals for a personal touch!\n\nWant to submit your own turn signal animation? Post it in the 'feature-request' channel in the FrogPilot Discord!", ""},
     {"CustomSounds", "Sound Pack", "Switch out the standard openpilot sounds with a set of custom sounds.\n\nWant to submit your own sound pack? Post it in the 'feature-request' channel in the FrogPilot Discord!", ""},
 
+    {"AlertVolumeControl", "Alert Volume Control", "Control the volume level for each individual sound in openpilot.", "../frogpilot/assets/toggle_icons/icon_mute.png"},
+    {"DisengageVolume", "Disengage Volume", "Related alerts:\n\nAdaptive Cruise Disabled\nParking Brake Engaged\nPedal Pressed\nSpeed too Low", ""},
+    {"EngageVolume", "Engage Volume", "Related alerts:\n\nNNFF Torque Controller loaded", ""},
+    {"PromptVolume", "Prompt Volume", "Related alerts:\n\nCar Detected in Blindspot\nLight turned green\nSpeed too Low\nSteer Unavailable Below 'X'\nTake Control, Turn Exceeds Steering Limit", ""},
+    {"PromptDistractedVolume", "Prompt Distracted Volume", "Related alerts:\n\nPay Attention, Driver Distracted\nTouch Steering Wheel, Driver Unresponsive", ""},
+    {"RefuseVolume", "Refuse Volume", "Related alerts:\n\nopenpilot Unavailable", ""},
+    {"WarningSoftVolume", "Warning Soft Volume", "Related alerts:\n\nBRAKE!, Risk of Collision\nTAKE CONTROL IMMEDIATELY", ""},
+    {"WarningImmediateVolume", "Warning Immediate Volume", "Related alerts:\n\nDISENGAGE IMMEDIATELY, Driver Distracted\nDISENGAGE IMMEDIATELY, Driver Unresponsive", ""},
+
     {"CameraView", "Camera View", "Choose your preferred camera view for the onroad UI. This is a visual change only and doesn't impact openpilot.", "../frogpilot/assets/toggle_icons/icon_camera.png"},
     {"Compass", "Compass", "Add a compass to your onroad UI.", "../frogpilot/assets/toggle_icons/icon_compass.png"},
+
+    {"CustomAlerts", "Custom Alerts", "Enable custom alerts for various logic or situational changes.", "../frogpilot/assets/toggle_icons/icon_green_light.png"},
+    {"GreenLightAlert", "Green Light Alert", "Get an alert when a traffic light changes from red to green.", ""},
+    {"LeadDepartingAlert", "Lead Departing Alert", "Get an alert when your lead vehicle starts departing when you're at a standstill.", ""},
+    {"LoudBlindspotAlert", "Loud Blindspot Alert", "Enable a louder alert for when a vehicle is detected in your blindspot when attempting to change lanes.", ""},
+    {"SpeedLimitChangedAlert", "Speed Limit Changed Alert", "Trigger an alert whenever the current speed limit changes.", ""},
 
     {"CustomUI", "Custom Onroad UI", "Customize the Onroad UI with some additional visual functions.", "../assets/offroad/icon_road.png"},
     {"AccelerationPath", "Acceleration Path", "Visualize the car's intended acceleration or deceleration with a color-coded path.", ""},
@@ -22,7 +36,6 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
     {"UseVienna", "Use Vienna Speed Limit Signs", "Use the Vienna (EU) speed limit style signs as opposed to MUTCD (US).", ""},
 
     {"DriverCamera", "Driver Camera On Reverse", "Show the driver's camera feed when you shift to reverse.", "../assets/img_driver_face_static.png"},
-    {"GreenLightAlert", "Green Light Alert", "Get an alert when a traffic light changes from red to green.", "../frogpilot/assets/toggle_icons/icon_green_light.png"},
 
     {"ModelUI", "Model UI", "Personalize how the model's visualizations appear on your screen.", "../assets/offroad/icon_calibration.png"},
     {"LaneLinesWidth", "Lane Lines", "Adjust the visual thickness of lane lines on your display.\n\nDefault matches the MUTCD average of 4 inches.", ""},
@@ -38,20 +51,45 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
     {"FullMap", "Full Sized Map", "Maximize the size of the map in the onroad UI.", ""},
     {"HideSpeed", "Hide Speed", "Hide the speed indicator in the onroad UI. Additional toggle allows it to be hidden/shown via tapping the speed itself.", ""},
     {"ShowSLCOffset", "Show Speed Limit Offset", "Show the speed limit offset seperated from the speed limit in the onroad UI when using 'Speed Limit Controller'.", ""},
+    {"WheelSpeed", "Use Wheel Speed", "Use the wheel speed metric as opposed to the artificial speed.", ""},
 
     {"RandomEvents", "Random Events", "Enjoy a bit of unpredictability with random events that can occur during certain driving conditions.", "../frogpilot/assets/toggle_icons/icon_random.png"},
     {"ScreenBrightness", "Screen Brightness", "Customize your screen brightness.", "../frogpilot/assets/toggle_icons/icon_light.png"},
-    {"SilentMode", "Silent Mode", "Mute openpilot sounds for a quieter driving experience.", "../frogpilot/assets/toggle_icons/icon_mute.png"},
+
     {"WheelIcon", "Steering Wheel Icon", "Replace the default steering wheel icon with a custom design, adding a unique touch to your interface.", "../assets/offroad/icon_openpilot.png"},
   };
 
   for (const auto &[param, title, desc, icon] : visualToggles) {
     ParamControl *toggle;
 
-    if (param == "CameraView") {
+    if (param == "AlertVolumeControl") {
+      FrogPilotParamManageControl *alertVolumeControlToggle = new FrogPilotParamManageControl(param, title, desc, icon, this);
+      QObject::connect(alertVolumeControlToggle, &FrogPilotParamManageControl::manageButtonClicked, this, [this]() {
+        parentToggleClicked();
+        for (auto &[key, toggle] : toggles) {
+          toggle->setVisible(alertVolumeControlKeys.find(key.c_str()) != alertVolumeControlKeys.end());
+        }
+      });
+      toggle = alertVolumeControlToggle;
+    } else if (alertVolumeControlKeys.find(param) != alertVolumeControlKeys.end() && param != "WarningImmediateVolume") {
+      toggle = new FrogPilotParamValueControl(param, title, desc, icon, 0, 100, std::map<int, QString>(), this, false, "%");
+    } else if (param == "WarningImmediateVolume") {
+      toggle = new FrogPilotParamValueControl(param, title, desc, icon, 25, 100, std::map<int, QString>(), this, false, "%");
+
+    } else if (param == "CameraView") {
       std::vector<QString> cameraOptions{tr("Auto"), tr("Standard"), tr("Wide"), tr("Driver")};
       FrogPilotButtonParamControl *preferredCamera = new FrogPilotButtonParamControl(param, title, desc, icon, cameraOptions);
       toggle = preferredCamera;
+
+    } else if (param == "CustomAlerts") {
+      FrogPilotParamManageControl *customAlertsToggle = new FrogPilotParamManageControl(param, title, desc, icon, this);
+      QObject::connect(customAlertsToggle, &FrogPilotParamManageControl::manageButtonClicked, this, [this]() {
+        parentToggleClicked();
+        for (auto &[key, toggle] : toggles) {
+          toggle->setVisible(customAlertsKeys .find(key.c_str()) != customAlertsKeys .end());
+        }
+      });
+      toggle = customAlertsToggle;
 
     } else if (param == "CustomTheme") {
       FrogPilotParamManageControl *customThemeToggle = new FrogPilotParamManageControl(param, title, desc, icon, this);
@@ -62,7 +100,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
         }
       });
       toggle = customThemeToggle;
-    } else if (param == "CustomColors" || param == "CustomIcons" || param == "CustomSignals" || param == "CustomSounds") {
+    } else if (customThemeKeys.find(param) != customThemeKeys.end()) {
       std::vector<QString> themeOptions{tr("Stock"), tr("Frog"), tr("Tesla"), tr("Stalin")};
       FrogPilotButtonParamControl *themeSelection = new FrogPilotButtonParamControl(param, title, desc, icon, themeOptions);
       toggle = themeSelection;
@@ -160,7 +198,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
       updateToggles();
     });
 
-    QObject::connect(static_cast<FrogPilotParamValueControl*>(toggle), &FrogPilotParamValueControl::buttonPressed, [this]() {
+    QObject::connect(static_cast<FrogPilotParamValueControl*>(toggle), &FrogPilotParamValueControl::valueChanged, [this]() {
       updateToggles();
     });
 
@@ -175,17 +213,14 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
 
   std::set<std::string> rebootKeys = {"DriveStats"};
   for (const std::string &key : rebootKeys) {
-    QObject::connect(toggles[key], &ToggleControl::toggleFlipped, [this]() {
-      if (FrogPilotConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", this)) {
-        Hardware::reboot();
+    QObject::connect(toggles[key], &ToggleControl::toggleFlipped, [this, key]() {
+      if (started || key == "DriveStats") {
+        if (FrogPilotConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", this)) {
+          Hardware::reboot();
+        }
       }
     });
   }
-
-  customOnroadUIKeys = {"AccelerationPath", "AdjacentPath", "BlindSpotPath", "FPSCounter", "LeadInfo", "RoadNameUI", "UseVienna"};
-  customThemeKeys = {"CustomColors", "CustomIcons", "CustomSignals", "CustomSounds"};
-  modelUIKeys = {"LaneLinesWidth", "PathEdgeWidth", "PathWidth", "RoadEdgesWidth", "UnlimitedLength"};
-  qolKeys = {"DriveStats", "FullMap", "HideSpeed", "ShowSLCOffset"};
 
   QObject::connect(device(), &Device::interactiveTimeout, this, &FrogPilotVisualsPanel::hideSubToggles);
   QObject::connect(parent, &SettingsWindow::closeParentToggle, this, &FrogPilotVisualsPanel::hideSubToggles);
@@ -193,6 +228,12 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
 
   hideSubToggles();
   updateMetric();
+
+  QObject::connect(uiState(), &UIState::uiUpdate, this, &FrogPilotVisualsPanel::updateState);
+}
+
+void FrogPilotVisualsPanel::updateState(const UIState &s) {
+  started = s.scene.started;
 }
 
 void FrogPilotVisualsPanel::updateToggles() {
@@ -242,19 +283,21 @@ void FrogPilotVisualsPanel::updateMetric() {
 }
 
 void FrogPilotVisualsPanel::parentToggleClicked() {
-  this->openParentToggle();
+  openParentToggle();
 }
 
 void FrogPilotVisualsPanel::hideSubToggles() {
   for (auto &[key, toggle] : toggles) {
-    bool subToggles = modelUIKeys.find(key.c_str()) != modelUIKeys.end() ||
+    bool subToggles = alertVolumeControlKeys.find(key.c_str()) != alertVolumeControlKeys.end() ||
+                      customAlertsKeys.find(key.c_str()) != customAlertsKeys.end() ||
                       customOnroadUIKeys.find(key.c_str()) != customOnroadUIKeys.end() ||
                       customThemeKeys.find(key.c_str()) != customThemeKeys.end() ||
+                      modelUIKeys.find(key.c_str()) != modelUIKeys.end() ||
                       qolKeys.find(key.c_str()) != qolKeys.end();
     toggle->setVisible(!subToggles);
   }
 
-  this->closeParentToggle();
+  closeParentToggle();
 }
 
 void FrogPilotVisualsPanel::hideEvent(QHideEvent *event) {

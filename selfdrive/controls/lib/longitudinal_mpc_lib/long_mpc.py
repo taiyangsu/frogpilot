@@ -297,8 +297,7 @@ class LongitudinalMpc:
 
   def set_weights(self, prev_accel_constraint=True, custom_personalities=False, aggressive_jerk=0.5, standard_jerk=1.0, relaxed_jerk=1.0, personality=log.LongitudinalPersonality.standard):
     jerk_factor = get_jerk_factor(custom_personalities, aggressive_jerk, standard_jerk, relaxed_jerk, personality)
-    jerk_factor /= np.mean(self.acceleration_offset)
-    jerk_factor /= np.mean(self.braking_offset)
+    jerk_factor /= np.mean(self.acceleration_offset + self.braking_offset)
 
     if self.mode == 'acc':
       a_change_cost = A_CHANGE_COST if prev_accel_constraint else 0
@@ -369,8 +368,8 @@ class LongitudinalMpc:
     # Offset by FrogAi for FrogPilot for a more natural takeoff with a lead
     if frogpilot_planner.aggressive_acceleration:
       distance_factor = np.maximum(1, lead_xv_0[:,0] - (lead_xv_0[:,1] * t_follow))
-      standstill_offset = max(STOP_DISTANCE + frogpilot_planner.increased_stopping_distance - (v_ego**COMFORT_BRAKE), 0)
-      self.acceleration_offset = np.clip((lead_xv_0[:,1] - v_ego) + standstill_offset, 1, distance_factor)
+      standstill_offset = max(STOP_DISTANCE - (v_ego**COMFORT_BRAKE), 0)
+      self.acceleration_offset = np.clip((lead_xv_0[:,1] - v_ego) + standstill_offset - COMFORT_BRAKE, 1, distance_factor)
       t_follow = t_follow / self.acceleration_offset
     else:
       self.acceleration_offset = 1

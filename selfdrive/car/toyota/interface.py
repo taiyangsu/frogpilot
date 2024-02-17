@@ -1,6 +1,5 @@
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
-from openpilot.common.params import Params
 from panda import Panda
 from panda.python import uds
 from openpilot.selfdrive.car.toyota.values import Ecu, CAR, DBC, ToyotaFlags, CarControllerParams, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, \
@@ -22,7 +21,7 @@ class CarInterface(CarInterfaceBase):
       return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
 
   @staticmethod
-  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
+  def _get_params(ret, params, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "toyota"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.toyota)]
     ret.safetyConfigs[0].safetyParam = EPS_SCALE[candidate]
@@ -265,7 +264,40 @@ class CarInterface(CarInterfaceBase):
     tune = ret.longitudinalTuning
     tune.deadzoneBP = [0., 9.]
     tune.deadzoneV = [.0, .15]
-    if (candidate in TSS2_CAR or ret.enableGasInterceptor) and Params().get_bool("TSS2Tune"):
+    if params.get_bool("CydiaTune"):
+      # on stock Toyota this is -2.5
+      ret.stopAccel = -2.5
+      tune.deadzoneBP = [0., 16., 20., 30.]
+      tune.deadzoneV = [0., .03, .06, .15]
+      ret.stoppingDecelRate = 0.3  # This is okay for TSS-P
+      if candidate in TSS2_CAR:
+        ret.vEgoStopping = 0.25
+        ret.vEgoStarting = 0.25
+        ret.stoppingDecelRate = 0.009  # reach stopping target smoothly
+      tune.kpBP = [0.]
+      tune.kpV = [1.]
+      tune.kiBP = [0.]
+      tune.kiV = [1.]
+    elif params.get_bool("FrogsGoMooTune"):
+      tune.deadzoneBP = [0., 16., 20., 30.]
+      tune.deadzoneV = [0., .03, .06, .15]
+      tune.kpBP = [0., 5., 20.]
+      tune.kpV = [1.3, 1.0, 0.7]
+
+      # In MPH  = [ 0.,   2,    5,   11,   27,  45,  52,  67,   90] ​​
+      tune.kiBP = [ 0.,  1.,   2.,   5.,  12., 20., 23., 30.,  40.]
+      tune.kiV =  [.33, .33, .313, .245, .215, .17, .10, .01, .001]
+
+      if candidate in TSS2_CAR:
+        ret.stopAccel = -0.40
+        ret.stoppingDecelRate = 0.009  # reach stopping target smoothly
+      else:
+        ret.stopAccel = -2.5  # on stock Toyota this is -2.5
+        ret.stoppingDecelRate = 0.3  # This is okay for TSS-P
+
+      ret.vEgoStarting = 0.1
+      ret.vEgoStopping = 0.1
+    elif (candidate in TSS2_CAR or ret.enableGasInterceptor) and params.get_bool("DragonPilotTune"):
       # TSS2 tune - Credit goes to the DragonPilot team!
       tune.kpBP = [0., 5., 20.]
       tune.kpV = [1.3, 1.0, 0.7]

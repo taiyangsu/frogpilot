@@ -5,6 +5,8 @@ from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import clip, interp
 from openpilot.common.realtime import DT_CTRL
 
+from openpilot.selfdrive.frogpilot.functions.speed_limit_controller import SpeedLimitController
+
 # WARNING: this value was determined based on the model's training distribution,
 #          model predictions above this speed can be unpredictable
 # V_CRUISE's are in kph
@@ -135,21 +137,26 @@ class VCruiseHelper:
         self.button_timers[b.type.raw] = 1 if b.pressed else 0
         self.button_change_states[b.type.raw] = {"standstill": CS.cruiseState.standstill, "enabled": enabled}
 
-  def initialize_v_cruise(self, CS, experimental_mode: bool, conditional_experimental_mode) -> None:
+  def initialize_v_cruise(self, CS, experimental_mode: bool, conditional_experimental_mode, frogpilot_variables) -> None:
     # initializing is handled by the PCM
     if self.CP.pcmCruise:
       return
 
-    initial = V_CRUISE_INITIAL_EXPERIMENTAL_MODE if experimental_mode and not conditional_experimental_mode else V_CRUISE_INITIAL
+    if conditional_experimental_mode:
+      initial = V_CRUISE_INITIAL
+    else:
+      initial = V_CRUISE_INITIAL_EXPERIMENTAL_MODE if experimental_mode else V_CRUISE_INITIAL
 
     # 250kph or above probably means we never had a set speed
     if any(b.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for b in CS.buttonEvents) and self.v_cruise_kph_last < 250:
       self.v_cruise_kph = self.v_cruise_kph_last
     else:
-      self.v_cruise_kph = int(round(clip(CS.vEgo * CV.MS_TO_KPH, initial, V_CRUISE_MAX)))
+      if SpeedLimitController.desired_speed_limit != 0 and frogpilot_variables.set_speed_limit:
+        self.v_cruise_kph = SpeedLimitController.desired_speed_limit * CV.MS_TO_KPH
+      else:
+        self.v_cruise_kph = int(round(clip(CS.vEgo * CV.MS_TO_KPH, initial, V_CRUISE_MAX)))
 
     self.v_cruise_cluster_kph = self.v_cruise_kph
-
 
 def apply_deadzone(error, deadzone):
   if error > deadzone:

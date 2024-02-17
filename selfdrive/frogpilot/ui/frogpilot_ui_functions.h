@@ -1,5 +1,9 @@
 #pragma once
 
+#include <cmath>
+
+#include <QTimer>
+
 #include "selfdrive/ui/qt/widgets/controls.h"
 
 class FrogPilotConfirmationDialog : public ConfirmationDialog {
@@ -53,6 +57,25 @@ private:
   QVBoxLayout inner_layout;
 };
 
+class FrogPilotDualParamControl : public QFrame {
+  Q_OBJECT
+
+public:
+  FrogPilotDualParamControl(ParamControl *control1, ParamControl *control2, QWidget *parent = nullptr, bool split=false)
+    : QFrame(parent) {
+    QHBoxLayout *hlayout = new QHBoxLayout(this);
+
+    control1->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
+    control1->setMaximumWidth(split ? 850 : 700);
+
+    control2->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+    control2->setMaximumWidth(split ? 700 : 850);
+
+    hlayout->addWidget(control1);
+    hlayout->addWidget(control2);
+  }
+};
+
 class FrogPilotButtonIconControl : public AbstractControl {
   Q_OBJECT
 
@@ -75,7 +98,7 @@ class FrogPilotButtonParamControl : public ParamControl {
   Q_OBJECT
 public:
   FrogPilotButtonParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon,
-                     const std::vector<QString> &button_texts, const int minimum_button_width = 225)
+                              const std::vector<QString> &button_texts, const int minimum_button_width = 225)
     : ParamControl(param, title, desc, icon) {
     const QString style = R"(
       QPushButton {
@@ -135,6 +158,80 @@ signals:
 
 private:
   std::string key;
+  Params params;
+  QButtonGroup *button_group;
+};
+
+class FrogPilotButtonsParamControl : public ParamControl {
+  Q_OBJECT
+public:
+  FrogPilotButtonsParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon,
+                               const std::vector<std::pair<QString, QString>> &button_params)
+    : ParamControl(param, title, desc, icon) {
+    const QString style = R"(
+      QPushButton {
+        border-radius: 50px;
+        font-size: 40px;
+        font-weight: 500;
+        height:100px;
+        padding: 0 25 0 25;
+        color: #E4E4E4;
+        background-color: #393939;
+      }
+      QPushButton:pressed {
+        background-color: #4a4a4a;
+      }
+      QPushButton:checked:enabled {
+        background-color: #33Ab4C;
+      }
+      QPushButton:disabled {
+        color: #33E4E4E4;
+      }
+    )";
+
+    button_group = new QButtonGroup(this);
+    button_group->setExclusive(true);
+
+    for (const auto &param_pair : button_params) {
+      const QString &param_toggle = param_pair.first;
+      const QString &button_text = param_pair.second;
+
+      QPushButton *button = new QPushButton(button_text, this);
+      button->setCheckable(true);
+
+      bool value = params.getBool(param_toggle.toStdString());
+      button->setChecked(value);
+      button->setStyleSheet(style);
+      button->setMinimumWidth(225);
+      hlayout->addWidget(button);
+
+      QObject::connect(button, &QPushButton::toggled, this, [=](bool checked) {
+        if (checked) {
+          for (const auto &inner_param_pair : button_params) {
+            const QString &inner_param = inner_param_pair.first;
+            params.putBool(inner_param.toStdString(), inner_param == param_toggle);
+          }
+          refresh();
+          emit buttonClicked();
+        }
+      });
+
+      button_group->addButton(button);
+    }
+
+    toggle.hide();
+  }
+
+  void setEnabled(bool enable) {
+    for (auto btn : button_group->buttons()) {
+      btn->setEnabled(enable);
+    }
+  }
+
+signals:
+  void buttonClicked();
+
+private:
   Params params;
   QButtonGroup *button_group;
 };
@@ -278,148 +375,52 @@ class FrogPilotParamValueControl : public ParamControl {
 
 public:
   FrogPilotParamValueControl(const QString &param, const QString &title, const QString &desc, const QString &icon,
-                    const int &minValue, const int &maxValue, const std::map<int, QString> &valueLabels,
-                    QWidget *parent = nullptr, const bool &loop = true, const QString &label = "", const int &division = 1)
-    : ParamControl(param, title, desc, icon, parent),
-      minValue(minValue), maxValue(maxValue), valueLabelMappings(valueLabels), loop(loop), labelText(label), division(division) {
-        key = param.toStdString();
+                             const float &minValue, const float &maxValue, const std::map<int, QString> &valueLabels,
+                             QWidget *parent = nullptr, const bool &loop = true, const QString &label = "",
+                             const float &division = 1.0f, const float &intervals = 1.0f)
+      : ParamControl(param, title, desc, icon, parent),
+        minValue(minValue), maxValue(maxValue), valueLabelMappings(valueLabels), loop(loop), labelText(label),
+        division(division), previousValue(0.0f), value(0.0f) {
+    key = param.toStdString();
 
-        valueLabel = new QLabel(this);
-        hlayout->addWidget(valueLabel);
+    valueLabel = new QLabel(this);
+    hlayout->addWidget(valueLabel);
 
-        QPushButton *decrementButton = createButton("-", this);
-        QPushButton *incrementButton = createButton("+", this);
+    QPushButton *decrementButton = createButton("-", this);
+    QPushButton *incrementButton = createButton("+", this);
 
-        hlayout->addWidget(decrementButton);
-        hlayout->addWidget(incrementButton);
+    hlayout->addWidget(decrementButton);
+    hlayout->addWidget(incrementButton);
 
-        connect(decrementButton, &QPushButton::clicked, this, [=]() {
-          updateValue(-1);
-        });
+    countdownTimer = new QTimer(this);
+    countdownTimer->setInterval(150);
+    countdownTimer->setSingleShot(true);
 
-        connect(incrementButton, &QPushButton::clicked, this, [=]() {
-          updateValue(1);
-        });
+    connect(countdownTimer, &QTimer::timeout, this, &FrogPilotParamValueControl::handleTimeout);
 
-        toggle.hide();
-      }
+    connect(decrementButton, &QPushButton::pressed, this, [=]() { updateValue(-intervals); });
+    connect(incrementButton, &QPushButton::pressed, this, [=]() { updateValue(intervals); });
 
-  void updateValue(int increment) {
-    value = value + increment;
+    connect(decrementButton, &QPushButton::released, this, &FrogPilotParamValueControl::restartTimer);
+    connect(incrementButton, &QPushButton::released, this, &FrogPilotParamValueControl::restartTimer);
 
-    if (loop) {
-      if (value < minValue) value = maxValue;
-      else if (value > maxValue) value = minValue;
-    } else {
-      value = std::max(minValue, std::min(maxValue, value));
-    }
-
-    params.putInt(key, value);
-    refresh();
-    emit buttonPressed();
-    emit valueChanged(value);
+    toggle.hide();
   }
 
-  void refresh() {
-    value = params.getInt(key);
-
-    QString text;
-    auto it = valueLabelMappings.find(value);
-    if (division > 1) {
-      text = QString::number(value / (division * 1.0), 'g');
-    } else {
-      text = it != valueLabelMappings.end() ? it->second : QString::number(value);
-    }
-    if (!labelText.isEmpty()) {
-      text += labelText;
-    }
-    valueLabel->setText(text);
-    valueLabel->setStyleSheet("QLabel { color: #E0E879; }");
+  void restartTimer() {
+    countdownTimer->stop();
+    countdownTimer->start();
   }
 
-  void updateControl(int newMinValue, int newMaxValue, const QString &newLabel, int newDivision = 1) {
-    minValue = newMinValue;
-    maxValue = newMaxValue;
-    labelText = newLabel;
-    division = newDivision;
+  void handleTimeout() {
+    previousValue = value;
   }
-
-  void showEvent(QShowEvent *event) override {
-    refresh();
-  }
-
-signals:
-  void buttonPressed();
-  void valueChanged(int value);
-
-private:
-  bool loop;
-  int division;
-  int maxValue;
-  int minValue;
-  int value;
-  QLabel *valueLabel;
-  QString labelText;
-  std::map<int, QString> valueLabelMappings;
-  std::string key;
-  Params params;
-
-  QPushButton *createButton(const QString &text, QWidget *parent) {
-    QPushButton *button = new QPushButton(text, parent);
-    button->setFixedSize(150, 100);
-    button->setAutoRepeat(true);
-    button->setAutoRepeatInterval(150);
-    button->setStyleSheet(R"(
-      QPushButton {
-        border-radius: 50px;
-        font-size: 50px;
-        font-weight: 500;
-        height: 100px;
-        padding: 0 25 0 25;
-        color: #E4E4E4;
-        background-color: #393939;
-      }
-      QPushButton:pressed {
-        background-color: #4a4a4a;
-      }
-    )");
-    return button;
-  }
-};
-
-class FrogPilotParamValueControlFloat : public ParamControl {
-  Q_OBJECT
-
-public:
-  FrogPilotParamValueControlFloat(const QString &param, const QString &title, const QString &desc, const QString &icon,
-                    const float &minValue, const float &maxValue, const std::map<int, QString> &valueLabels,
-                    QWidget *parent = nullptr, const bool &loop = true, const QString &label = "", const float &division = 1.0f)
-    : ParamControl(param, title, desc, icon, parent),
-      minValue(minValue), maxValue(maxValue), valueLabelMappings(valueLabels), loop(loop), labelText(label), division(division) {
-        key = param.toStdString();
-
-        valueLabel = new QLabel(this);
-        hlayout->addWidget(valueLabel);
-
-        QPushButton *decrementButton = createButton("-", this);
-        QPushButton *incrementButton = createButton("+", this);
-
-        hlayout->addWidget(decrementButton);
-        hlayout->addWidget(incrementButton);
-
-        connect(decrementButton, &QPushButton::clicked, this, [=]() {
-          updateValue(-1.0f);
-        });
-
-        connect(incrementButton, &QPushButton::clicked, this, [=]() {
-          updateValue(1.0f);
-        });
-
-        toggle.hide();
-      }
 
   void updateValue(float increment) {
-    value += increment * 0.1f;
+    if (std::fabs(previousValue - value) > 5.0f && std::fmod(value, 5.0f) == 0.0f) {
+      increment *= 5;
+    }
+    value += increment;
 
     if (loop) {
       if (value < minValue) value = maxValue;
@@ -430,7 +431,6 @@ public:
 
     params.putFloat(key, value);
     refresh();
-    emit buttonPressed();
     emit valueChanged(value);
   }
 
@@ -439,14 +439,21 @@ public:
 
     QString text;
     auto it = valueLabelMappings.find(value);
-    if (division > 0.1f) {
-      text = QString::number(value, 'f', 1);
+
+    if (division > 1.0f) {
+      text = QString::number(value / division, 'g', division >= 10.0f ? 4 : 3);
     } else {
-      text = it != valueLabelMappings.end() ? it->second : QString::number(value, 'f', 1);
+      if (it != valueLabelMappings.end()) {
+        text = it->second;
+      } else {
+        text = QString::number(value, 'g', 4);
+      }
     }
+
     if (!labelText.isEmpty()) {
       text += labelText;
     }
+
     valueLabel->setText(text);
     valueLabel->setStyleSheet("QLabel { color: #E0E879; }");
   }
@@ -460,10 +467,10 @@ public:
 
   void showEvent(QShowEvent *event) override {
     refresh();
+    previousValue = value;
   }
 
 signals:
-  void buttonPressed();
   void valueChanged(float value);
 
 private:
@@ -471,18 +478,21 @@ private:
   float division;
   float maxValue;
   float minValue;
+  float previousValue;
   float value;
   QLabel *valueLabel;
   QString labelText;
   std::map<int, QString> valueLabelMappings;
   std::string key;
   Params params;
+  QTimer *countdownTimer;
 
   QPushButton *createButton(const QString &text, QWidget *parent) {
     QPushButton *button = new QPushButton(text, parent);
     button->setFixedSize(150, 100);
     button->setAutoRepeat(true);
     button->setAutoRepeatInterval(150);
+    button->setAutoRepeatDelay(500);
     button->setStyleSheet(R"(
       QPushButton {
         border-radius: 50px;
@@ -498,25 +508,6 @@ private:
       }
     )");
     return button;
-  }
-};
-
-class FrogPilotDualParamControl : public QFrame {
-  Q_OBJECT
-
-public:
-  FrogPilotDualParamControl(ParamControl *control1, ParamControl *control2, QWidget *parent = nullptr, bool split=false)
-    : QFrame(parent) {
-    QHBoxLayout *hlayout = new QHBoxLayout(this);
-
-    control1->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
-    control1->setMaximumWidth(split ? 800 : 700);
-
-    control2->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-    control2->setMaximumWidth(800);
-
-    hlayout->addWidget(control1);
-    hlayout->addWidget(control2);
   }
 };
 
@@ -610,7 +601,6 @@ public:
 
     params.putInt(key, value);
     refresh();
-    emit buttonPressed();
     emit valueChanged(value);
   }
 
@@ -643,7 +633,6 @@ public:
   }
 
 signals:
-  void buttonPressed();
   void valueChanged(int value);
 
 private:
@@ -664,6 +653,7 @@ private:
     button->setFixedSize(150, 100);
     button->setAutoRepeat(true);
     button->setAutoRepeatInterval(150);
+    button->setAutoRepeatDelay(350);
     button->setStyleSheet(R"(
       QPushButton {
         border-radius: 50px;
@@ -681,5 +671,3 @@ private:
     return button;
   }
 };
-
-void setDefaultParams();

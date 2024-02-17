@@ -1,5 +1,4 @@
 #include "selfdrive/frogpilot/ui/control_settings.h"
-#include "selfdrive/ui/ui.h"
 
 FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPilotListWidget(parent) {
   const std::vector<std::tuple<QString, QString, QString, QString>> controlToggles {
@@ -19,15 +18,14 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
 
     {"FireTheBabysitter", "Fire the Babysitter", "Deactivate some of openpilot's 'Babysitter' protocols for more user autonomy.", "../frogpilot/assets/toggle_icons/icon_babysitter.png"},
     {"NoLogging", "Disable All Logging", "Turn off all data tracking to enhance privacy or reduce thermal load.\n\nWARNING: This action will prevent drive recording and data cannot be recovered!", ""},
-    {"MuteDoor", "Mute Door Open Alert", "Disable alerts for open doors.", ""},
-    {"MuteDM", "Mute Driver Monitoring", "Disable driver monitoring.", ""},
     {"MuteOverheated", "Mute Overheated System Alert", "Disable alerts for the device being overheated.", ""},
-    {"MuteSeatbelt", "Mute Seatbelt Unlatched Alert", "Disable alerts for unlatched seatbelts.", ""},
     {"OfflineMode", "Offline Mode", "Allow the device to be offline indefinitely.", ""},
 
     {"LateralTune", "Lateral Tuning", "Modify openpilot's steering behavior.", "../frogpilot/assets/toggle_icons/icon_lateral_tune.png"},
+    {"ForceAutoTune", "Force Auto Tune", "Forces comma's auto lateral tuning for unsupported vehicles.", ""},
     {"NNFF", "NNFF - Neural Network Feedforward", "Use Twilsonco's Neural Network Feedforward for enhanced precision in lateral control.", ""},
     {"SteerRatio", steerRatioStock != 0 ? QString("Steer Ratio (Default: %1)").arg(steerRatioStock, 0, 'f', 2) : "Steer Ratio", "Set a custom steer ratio for your vehicle controls.", ""},
+    {"UseLateralJerk", "Use Lateral Jerk", "Include steer torque necessary to achieve desired steer rate (lateral jerk).", ""},
 
     {"LongitudinalTune", "Longitudinal Tuning", "Modify openpilot's acceleration and braking behavior.", "../frogpilot/assets/toggle_icons/icon_longitudinal_tune.png"},
     {"AccelerationProfile", "Acceleration Profile", "Change the acceleration rate to be either sporty or eco-friendly.", ""},
@@ -38,11 +36,15 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
     {"Model", "Model Selector", "Choose your preferred openpilot model.", "../assets/offroad/icon_calibration.png"},
 
     {"MTSCEnabled", "Map Turn Speed Control", "Slow down for anticipated curves detected by your downloaded maps.", "../frogpilot/assets/toggle_icons/icon_speed_map.png"},
+    {"DisableMTSCSmoothing", "Disable MTSC UI Smoothing", "Disables the smoothing for the requested speed in the onroad UI.", ""},
+    {"MTSCCurvatureCheck", "Model Curvature Detection Failsafe", "Only trigger MTSC when the model detects a curve in the road. Purely used as a failsafe to prevent false positives. Leave this off if you never experience false positives.", ""},
+    {"MTSCLimit", "Speed Change Hard Cap", "Set a hard cap for MTSC. If MTSC requests a speed decrease greater than this value, it ignores the requested speed from MTSC. Purely used as a failsafe to prevent false positives. Leave this off if you never experience false positives.", ""},
     {"MTSCAggressiveness", "Turn Speed Aggressiveness", "Set turn speed aggressiveness. Higher values result in faster turns, lower values yield gentler turns.\n\nA change of +- 1% results in the velocity being raised or lowered by about 1 mph.", ""},
 
     {"NudgelessLaneChange", "Nudgeless Lane Change", "Enable lane changes without manual steering input.", "../frogpilot/assets/toggle_icons/icon_lane.png"},
     {"LaneChangeTime", "Lane Change Timer", "Specify a delay before executing a nudgeless lane change.", ""},
     {"LaneDetection", "Lane Detection", "Block nudgeless lane changes when a lane isn't detected.", ""},
+    {"LaneDetectionWidth", "Lane Detection Threshold", "Set the required lane width to be qualified as a lane.", ""},
     {"OneLaneChange", "One Lane Change Per Signal", "Limit to one nudgeless lane change per turn signal activation.", ""},
 
     {"QOLControls", "Quality of Life", "Miscellaneous quality of life changes to improve your overall openpilot experience.", "../frogpilot/assets/toggle_icons/quality_of_life.png"},
@@ -51,6 +53,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
     {"NavChill", "Navigate on Chill Mode", "Allows cars without longitudinal support to navigate. Allows navigation without experimental mode.", ""},
     {"PauseLateralOnSignal", "Pause Lateral On Turn Signal Below", "Temporarily disable lateral control during turn signal use below the set speed.", ""},
     {"ReverseCruise", "Reverse Cruise Increase", "Reverses the 'long press' functionality when increasing the max set speed. Useful to increase the max speed quickly.", ""},
+    {"SetSpeedLimit", "Set Speed to Current Speed Limit", "Sets your max speed to the current speed limit if one is populated when you initially enable openpilot.", ""},
     {"SetSpeedOffset", "Set Speed Offset", "Set an offset for your desired set speed.", ""},
 
     {"SpeedLimitController", "Speed Limit Controller", "Automatically adjust vehicle speed to match speed limits using 'Open Street Map's, 'Navigate On openpilot', or your car's dashboard (TSS2 Toyotas only).", "../assets/offroad/icon_speed_limit.png"},
@@ -64,6 +67,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
     {"TurnDesires", "Use Turn Desires", "Use turn desires for enhanced precision in turns below the minimum lane change speed.", "../assets/navigation/direction_continue_right.png"},
 
     {"VisionTurnControl", "Vision Turn Speed Controller", "Slow down for detected road curvature for smoother curve handling.", "../frogpilot/assets/toggle_icons/icon_vtc.png"},
+    {"DisableVTSCSmoothing", "Disable VTSC UI Smoothing", "Disables the smoothing for the requested speed in the onroad UI.", ""},
     {"CurveSensitivity", "Curve Detection Sensitivity", "Set curve detection sensitivity. Higher values prompt earlier responses, lower values lead to smoother but later reactions.", ""},
     {"TurnAggressiveness", "Turn Speed Aggressiveness", "Set turn speed aggressiveness. Higher values result in faster turns, lower values yield gentler turns.", ""},
   };
@@ -86,8 +90,10 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
           FrogPilotConfirmationDialog::toggleAlert("WARNING: This is very experimental and isn't guaranteed to work. If you run into any issues, please report it in the FrogPilot Discord!",
           "I understand the risks.", this);
         }
-        if (FrogPilotConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", this)) {
-          Hardware::reboot();
+        if (started) {
+          if (FrogPilotConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", this)) {
+            Hardware::reboot();
+          }
         }
       });
 
@@ -120,6 +126,10 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
       std::vector<QString> curveToggles{"CECurvesLead"};
       std::vector<QString> curveToggleNames{tr("With Lead")};
       toggle = new FrogPilotParamToggleControl(param, title, desc, icon, curveToggles, curveToggleNames);
+    } else if (param == "CENavigation") {
+      std::vector<QString> navigationToggles{"CENavigationIntersections", "CENavigationTurns", "CENavigationLead"};
+      std::vector<QString> navigationToggleNames{tr("Intersections"), tr("Turns"), tr("With Lead")};
+      toggle = new FrogPilotParamToggleControl(param, title, desc, icon, navigationToggles, navigationToggleNames);
     } else if (param == "CEStopLights") {
       std::vector<QString> stopLightToggles{"CEStopLightsLead"};
       std::vector<QString> stopLightToggleNames{tr("With Lead")};
@@ -142,12 +152,12 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
                                                                                     "Set the 'Aggressive' personality' following distance. "
                                                                                     "Represents seconds to follow behind the lead vehicle.\n\nStock: 1.25 seconds.",
                                                                                     "../frogpilot/assets/other_images/aggressive.png",
-                                                                                    10, 50, std::map<int, QString>(), this, false, " sec", 10);
+                                                                                    1, 5, std::map<int, QString>(), this, false, " sec", 1, 0.01);
       FrogPilotParamValueControl *aggressiveJerk = new FrogPilotParamValueControl("AggressiveJerk", " Jerk",
                                                                                   "Configure brake/gas pedal responsiveness for the 'Aggressive' personality. "
                                                                                   "Higher values yield a more 'relaxed' response.\n\nStock: 0.5.",
                                                                                   "",
-                                                                                  1, 50, std::map<int, QString>(), this, false, "", 10);
+                                                                                  0.01, 5, std::map<int, QString>(), this, false, "", 1, 0.01);
       aggressiveProfile = new FrogPilotDualParamControl(aggressiveFollow, aggressiveJerk, this, true);
       addItem(aggressiveProfile);
 
@@ -155,12 +165,12 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
                                                                                   "Set the 'Standard' personality following distance. "
                                                                                   "Represents seconds to follow behind the lead vehicle.\n\nStock: 1.45 seconds.",
                                                                                   "../frogpilot/assets/other_images/standard.png",
-                                                                                  10, 50, std::map<int, QString>(), this, false, " sec", 10);
+                                                                                  1, 5, std::map<int, QString>(), this, false, " sec", 1, 0.01);
       FrogPilotParamValueControl *standardJerk = new FrogPilotParamValueControl("StandardJerk", " Jerk",
                                                                                 "Adjust brake/gas pedal responsiveness for the 'Standard' personality. "
                                                                                 "Higher values yield a more 'relaxed' response.\n\nStock: 1.0.",
                                                                                 "",
-                                                                                1, 50, std::map<int, QString>(), this, false, "", 10);
+                                                                                0.01, 5, std::map<int, QString>(), this, false, "", 1, 0.01);
       standardProfile = new FrogPilotDualParamControl(standardFollow, standardJerk, this, true);
       addItem(standardProfile);
 
@@ -168,12 +178,12 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
                                                                                  "Set the 'Relaxed' personality following distance. "
                                                                                  "Represents seconds to follow behind the lead vehicle.\n\nStock: 1.75 seconds.",
                                                                                  "../frogpilot/assets/other_images/relaxed.png",
-                                                                                 10, 50, std::map<int, QString>(), this, false, " sec", 10);
+                                                                                 1, 5, std::map<int, QString>(), this, false, " sec", 1, 0.01);
       FrogPilotParamValueControl *relaxedJerk = new FrogPilotParamValueControl("RelaxedJerk", " Jerk",
                                                                                "Set brake/gas pedal responsiveness for the 'Relaxed' personality. "
                                                                                "Higher values yield a more 'relaxed' response.\n\nStock: 1.0.",
-                                                                               "", 1, 50,
-                                                                               std::map<int, QString>(), this, false, "", 10);
+                                                                               "",
+                                                                               0.01, 5, std::map<int, QString>(), this, false, "", 1, 0.01);
       relaxedProfile = new FrogPilotDualParamControl(relaxedFollow, relaxedJerk, this, true);
       addItem(relaxedProfile);
 
@@ -209,7 +219,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
       });
       toggle = lateralTuneToggle;
     } else if (param == "SteerRatio") {
-      toggle = new FrogPilotParamValueControlFloat(param, title, desc, icon, steerRatioStock * 0.75, steerRatioStock * 1.25, std::map<int, QString>(), this, false, "", 10.0);
+      toggle = new FrogPilotParamValueControl(param, title, desc, icon, steerRatioStock * 0.75, steerRatioStock * 1.25, std::map<int, QString>(), this, false, "", 1, 0.01);
 
     } else if (param == "LongitudinalTune") {
       FrogPilotParamManageControl *longitudinalTuneToggle = new FrogPilotParamManageControl(param, title, desc, icon, this);
@@ -236,7 +246,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
 
     } else if (param == "Model") {
       modelSelectorButton = new FrogPilotButtonIconControl(title, tr("SELECT"), desc, icon);
-      QStringList models = {"Los Angeles (Default)"};
+      QStringList models = {"Los Angeles (Default)", "Certified Herbalist"};
       QObject::connect(modelSelectorButton, &FrogPilotButtonIconControl::clicked, this, [this, models]() {
         int currentModel = params.getInt("Model");
         QString currentModelLabel = models[currentModel];
@@ -265,6 +275,8 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
       toggle = mtscToggle;
     } else if (param == "MTSCAggressiveness") {
       toggle = new FrogPilotParamValueControl(param, title, desc, icon, 1, 200, std::map<int, QString>(), this, false, "%");
+    } else if (param == "MTSCLimit") {
+      toggle = new FrogPilotParamValueControl(param, title, desc, icon, 0, 99, std::map<int, QString>(), this, false, " mph");
 
     } else if (param == "QOLControls") {
       FrogPilotParamManageControl *qolToggle = new FrogPilotParamManageControl(param, title, desc, icon, this);
@@ -299,6 +311,8 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
         laneChangeTimeLabels[i] = i == 0 ? "Instant" : QString::number(i / 2.0) + " seconds";
       }
       toggle = new FrogPilotParamValueControl(param, title, desc, icon, 0, 10, laneChangeTimeLabels, this, false);
+    } else if (param == "LaneDetectionWidth") {
+      toggle = new FrogPilotParamValueControl(param, title, desc, icon, 0, 100, std::map<int, QString>(), this, false, " feet", 10);
 
     } else if (param == "SpeedLimitController") {
       FrogPilotParamManageControl *speedLimitControllerToggle = new FrogPilotParamManageControl(param, title, desc, icon, this);
@@ -395,7 +409,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
       updateToggles();
     });
 
-    QObject::connect(static_cast<FrogPilotParamValueControl*>(toggle), &FrogPilotParamValueControl::buttonPressed, [this]() {
+    QObject::connect(static_cast<FrogPilotParamValueControl*>(toggle), &FrogPilotParamValueControl::valueChanged, [this]() {
       updateToggles();
     });
 
@@ -408,38 +422,29 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
     });
   }
 
-  std::set<std::string> rebootKeys = {"AlwaysOnLateral", "FireTheBabysitter", "HigherBitrate", "NNFF", "MuteDM", "OfflineMode"};
+  std::set<std::string> rebootKeys = {"AlwaysOnLateral", "HigherBitrate", "NNFF", "UseLateralJerk"};
   for (const std::string &key : rebootKeys) {
-    QObject::connect(toggles[key], &ToggleControl::toggleFlipped, [this]() {
-      if (FrogPilotConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", this)) {
-        Hardware::reboot();
+    QObject::connect(toggles[key], &ToggleControl::toggleFlipped, [this, key]() {
+      if (started) {
+        if (FrogPilotConfirmationDialog::toggle("Reboot required to take effect.", "Reboot Now", this)) {
+          Hardware::reboot();
+        }
       }
     });
   }
-
-  conditionalExperimentalKeys = {"CECurves", "CECurvesLead", "CESlowerLead", "CENavigation", "CEStopLights", "CESignal"};
-  fireTheBabysitterKeys = {"NoLogging", "MuteDM", "MuteDoor", "MuteOverheated", "MuteSeatbelt", "OfflineMode"};
-  laneChangeKeys = {"LaneChangeTime", "LaneDetection", "OneLaneChange"};
-  lateralTuneKeys = {"NNFF", "SteerRatio"};
-  longitudinalTuneKeys = {"AccelerationProfile", "AggressiveAcceleration", "SmoothBraking", "StoppingDistance"};
-  mtscKeys = {"MTSCAggressiveness"};
-  qolKeys = {"DisableOnroadUploads", "HigherBitrate", "NavChill", "PauseLateralOnSignal", "ReverseCruise", "SetSpeedOffset"};
-  speedLimitControllerKeys = {"Offset1", "Offset2", "Offset3", "Offset4", "SLCFallback", "SLCOverride", "SLCPriority"};
-  visionTurnControlKeys = {"CurveSensitivity", "TurnAggressiveness"};
-
-  QObject::connect(uiState(), &UIState::offroadTransition, this, [this](bool offroad) {
-    if (!offroad) {
-      updateCarToggles();
-    }
-  });
 
   QObject::connect(device(), &Device::interactiveTimeout, this, &FrogPilotControlsPanel::hideSubToggles);
   QObject::connect(parent, &SettingsWindow::closeParentToggle, this, &FrogPilotControlsPanel::hideSubToggles);
   QObject::connect(parent, &SettingsWindow::updateMetric, this, &FrogPilotControlsPanel::updateMetric);
   QObject::connect(uiState(), &UIState::offroadTransition, this, &FrogPilotControlsPanel::updateCarToggles);
+  QObject::connect(uiState(), &UIState::uiUpdate, this, &FrogPilotControlsPanel::updateState);
 
   hideSubToggles();
   updateMetric();
+}
+
+void FrogPilotControlsPanel::updateState(const UIState &s) {
+  started = s.scene.started;
 }
 
 void FrogPilotControlsPanel::updateToggles() {
@@ -451,11 +456,30 @@ void FrogPilotControlsPanel::updateToggles() {
 }
 
 void FrogPilotControlsPanel::updateCarToggles() {
-  FrogPilotParamValueControlFloat *steerRatioToggle = static_cast<FrogPilotParamValueControlFloat*>(toggles["SteerRatio"]);
   steerRatioStock = params.getFloat("SteerRatioStock");
-  steerRatioToggle->setTitle(steerRatioStock != 0 ? QString("Steer Ratio (Default: %1)").arg(steerRatioStock, 0, 'f', 2) : QString("Steer Ratio"));
-  steerRatioToggle->updateControl(steerRatioStock * 0.75, steerRatioStock * 1.25, "", 10.0);
-  steerRatioToggle->refresh();
+
+  if (steerRatioStock == 0.0) {
+    QTimer *timer = new QTimer(this);
+    timer->setInterval(1000);
+    connect(timer, &QTimer::timeout, this, [this, timer]() {
+      steerRatioStock = params.getFloat("SteerRatioStock");
+      if (steerRatioStock != 0.0) {
+        timer->stop();
+        timer->deleteLater();
+
+        FrogPilotParamValueControl *steerRatioToggle = static_cast<FrogPilotParamValueControl*>(toggles["SteerRatio"]);
+        steerRatioToggle->setTitle(QString("Steer Ratio (Default: %1)").arg(steerRatioStock, 0, 'f', 2));
+        steerRatioToggle->updateControl(steerRatioStock * 0.75, steerRatioStock * 1.25, "", 0.01);
+        steerRatioToggle->refresh();
+      }
+    });
+    timer->start();
+  } else {
+    FrogPilotParamValueControl *steerRatioToggle = static_cast<FrogPilotParamValueControl*>(toggles["SteerRatio"]);
+    steerRatioToggle->setTitle(QString("Steer Ratio (Default: %1)").arg(steerRatioStock, 0, 'f', 2));
+    steerRatioToggle->updateControl(steerRatioStock * 0.75, steerRatioStock * 1.25, "", 0.01);
+    steerRatioToggle->refresh();
+  }
 }
 
 void FrogPilotControlsPanel::updateMetric() {
@@ -467,6 +491,8 @@ void FrogPilotControlsPanel::updateMetric() {
     double speedConversion = isMetric ? MILE_TO_KM : KM_TO_MILE;
     params.putIntNonBlocking("CESpeed", std::nearbyint(params.getInt("CESpeed") * speedConversion));
     params.putIntNonBlocking("CESpeedLead", std::nearbyint(params.getInt("CESpeedLead") * speedConversion));
+    params.putIntNonBlocking("MTSCLimit", std::nearbyint(params.getInt("MTSCLimit") * speedConversion));
+    params.putIntNonBlocking("LaneDetectionWidth", std::nearbyint(params.getInt("LaneDetectionWidth") * distanceConversion));
     params.putIntNonBlocking("Offset1", std::nearbyint(params.getInt("Offset1") * speedConversion));
     params.putIntNonBlocking("Offset2", std::nearbyint(params.getInt("Offset2") * speedConversion));
     params.putIntNonBlocking("Offset3", std::nearbyint(params.getInt("Offset3") * speedConversion));
@@ -476,6 +502,8 @@ void FrogPilotControlsPanel::updateMetric() {
     params.putIntNonBlocking("StoppingDistance", std::nearbyint(params.getInt("StoppingDistance") * distanceConversion));
   }
 
+  FrogPilotParamValueControl *laneWidthToggle = static_cast<FrogPilotParamValueControl*>(toggles["LaneDetectionWidth"]);
+  FrogPilotParamValueControl *mtscLimitToggle = static_cast<FrogPilotParamValueControl*>(toggles["MTSCLimit"]);
   FrogPilotParamValueControl *offset1Toggle = static_cast<FrogPilotParamValueControl*>(toggles["Offset1"]);
   FrogPilotParamValueControl *offset2Toggle = static_cast<FrogPilotParamValueControl*>(toggles["Offset2"]);
   FrogPilotParamValueControl *offset3Toggle = static_cast<FrogPilotParamValueControl*>(toggles["Offset3"]);
@@ -494,6 +522,9 @@ void FrogPilotControlsPanel::updateMetric() {
     offset2Toggle->setDescription("Set speed limit offset for limits between 35-54 kph.");
     offset3Toggle->setDescription("Set speed limit offset for limits between 55-64 kph.");
     offset4Toggle->setDescription("Set speed limit offset for limits between 65-99 kph.");
+
+    laneWidthToggle->updateControl(0, 30, " meters", 10);
+    mtscLimitToggle->updateControl(0, 99, " kph");
 
     offset1Toggle->updateControl(0, 99, " kph");
     offset2Toggle->updateControl(0, 99, " kph");
@@ -514,6 +545,9 @@ void FrogPilotControlsPanel::updateMetric() {
     offset3Toggle->setDescription("Set speed limit offset for limits between 55-64 mph.");
     offset4Toggle->setDescription("Set speed limit offset for limits between 65-99 mph.");
 
+    laneWidthToggle->updateControl(0, 100, " feet", 10);
+    mtscLimitToggle->updateControl(0, 99, " mph");
+
     offset1Toggle->updateControl(0, 99, " mph");
     offset2Toggle->updateControl(0, 99, " mph");
     offset3Toggle->updateControl(0, 99, " mph");
@@ -524,6 +558,8 @@ void FrogPilotControlsPanel::updateMetric() {
     stoppingDistanceToggle->updateControl(0, 10, " feet");
   }
 
+  laneWidthToggle->refresh();
+  mtscLimitToggle->refresh();
   offset1Toggle->refresh();
   offset2Toggle->refresh();
   offset3Toggle->refresh();
@@ -544,7 +580,7 @@ void FrogPilotControlsPanel::parentToggleClicked() {
   standardProfile->setVisible(false);
   relaxedProfile->setVisible(false);
 
-  this->openParentToggle();
+  openParentToggle();
 }
 
 void FrogPilotControlsPanel::hideSubToggles() {
@@ -569,7 +605,7 @@ void FrogPilotControlsPanel::hideSubToggles() {
     toggle->setVisible(!subToggles);
   }
 
-  this->closeParentToggle();
+  closeParentToggle();
 }
 
 void FrogPilotControlsPanel::hideEvent(QHideEvent *event) {

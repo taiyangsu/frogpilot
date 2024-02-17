@@ -214,7 +214,7 @@ class RouteEngine:
         self.route_geometry = []
 
         # Iterate through the steps in self.route to find "stop_sign" and "traffic_light"
-        if self.conditional_navigation:
+        if self.conditional_navigation_intersections:
           self.stop_signal = []
           self.stop_coord = []
           for step in self.route:
@@ -397,7 +397,7 @@ class RouteEngine:
 
         # Calculate the distance to the stopSign or trafficLight
         distance_to_condition = self.last_position.distance_to(self.stop_coord[index])
-        if distance_to_condition < max((seconds_to_stop * v_ego), 25):
+        if self.conditional_navigation_intersections and distance_to_condition < max((seconds_to_stop * v_ego), 25):
           self.nav_condition = True
         else:
           self.nav_condition = False  # Not approaching any stopSign or trafficLight
@@ -405,15 +405,18 @@ class RouteEngine:
         self.nav_condition = False  # No more stopSign or trafficLight in array
 
       # Determine if NoO distance to maneuver is upcoming
-      if distance_to_maneuver_along_geometry < max((seconds_to_stop * v_ego), 25):
+      if self.conditional_navigation_turns and distance_to_maneuver_along_geometry < max((seconds_to_stop * v_ego), 25):
         self.noo_condition = True
       else:
         self.noo_condition = False  # Not approaching any NoO maneuver
+    else:
+      self.nav_condition = False
+      self.noo_condition = False
 
     frogpilot_plan_send = messaging.new_message('frogpilotNavigation')
     frogpilotNavigation = frogpilot_plan_send.frogpilotNavigation
 
-    frogpilotNavigation.navigationConditionMet = self.conditional_navigation and (self.nav_condition or self.noo_condition)
+    frogpilotNavigation.navigationConditionMet = self.nav_condition or self.noo_condition
 
     self.pm.send('frogpilotNavigation', frogpilot_plan_send)
 
@@ -467,6 +470,8 @@ class RouteEngine:
 
   def update_frogpilot_params(self):
     self.conditional_navigation = self.params.get_bool("CENavigation")
+    self.conditional_navigation_intersections = self.params.get_bool("CENavigationIntersections") and self.conditional_navigation
+    self.conditional_navigation_turns = self.params.get_bool("CENavigationTurns") and self.conditional_navigation
 
 def main():
   pm = messaging.PubMaster(['navInstruction', 'navRoute', 'frogpilotNavigation'])

@@ -4,6 +4,7 @@
 
 #include "selfdrive/frogpilot/ui/frogpilot_ui_functions.h"
 #include "selfdrive/ui/qt/offroad/settings.h"
+#include "selfdrive/ui/ui.h"
 
 class FrogPilotVisualsPanel : public FrogPilotListWidget {
   Q_OBJECT
@@ -20,12 +21,15 @@ private:
   void hideSubToggles();
   void parentToggleClicked();
   void updateMetric();
+  void updateState(const UIState &s);
   void updateToggles();
 
-  std::set<QString> customOnroadUIKeys;
-  std::set<QString> customThemeKeys;
-  std::set<QString> modelUIKeys;
-  std::set<QString> qolKeys;
+  std::set<QString> alertVolumeControlKeys = {"EngageVolume", "DisengageVolume", "RefuseVolume", "PromptVolume", "PromptDistractedVolume", "WarningSoftVolume", "WarningImmediateVolume"};
+  std::set<QString> customAlertsKeys = {"GreenLightAlert", "LeadDepartingAlert", "LoudBlindspotAlert", "SpeedLimitChangedAlert"};
+  std::set<QString> customOnroadUIKeys = {"AccelerationPath", "AdjacentPath", "BlindSpotPath", "FPSCounter", "LeadInfo", "RoadNameUI", "UseVienna"};
+  std::set<QString> customThemeKeys = {"CustomColors", "CustomIcons", "CustomSignals", "CustomSounds"};
+  std::set<QString> modelUIKeys = {"LaneLinesWidth", "PathEdgeWidth", "PathWidth", "RoadEdgesWidth", "UnlimitedLength"};
+  std::set<QString> qolKeys = {"DriveStats", "FullMap", "HideSpeed", "ShowSLCOffset", "WheelSpeed"};
 
   std::map<std::string, ParamControl*> toggles;
 
@@ -33,4 +37,5 @@ private:
   Params paramsMemory{"/dev/shm/params"};
 
   bool isMetric = params.getBool("IsMetric");
+  bool started = false;
 };

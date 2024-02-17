@@ -10,6 +10,7 @@ THNEED_FILE = os.path.join(DESTINATION_PATH, "supercombo.thneed")
 
 MODEL_NAMES = {
   0: "los-angeles",
+  1: "certified-herbalist",
 }
 
 def set_model_list(params):
@@ -24,8 +25,6 @@ def set_model_list(params):
     # Reset the selected model if the model list changed
     params.put_int("Model", 0)
     params.put("ModelList", model_list)
-    params.remove("CalibrationParams")
-    params.remove("LiveTorqueParameters")
 
 def onnx_already_set(path1, path2):
   """Check if the two files are identical by comparing their SHA-256 hashes."""
@@ -38,10 +37,7 @@ def set_model(params):
 
   # Get the corresponding supercombo variant name
   selected_model = params.get_int("Model")
-  if selected_model == 0:
-    return
-
-  variant = MODEL_NAMES.get(selected_model, MODEL_NAMES[0])
+  variant = MODEL_NAMES.get(selected_model)
 
   # Copy the selected model to the models folder
   onnx_path = os.path.join(MODELS_SOURCE, f"{variant}.onnx")

@@ -4,7 +4,7 @@ import numpy as np
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import clip
 from openpilot.selfdrive.controls.lib.desire_helper import LANE_CHANGE_SPEED_MIN
-from openpilot.selfdrive.controls.lib.longitudinal_planner import A_CRUISE_MIN, A_CRUISE_MAX_BP, get_max_accel
+from openpilot.selfdrive.controls.lib.longitudinal_planner import A_CRUISE_MIN, get_max_accel
 
 from openpilot.selfdrive.frogpilot.functions.frogpilot_functions import FrogPilotFunctions
 
@@ -19,12 +19,14 @@ TARGET_LAT_A = 1.9  # m/s^2
 class FrogPilotPlanner:
   def __init__(self, params, params_memory):
     self.cem = ConditionalExperimentalMode()
+    self.fpf = FrogPilotFunctions()
     self.mtsc = MapTurnSpeedController()
 
     self.override_slc = False
 
     self.overridden_speed = 0
     self.mtsc_target = 0
+    self.road_curvature = 0
     self.slc_target = 0
     self.v_cruise = 0
     self.vtsc_target = 0
@@ -36,25 +38,24 @@ class FrogPilotPlanner:
   def update(self, carState, controlsState, modelData, mpc, sm, v_cruise, v_ego):
     enabled = controlsState.enabled
 
-    road_curvature = FrogPilotFunctions.road_curvature(modelData, v_ego)
-
     # Acceleration profiles
     v_cruise_changed = (self.mtsc_target or self.vtsc_target) + 1 < v_cruise  # Use stock acceleration profiles to handle MTSC/VTSC more precisely
     if v_cruise_changed:
       self.accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
     elif self.acceleration_profile == 1:
-      self.accel_limits = [FrogPilotFunctions.get_min_accel_eco(v_ego), FrogPilotFunctions.get_max_accel_eco(v_ego)]
+      self.accel_limits = [self.fpf.get_min_accel_eco(v_ego), self.fpf.get_max_accel_eco(v_ego)]
     elif self.acceleration_profile in (2, 3):
-      self.accel_limits = [FrogPilotFunctions.get_min_accel_sport(v_ego), FrogPilotFunctions.get_max_accel_sport(v_ego)]
+      self.accel_limits = [self.fpf.get_min_accel_sport(v_ego), self.fpf.get_max_accel_sport(v_ego)]
     else:
       self.accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
 
     # Conditional Experimental Mode
     if self.conditional_experimental_mode and enabled:
-      self.cem.update(carState, sm['frogpilotNavigation'], modelData, mpc, sm['radarState'], road_curvature, carState.standstill, v_ego)
+      self.cem.update(carState, sm['frogpilotNavigation'], modelData, mpc, sm['radarState'], self.road_curvature, carState.standstill, v_ego)
 
+    # Update the max allowed speed
     if v_ego > MIN_TARGET_V:
-      self.v_cruise = self.update_v_cruise(carState, controlsState, modelData, enabled, v_cruise, v_ego)
+      self.v_cruise = self.update_v_cruise(carState, controlsState, enabled, modelData, v_cruise, v_ego)
     else:
       self.mtsc_target = v_cruise
       self.vtsc_target = v_cruise
@@ -63,16 +64,23 @@ class FrogPilotPlanner:
     # Lane detection
     check_lane_width = self.adjacent_lanes or self.blind_spot_path or self.lane_detection
     if check_lane_width and v_ego >= LANE_CHANGE_SPEED_MIN:
-      self.lane_width_left = float(FrogPilotFunctions.calculate_lane_width(modelData.laneLines[0], modelData.laneLines[1], modelData.roadEdges[0]))
-      self.lane_width_right = float(FrogPilotFunctions.calculate_lane_width(modelData.laneLines[3], modelData.laneLines[2], modelData.roadEdges[1]))
+      self.lane_width_left = float(self.fpf.calculate_lane_width(modelData.laneLines[0], modelData.laneLines[1], modelData.roadEdges[0]))
+      self.lane_width_right = float(self.fpf.calculate_lane_width(modelData.laneLines[3], modelData.laneLines[2], modelData.roadEdges[1]))
     else:
       self.lane_width_left = 0
       self.lane_width_right = 0
 
-  def update_v_cruise(self, carState, controlsState, modelData, enabled, v_cruise, v_ego):
+    # Update the current road curvature
+    self.road_curvature = self.fpf.road_curvature(modelData, v_ego)
+
+  def update_v_cruise(self, carState, controlsState, enabled, modelData, v_cruise, v_ego):
     # Pfeiferj's Map Turn Speed Controller
-    if self.map_turn_speed_controller:
+    if self.map_turn_speed_controller and enabled:
       self.mtsc_target = np.clip(self.mtsc.target_speed(v_ego, carState.aEgo), MIN_TARGET_V, v_cruise)
+      if self.mtsc_curvature_check and self.road_curvature < 1.0:
+        self.mtsc_target = v_cruise
+      if v_ego - self.mtsc_limit > self.mtsc_target:
+        self.mtsc_target = v_cruise
     else:
       self.mtsc_target = v_cruise
 
@@ -101,6 +109,7 @@ class FrogPilotPlanner:
         elif self.speed_limit_controller_override == 2:
           self.overridden_speed = v_cruise
           self.slc_target = v_cruise
+
       if self.slc_target == 0:
         self.slc_target = v_cruise
     else:
@@ -108,7 +117,7 @@ class FrogPilotPlanner:
       self.slc_target = v_cruise
 
     # Pfeiferj's Vision Turn Controller
-    if self.vision_turn_controller:
+    if self.vision_turn_controller and enabled:
       # Set the curve sensitivity
       orientation_rate = np.array(np.abs(modelData.orientationRate.z)) * self.curve_sensitivity
       velocity = np.array(modelData.velocity.x)
@@ -167,18 +176,16 @@ class FrogPilotPlanner:
       params.put_bool("ExperimentalMode", True)
 
     self.custom_personalities = params.get_bool("CustomPersonalities")
-    self.aggressive_follow = params.get_int("AggressiveFollow") / 10
-    self.standard_follow = params.get_int("StandardFollow") / 10
-    self.relaxed_follow = params.get_int("RelaxedFollow") / 10
-    self.aggressive_jerk = params.get_int("AggressiveJerk") / 10
-    self.standard_jerk = params.get_int("StandardJerk") / 10
-    self.relaxed_jerk = params.get_int("RelaxedJerk") / 10
+    self.aggressive_follow = params.get_float("AggressiveFollow")
+    self.standard_follow = params.get_float("StandardFollow")
+    self.relaxed_follow = params.get_float("RelaxedFollow")
+    self.aggressive_jerk = params.get_float("AggressiveJerk")
+    self.standard_jerk = params.get_float("StandardJerk")
+    self.relaxed_jerk = params.get_float("RelaxedJerk")
 
     custom_ui = params.get_bool("CustomUI")
     self.adjacent_lanes = params.get_bool("AdjacentPath") and custom_ui
     self.blind_spot_path = params.get_bool("BlindSpotPath") and custom_ui
-
-    lateral_tune = params.get_bool("LateralTune")
 
     self.lane_detection = params.get_bool("LaneDetection") and params.get_bool("NudgelessLaneChange")
 
@@ -190,6 +197,8 @@ class FrogPilotPlanner:
 
     self.map_turn_speed_controller = params.get_bool("MTSCEnabled")
     if self.map_turn_speed_controller:
+      self.mtsc_curvature_check = params.get_bool("MTSCCurvatureCheck")
+      self.mtsc_limit = params.get_float("MTSCLimit") * (CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS)
       params_memory.put_float("MapTargetLatA", 2 * (params.get_int("MTSCAggressiveness") / 100))
 
     self.speed_limit_controller = params.get_bool("SpeedLimitController")

@@ -131,7 +131,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   list->addItem(tetheringToggle);
   QObject::connect(tetheringToggle, &ToggleControl::toggleFlipped, this, &AdvancedNetworking::toggleTethering);
   if (params.getBool("TetheringEnabled")) {
-    tetheringToggle->setVisualOn();
+    tetheringToggle->refresh();
     uiState()->scene.tethering_enabled = true;
   }
 

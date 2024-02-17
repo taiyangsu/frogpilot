@@ -11,9 +11,6 @@ from openpilot.selfdrive.car.interfaces import CarStateBase
 from openpilot.selfdrive.car.toyota.values import ToyotaFlags, CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR, \
                                                   TSS2_CAR, RADAR_ACC_CAR, EPS_SCALE, UNSUPPORTED_DSU_CAR
 
-from openpilot.selfdrive.frogpilot.functions.frogpilot_functions import FrogPilotFunctions
-from openpilot.selfdrive.frogpilot.functions.speed_limit_controller import SpeedLimitController
-
 SteerControlType = car.CarParams.SteerControlType
 
 # These steering fault definitions seem to be common across LKA (torque) and LTA (angle):
@@ -50,6 +47,7 @@ class CarState(CarStateBase):
     self.lkas_hud = {}
 
     # FrogPilot variables
+    self.profile_restored = False
     self.zss_compute = False
     self.zss_cruise_active_last = False
 
@@ -85,7 +83,7 @@ class CarState(CarStateBase):
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.vEgoCluster = ret.vEgo * 1.015  # minimum of all the cars
 
-    ret.standstill = ret.vEgoRaw == 0
+    ret.standstill = abs(ret.vEgoRaw) < 1e-3
 
     ret.steeringAngleDeg = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"] + cp.vl["STEER_ANGLE_SENSOR"]["STEER_FRACTION"]
     ret.steeringRateDeg = cp.vl["STEER_ANGLE_SENSOR"]["STEER_RATE"]
@@ -160,6 +158,7 @@ class CarState(CarStateBase):
       ret.cruiseState.standstill = self.pcm_acc_status == 7
     ret.cruiseState.enabled = bool(cp.vl["PCM_CRUISE"]["CRUISE_ACTIVE"])
     ret.cruiseState.nonAdaptive = cp.vl["PCM_CRUISE"]["CRUISE_STATE"] in (1, 2, 3, 4, 5, 6)
+    self.pcm_neutral_force = cp.vl["PCM_CRUISE"]["NEUTRAL_FORCE"]
 
     ret.genericToggle = bool(cp.vl["LIGHT_STALK"]["AUTO_HIGH_BEAM"])
     ret.espDisabled = cp.vl["ESP_CONTROL"]["TC_DISABLED"] != 0
@@ -180,17 +179,16 @@ class CarState(CarStateBase):
       self.personality_profile = cp.vl["PCM_CRUISE_SM"]["DISTANCE_LINES"] - 1
 
       # Sync with the onroad UI button
-      if self.param_memory.get_bool("PersonalityChangedViaUI"):
+      if self.fpf.personality_changed_via_ui:
         self.profile_restored = False
-        self.previous_personality_profile = self.param.get_int("LongitudinalPersonality")
-        self.param_memory.put_bool("PersonalityChangedViaUI", False)
+        self.previous_personality_profile = self.fpf.current_personality
+        self.fpf.reset_personality_changed_param()
 
       # Set personality to the previous drive's personality or when the user changes it via the UI
       if self.personality_profile == self.previous_personality_profile:
         self.profile_restored = True
       if not self.profile_restored:
-        self.distance_previously_pressed = not self.distance_previously_pressed
-        self.distance_button = not self.distance_previously_pressed
+        self.distance_button = not self.distance_button
 
       if self.profile_restored:
         if self.CP.flags & ToyotaFlags.SMART_DSU:
@@ -200,8 +198,7 @@ class CarState(CarStateBase):
           self.distance_button = cp_acc.vl["ACC_CONTROL"]["DISTANCE"]
 
         if self.personality_profile != self.previous_personality_profile and self.personality_profile >= 0:
-          self.param.put_int("LongitudinalPersonality", self.personality_profile)
-          self.param_memory.put_bool("PersonalityChangedViaWheel", True)
+          self.fpf.distance_button_function(self.personality_profile)
           self.previous_personality_profile = self.personality_profile
 
     # Toggle Experimental Mode from steering wheel function
@@ -210,14 +207,14 @@ class CarState(CarStateBase):
       lkas_pressed = any(self.lkas_hud.get(key) == 1 for key in message_keys)
 
       if lkas_pressed and not self.lkas_previously_pressed:
-        FrogPilotFunctions.lkas_button_function(conditional_experimental_mode)
+        self.fpf.lkas_button_function(conditional_experimental_mode)
       self.lkas_previously_pressed = lkas_pressed
 
     # Traffic signals for Speed Limit Controller - Credit goes to the DragonPilot team!
     self.update_traffic_signals(cp_cam)
-    SpeedLimitController.load_state()
-    SpeedLimitController.car_speed_limit = self.calculate_speed_limit()
-    SpeedLimitController.write_car_state()
+    self.slc.load_state()
+    self.slc.car_speed_limit = self.calculate_speed_limit()
+    self.slc.write_car_state()
 
     # ZSS Support - Credit goes to the DragonPilot team!
     if self.CP.flags & ToyotaFlags.ZSS and self.zss_threshold_count < ZSS_THRESHOLD_COUNT:

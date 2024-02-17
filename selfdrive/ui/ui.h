@@ -77,7 +77,12 @@ struct Alert {
       const int controls_missing = (nanos_since_boot() - sm.rcv_time("controlsState")) / 1e9;
 
       // Handle controls timeout
-      if (controls_frame < started_frame) {
+      if (std::ifstream("/data/community/crashes/error.txt")) {
+        alert = {"openpilot crashed", "Please post the error log in the FrogPilot Discord!",
+                 "controlsWaiting", cereal::ControlsState::AlertSize::MID,
+                 cereal::ControlsState::AlertStatus::NORMAL,
+                 Params().getBool("RandomEvents") ? AudibleAlert::FART : AudibleAlert::NONE};
+      } else if (controls_frame < started_frame) {
         // car is started, but controlsState hasn't been seen at all
         alert = {"openpilot Unavailable", "Waiting for controls to start",
                  "controlsWaiting", cereal::ControlsState::AlertSize::MID,
@@ -180,8 +185,8 @@ typedef struct UIScene {
   bool blind_spot_right;
   bool compass;
   bool conditional_experimental;
-  bool custom_onroad_ui;
-  bool custom_theme;
+  bool disable_smoothing_mtsc;
+  bool disable_smoothing_vtsc;
   bool driver_camera;
   bool enabled;
   bool experimental_mode;
@@ -194,11 +199,8 @@ typedef struct UIScene {
   bool lead_info;
   bool map_open;
   bool model_ui;
-  bool mute_dm;
   bool numerical_temp;
   bool personalities_via_screen;
-  bool quality_of_life_controls;
-  bool quality_of_life_visuals;
   bool random_events;
   bool reverse_cruise;
   bool reverse_cruise_ui;
@@ -216,6 +218,8 @@ typedef struct UIScene {
   bool use_si;
   bool use_vienna_slc_sign;
   bool vtsc_controlling_curve;
+  bool wheel_speed;
+
   float adjusted_cruise;
   float lane_line_width;
   float lane_width_left;
@@ -226,6 +230,7 @@ typedef struct UIScene {
   float speed_limit;
   float speed_limit_offset;
   float speed_limit_overridden_speed;
+
   int bearing_deg;
   int camera_view;
   int conditional_speed;
@@ -242,6 +247,7 @@ typedef struct UIScene {
   int steering_angle_deg;
   int stopped_equivalence;
   int wheel_icon;
+
   QPolygonF track_adjacent_vertices[6];
   QPolygonF track_edge_vertices;
 
@@ -272,6 +278,8 @@ public:
 
   QTransform car_space_transform;
 
+  WifiManager *wifi = nullptr;
+
 signals:
   void uiUpdate(const UIState &s);
   void offroadTransition(bool offroad);
@@ -285,8 +293,6 @@ private:
   QTimer *timer;
   bool started_prev = false;
   PrimeType prime_type = PrimeType::UNKNOWN;
-
-  WifiManager *wifi = nullptr;
 };
 
 UIState *uiState();

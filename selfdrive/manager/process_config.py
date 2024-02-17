@@ -9,53 +9,50 @@ WIFI = log.DeviceState.NetworkType.wifi
 
 WEBCAM = os.getenv("USE_WEBCAM") is not None
 
-def driverview(started: bool, params: Params, CP: car.CarParams) -> bool:
+def driverview(started: bool, params: Params, params_memory: Params, CP: car.CarParams) -> bool:
   return started or params.get_bool("IsDriverViewEnabled")
 
-def notcar(started: bool, params: Params, CP: car.CarParams) -> bool:
+def notcar(started: bool, params: Params, params_memory: Params, CP: car.CarParams) -> bool:
   return started and CP.notCar
 
-def iscar(started: bool, params: Params, CP: car.CarParams) -> bool:
+def iscar(started: bool, params: Params, params_memory: Params, CP: car.CarParams) -> bool:
   return started and not CP.notCar
 
-def logging(started, params, CP: car.CarParams) -> bool:
+def logging(started, params, params_memory, CP: car.CarParams) -> bool:
   run = (not CP.notCar) or not params.get_bool("DisableLogging")
   return started and run
 
 def ublox_available() -> bool:
   return os.path.exists('/dev/ttyHS0') and not os.path.exists('/persist/comma/use-quectel-gps')
 
-def ublox(started, params, CP: car.CarParams) -> bool:
+def ublox(started, params, params_memory, CP: car.CarParams) -> bool:
   use_ublox = ublox_available()
   if use_ublox != params.get_bool("UbloxAvailable"):
     params.put_bool("UbloxAvailable", use_ublox)
   return started and use_ublox
 
-def qcomgps(started, params, CP: car.CarParams) -> bool:
+def qcomgps(started, params, params_memory, CP: car.CarParams) -> bool:
   return started and not ublox_available()
 
-def always_run(started, params, CP: car.CarParams) -> bool:
+def always_run(started, params, params_memory, CP: car.CarParams) -> bool:
   return True
 
-def only_onroad(started: bool, params, CP: car.CarParams) -> bool:
+def only_onroad(started: bool, params, params_memory, CP: car.CarParams) -> bool:
   return started
 
-def only_offroad(started, params, CP: car.CarParams) -> bool:
+def only_offroad(started, params, params_memor, CP: car.CarParams) -> bool:
   return not started
 
 # FrogPilot functions
-def allow_uploads(started, params, CP: car.CarParams) -> bool:
+def allow_uploads(started, params, params_memory, CP: car.CarParams) -> bool:
   wifi_connected = HARDWARE.get_network_type() == WIFI and not started
-  return wifi_connected if params.get_bool("DisableOnroadUploads") else enable_logging(started, params, CP)
+  return wifi_connected if params_memory.get_bool("DisableOnroadUploads") else enable_logging(started, params, params_memory, CP)
 
-def enable_dm(started, params, CP: car.CarParams) -> bool:
-  return driverview(started, params, CP) and not (params.get_bool("FireTheBabysitter") and params.get_bool("MuteDM"))
+def enable_logging(started, params, params_memory, CP: car.CarParams) -> bool:
+  return not (params_memory.get_bool("FireTheBabysitter") and params_memory.get_bool("NoLogging"))
 
-def enable_logging(started, params, CP: car.CarParams) -> bool:
-  return not (params.get_bool("FireTheBabysitter") and params.get_bool("NoLogging"))
-
-def osm(started, params, CP: car.CarParams) -> bool:
-  return params.get_bool("RoadNameUI") or params.get_bool("SpeedLimitController")
+def osm(started, params, params_memory, CP: car.CarParams) -> bool:
+  return params_memory.get_bool("RoadNameUI") or params_memory.get_bool("SpeedLimitController")
 
 procs = [
   DaemonProcess("manage_athenad", "selfdrive.athena.manage_athenad", "AthenadPid"),
@@ -67,7 +64,7 @@ procs = [
   PythonProcess("micd", "system.micd", iscar),
   PythonProcess("timed", "system.timed", always_run, enabled=not PC),
 
-  PythonProcess("dmonitoringmodeld", "selfdrive.modeld.dmonitoringmodeld", enable_dm, enabled=(not PC or WEBCAM)),
+  PythonProcess("dmonitoringmodeld", "selfdrive.modeld.dmonitoringmodeld", driverview, enabled=(not PC or WEBCAM)),
   NativeProcess("encoderd", "system/loggerd", ["./encoderd"], only_onroad),
   NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], notcar),
   NativeProcess("loggerd", "system/loggerd", ["./loggerd"], (enable_logging and logging)),
@@ -83,7 +80,7 @@ procs = [
   PythonProcess("torqued", "selfdrive.locationd.torqued", only_onroad),
   PythonProcess("controlsd", "selfdrive.controls.controlsd", only_onroad),
   PythonProcess("deleter", "system.loggerd.deleter", always_run),
-  PythonProcess("dmonitoringd", "selfdrive.monitoring.dmonitoringd", enable_dm, enabled=(not PC or WEBCAM)),
+  PythonProcess("dmonitoringd", "selfdrive.monitoring.dmonitoringd", driverview, enabled=(not PC or WEBCAM)),
   PythonProcess("qcomgpsd", "system.qcomgpsd.qcomgpsd", qcomgps, enabled=TICI),
   PythonProcess("navd", "selfdrive.navd.navd", only_onroad),
   PythonProcess("pandad", "selfdrive.boardd.pandad", always_run),
