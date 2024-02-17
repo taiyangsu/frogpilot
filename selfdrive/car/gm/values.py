@@ -113,6 +113,7 @@ class CAR(StrEnum):
   CT6_CC = "CADILLAC CT6 NO ACC"
   TRAILBLAZER_CC = "CHEVROLET TRAILBLAZER 2024 NO ACC"
   XT4 = "CADILLAC XT4 2023"
+  TRAX = "Chevrolet TRAX 2024"
 
 
 class Footnote(Enum):
