@@ -73,22 +73,32 @@ def footage():
   route_paths = fleet.all_routes()
   gifs = []
   for route_path in route_paths:
-    input_path = os.path.join(route_path, "---0/qcamera.ts")
-    output_path = os.path.join(route_path, "---0/preview.gif")
-    fleet.video_to_gif(input_path, output_path)
-    gifs.append(output_path)
-  return render_template("footage.html", rows=route_paths, gifs=gifs)
+    input_path = Paths.log_root() + route_path + "--0/qcamera.ts"
+    output_path = Paths.log_root() + route_path + "--0/preview.gif"
+    fleet.video_to_img(input_path, output_path)
+    gif_path = route_path + "--0/preview.gif"
+    gifs.append(gif_path)
+  zipped = zip(route_paths, gifs)  
+  return render_template("footage.html", zipped=zipped)
 
 @app.route("/preserved/")
 @app.route("/preserved")
 def preserved():
   query_type = "qcamera"
-  links = ""
+  route_paths = []
+  gifs = []
   segments = fleet.preserved_routes()
   for segment in segments:
+    input_path = Paths.log_root() + segment + "/qcamera.ts"
+    output_path = Paths.log_root() + segment + "/preview.gif"
+    fleet.video_to_img(input_path, output_path)
     split_segment = segment.split("--")
-    links += f"<a href='footage/{split_segment[0]}--{split_segment[1]}?{split_segment[2]},{query_type}'>{segment}</a><br>"
-  return render_template("preserved.html", links=links)
+    route_paths.append(f"{split_segment[0]}--{split_segment[1]}?{split_segment[2]},{query_type}")
+    gif_path = segment + "/preview.gif"
+    gifs.append(gif_path)
+  
+  zipped = zip(route_paths, gifs, segments) 
+  return render_template("preserved.html", zipped=zipped)
 
 @app.route("/screenrecords/")
 @app.route("/screenrecords")
@@ -281,10 +291,10 @@ def find_navicon(file_name):
   directory = "/data/openpilot/selfdrive/assets/navigation/"
   return send_from_directory(directory, file_name, as_attachment=True)
 
-@app.route("/previewgif/<file_name>", methods=['GET'])
-def find_previewgif(file_name):
+@app.route("/previewgif/<path:file_path>", methods=['GET'])
+def find_previewgif(file_path):
   directory = "/data/media/0/realdata/"
-  return send_from_directory(directory, file_name, as_attachment=True)
+  return send_from_directory(directory, file_path, as_attachment=True)
 
 def main():
   try:
