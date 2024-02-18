@@ -66,7 +66,7 @@ def manager_init() -> None:
     ("AggressiveAcceleration", "1"),
     ("AggressiveFollow", "1" if FrogsGoMoo else "1.25"),
     ("AggressiveJerk", "0.6" if FrogsGoMoo else "0.5"),
-    ("AlertVolumeControl", "1"),
+    ("AlertVolumeControl", "0"),
     ("AlwaysOnLateral", "1"),
     ("AlwaysOnLateralMain", "1" if FrogsGoMoo else "0"),
     ("BlindSpotPath", "1"),
