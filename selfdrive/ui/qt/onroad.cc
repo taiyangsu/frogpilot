@@ -171,7 +171,7 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
       clickTimer.stop();
 
       if (scene.conditional_experimental) {
-        int override_value = (scene.conditional_status >= 1 && scene.conditional_status <= 4) ? 0 : scene.conditional_status >= 5 ? 3 : 4;
+        int override_value = (scene.conditional_status >= 1 && scene.conditional_status <= 4) ? 0 : scene.conditional_status >= 5 ? 1 : 2;
         paramsMemory.putIntNonBlocking("CEStatus", override_value);
       } else {
         bool experimentalMode = params.getBool("ExperimentalMode");
@@ -1802,11 +1802,18 @@ void AnnotatedCameraWidget::drawStatusBar(QPainter &p) {
   }
 
   // Append suffix to the status
+  QString distanceSuffix = ". Long press the \"distance\" button to revert";
+  QString lkasSuffix = ". Double press the \"LKAS\" button to revert";
   QString screenSuffix = ". Double tap the screen to revert";
-  QString wheelSuffix = ". Double press the \"LKAS\" button to revert";
 
   if (!alwaysOnLateralActive && !mapOpen && status != STATUS_DISENGAGED && !newStatus.isEmpty()) {
-    newStatus += (conditionalStatus == 3 || conditionalStatus == 4) ? screenSuffix : (conditionalStatus == 1 || conditionalStatus == 2) ? wheelSuffix : "";
+    if (conditionalStatus == 1 || conditionalStatus == 2) {
+      newStatus += screenSuffix;
+    } else if (conditionalStatus == 3 || conditionalStatus == 4) {
+      newStatus += distanceSuffix;
+    } else if (conditionalStatus == 5 || conditionalStatus == 6) {
+      newStatus += lkasSuffix;
+    }
   }
 
   // Check if status has changed or if the road name is empty
