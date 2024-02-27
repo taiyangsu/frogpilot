@@ -351,6 +351,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"ShowStorageLeft", PERSISTENT},
     {"ShowStorageUsed", PERSISTENT},
     {"Sidebar", PERSISTENT},
+    {"SmoothBraking", PERSISTENT},
     {"StandardFollow", PERSISTENT},
     {"StandardJerk", PERSISTENT},
     {"StockTune", PERSISTENT},
