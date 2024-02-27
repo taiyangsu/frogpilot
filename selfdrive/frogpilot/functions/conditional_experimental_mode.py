@@ -49,14 +49,14 @@ class ConditionalExperimentalMode:
 
     # Update Experimental Mode based on the current driving conditions
     condition_met = self.check_conditions(carState, frogpilotNavigation, lead, modelData, stop_distance, v_ego)
-    if ((not self.experimental_mode and condition_met and overridden not in (1, 3)) or overridden in (2, 4)) and enabled:
+    if ((not self.experimental_mode and condition_met and overridden not in (1, 3, 5)) or overridden in (2, 4, 6)) and enabled:
       self.experimental_mode = True
-    elif (self.experimental_mode and not condition_met and overridden not in (2, 4)) or overridden in (1, 3) or not enabled:
+    elif (self.experimental_mode and not condition_met and overridden not in (2, 4, 6)) or overridden in (1, 3, 5) or not enabled:
       self.experimental_mode = False
       self.status_value = 0
 
     # Update the onroad status bar
-    self.status_value = overridden if overridden in (1, 2, 3, 4) else self.status_value
+    self.status_value = overridden if overridden in (1, 2, 3, 4, 5, 6) else self.status_value
     if self.status_value != self.previous_status_value:
       self.params_memory.put_int("CEStatus", self.status_value)
       self.previous_status_value = self.status_value
