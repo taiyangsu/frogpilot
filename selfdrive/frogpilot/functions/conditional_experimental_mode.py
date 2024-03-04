@@ -1,12 +1,9 @@
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import interp
 
-from openpilot.selfdrive.frogpilot.functions.frogpilot_functions import CRUISING_SPEED, MovingAverageCalculator
+from openpilot.selfdrive.frogpilot.functions.frogpilot_functions import CITY_SPEED_LIMIT, CRUISING_SPEED, MovingAverageCalculator, PROBABILITY
 
 from openpilot.selfdrive.frogpilot.functions.speed_limit_controller import SpeedLimitController
-
-CITY_SPEED_LIMIT = 25  # Speed limit for turn signal check
-PROBABILITY = 0.6  # 60% chance of condition being true
 
 # Lookup table for stop sign / stop light detection
 SLOW_DOWN_BP = [0., 10., 20., 30., 40., 50., 55., 60.]
