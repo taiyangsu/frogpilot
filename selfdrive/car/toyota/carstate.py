@@ -226,6 +226,16 @@ class CarState(CarStateBase):
         else:
           self.fpf.update_experimental_mode()
 
+      # Switch the current state of Traffic Mode if the button is held down for 2.5 seconds
+      if self.distance_pressed_counter == CRUISE_LONG_PRESS * 5 and frogpilot_variables.traffic_mode:
+        self.fpf.update_traffic_mode()
+
+        # Revert the previous changes to Experimental Mode
+        if frogpilot_variables.conditional_experimental_mode:
+          self.fpf.update_cestatus_lkas()
+        else:
+          self.fpf.update_experimental_mode()
+
       self.distance_previously_pressed = distance_pressed
 
     # Personality Profiles via steering wheel functions
