@@ -18,18 +18,7 @@
 #include "selfdrive/ui/qt/maps/map_panel.h"
 #endif
 
-static void drawIcon(QPainter &p, const QPoint &center, const QPixmap &img, const QBrush &bg, float opacity) {
-  p.setRenderHint(QPainter::Antialiasing);
-  p.setOpacity(1.0);  // bg dictates opacity of ellipse
-  p.setPen(Qt::NoPen);
-  p.setBrush(bg);
-  p.drawEllipse(center, btn_size / 2, btn_size / 2);
-  p.setOpacity(opacity);
-  p.drawPixmap(center - QPoint(img.width() / 2, img.height() / 2), img);
-  p.setOpacity(1.0);
-}
-
-static void drawIconRotate(QPainter &p, const QPoint &center, const QPixmap &img, const QBrush &bg, float opacity, const int angle) {
+static void drawIcon(QPainter &p, const QPoint &center, const QPixmap &img, const QBrush &bg, float opacity, const int angle = 0) {
   p.setRenderHint(QPainter::Antialiasing);
   p.setOpacity(1.0);  // bg dictates opacity of ellipse
   p.setPen(Qt::NoPen);
@@ -42,6 +31,18 @@ static void drawIconRotate(QPainter &p, const QPoint &center, const QPixmap &img
   p.drawPixmap(-QPoint(img.width() / 2, img.height() / 2), img);
   p.setOpacity(1.0);
   p.restore();
+}
+
+static void drawIconGif(QPainter &p, const QPoint &center, const QMovie &img, const QBrush &bg, float opacity) {
+  p.setRenderHint(QPainter::Antialiasing);
+  p.setOpacity(1.0);  // bg dictates opacity of ellipse
+  p.setPen(Qt::NoPen);
+  p.setBrush(bg);
+  p.drawEllipse(center.x() - btn_size / 2, center.y() - btn_size / 2, btn_size, btn_size);
+  p.setOpacity(opacity);
+  QPixmap currentFrame = img.currentPixmap();
+  p.drawPixmap(center - QPoint(currentFrame.width() / 2, currentFrame.height() / 2), currentFrame);
+  p.setOpacity(1.0);
 }
 
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent), scene(uiState()->scene) {
@@ -171,7 +172,7 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
       clickTimer.stop();
 
       if (scene.conditional_experimental) {
-        int override_value = (scene.conditional_status >= 1 && scene.conditional_status <= 4) ? 0 : scene.conditional_status >= 5 ? 1 : 2;
+        int override_value = (scene.conditional_status >= 1 && scene.conditional_status <= 6) ? 0 : scene.conditional_status >= 7 ? 1 : 2;
         paramsMemory.putIntNonBlocking("CEStatus", override_value);
       } else {
         bool experimentalMode = params.getBool("ExperimentalMode");
@@ -388,8 +389,10 @@ ExperimentalButton::ExperimentalButton(QWidget *parent) : experimental_mode(fals
     {4, loadPixmap("../frogpilot/assets/wheel_images/rocket.png", {img_size, img_size})},
     {5, loadPixmap("../frogpilot/assets/wheel_images/hyundai.png", {img_size, img_size})},
     {6, loadPixmap("../frogpilot/assets/wheel_images/stalin.png", {img_size, img_size})},
-    {7, loadPixmap("../frogpilot/assets/random_events/images/firefox.png", {img_size, img_size})}
+    {7, loadPixmap("../frogpilot/assets/random_events/images/firefox.png", {img_size, img_size})},
   };
+
+  wheelImagesGif[1] = new QMovie("../frogpilot/assets/random_events/images/weeb_wheel.gif", QByteArray(), this);
 }
 
 void ExperimentalButton::changeMode() {
@@ -418,8 +421,10 @@ void ExperimentalButton::updateState(const UIState &s, bool leadInfo) {
 
   // FrogPilot variables
   firefoxRandomEventTriggered = scene.current_random_event == 1;
+  weebRandomEventTriggered = scene.current_random_event == 2;
   rotatingWheel = scene.rotating_wheel;
   wheelIcon = scene.wheel_icon;
+  wheelIconGif = 0;
 
   y_offset = leadInfo ? 10 : 0;
 
@@ -429,10 +434,32 @@ void ExperimentalButton::updateState(const UIState &s, bool leadInfo) {
     steeringAngleDeg = rotationDegree;
     wheelIcon = 7;
     update();
-  // Update the icon so the steering wheel rotates in real time
-  } else if (rotatingWheel && steeringAngleDeg != scene.steering_angle_deg) {
-    steeringAngleDeg = scene.steering_angle_deg;
+
+  } else if (weebRandomEventTriggered) {
+    if (!gifLabel) {
+      gifLabel = new QLabel(this);
+      QMovie *movie = new QMovie("../frogpilot/assets/random_events/images/weeb_wheel.gif");
+      gifLabel->setMovie(movie);
+      movie->start();
+      gifLabel->resize(img_size, img_size);
+    }
+    gifLabel->show();
+    wheelIconGif = 1;
     update();
+
+  } else {
+    if (gifLabel) {
+      gifLabel->hide();
+    }
+    if (rotatingWheel) {
+      // Update the icon so the steering wheel rotates in real time
+      if (steeringAngleDeg != scene.steering_angle_deg) {
+        steeringAngleDeg = scene.steering_angle_deg;
+        update();
+      }
+    } else {
+      steeringAngleDeg = 0;
+    }
   }
 }
 
@@ -446,19 +473,22 @@ void ExperimentalButton::paintEvent(QPaintEvent *event) {
   engage_img = wheelImages[wheelIcon];
   QPixmap img = wheelIcon ? engage_img : (experimental_mode ? experimental_img : engage_img);
 
+  QMovie *gif = wheelImagesGif[wheelIconGif];
+
   QColor background_color = wheelIcon != 0 && !isDown() && engageable ?
     (scene.always_on_lateral_active ? QColor(10, 186, 181, 255) :
-    (scene.traffic_mode_active ? QColor(201, 34, 49, 255) :
     (scene.conditional_status == 1 ? QColor(255, 246, 0, 255) :
     (experimental_mode ? QColor(218, 111, 37, 241) :
+    (scene.traffic_mode_active ? QColor(255, 0, 0, 255) :
     (scene.navigate_on_openpilot ? QColor(49, 161, 238, 255) : QColor(0, 0, 0, 166)))))) :
     QColor(0, 0, 0, 166);
 
   if (!(scene.show_driver_camera || scene.map_open && scene.full_map)) {
-    if (rotatingWheel || firefoxRandomEventTriggered) {
-      drawIconRotate(p, QPoint(btn_size / 2, btn_size / 2 + y_offset), img, background_color, (isDown() || !(engageable || scene.always_on_lateral_active)) ? 0.6 : 1.0, steeringAngleDeg);
+    if (wheelIconGif != 0) {
+      QBrush backgroundBrush(background_color);
+      drawIconGif(p, QPoint(btn_size / 2, btn_size / 2 + y_offset), *gif, backgroundBrush, 1.0);
     } else {
-      drawIcon(p, QPoint(btn_size / 2, btn_size / 2 + y_offset), img, background_color, (isDown() || !(engageable || scene.always_on_lateral_active)) ? 0.6 : 1.0);
+      drawIcon(p, QPoint(btn_size / 2, btn_size / 2 + y_offset), img, background_color, (isDown() || !(engageable || scene.always_on_lateral_active)) ? 0.6 : 1.0, steeringAngleDeg);
     }
   }
 }
@@ -617,7 +647,7 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
     } else if (scene.reverse_cruise) {
       p.setPen(QPen(QColor(0, 150, 255), 6));
     } else if (scene.traffic_mode_active) {
-      p.setPen(QPen(QColor(201, 34, 49), 6));
+      p.setPen(QPen(QColor(255, 0, 0), 6));
     } else {
       p.setPen(QPen(whiteColor(75), 6));
     }
@@ -706,7 +736,6 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   if (!(scene.hide_speed || fullMapOpen)) {
     p.save();
     p.setFont(InterFont(176, QFont::Bold));
-    p.setPen(QPen(QColor(201, 34, 49), 6));
     drawText(p, rect().center().x(), 210, speedStr);
     p.restore();
     p.setFont(InterFont(66));
@@ -860,10 +889,6 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     pe.setColorAt(0.0, QColor::fromHslF(178 / 360., 0.90, 0.38, 1.0));
     pe.setColorAt(0.5, QColor::fromHslF(178 / 360., 0.90, 0.38, 0.5));
     pe.setColorAt(1.0, QColor::fromHslF(178 / 360., 0.90, 0.38, 0.1));
-  } else if (scene.traffic_mode_active) {
-    pe.setColorAt(0.0, QColor::fromHslF(355 / 360., 0.71, 0.46, 1.0));
-    pe.setColorAt(0.5, QColor::fromHslF(355 / 360., 0.71, 0.46, 0.5));
-    pe.setColorAt(1.0, QColor::fromHslF(355 / 360., 0.71, 0.46, 0.1));
   } else if (conditionalStatus == 1 || conditionalStatus == 3) {
     pe.setColorAt(0.0, QColor::fromHslF(58 / 360., 1.00, 0.50, 1.0));
     pe.setColorAt(0.5, QColor::fromHslF(58 / 360., 1.00, 0.50, 0.5));
@@ -872,6 +897,10 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     pe.setColorAt(0.0, QColor::fromHslF(25 / 360., 0.71, 0.50, 1.0));
     pe.setColorAt(0.5, QColor::fromHslF(25 / 360., 0.71, 0.50, 0.5));
     pe.setColorAt(1.0, QColor::fromHslF(25 / 360., 0.71, 0.50, 0.1));
+  } else if (scene.traffic_mode_active) {
+    pe.setColorAt(0.0, QColor::fromHslF(0 / 360., 1.0, 0.50, 1.0));
+    pe.setColorAt(0.5, QColor::fromHslF(0 / 360., 1.0, 0.50, 0.5));
+    pe.setColorAt(1.0, QColor::fromHslF(0 / 360., 1.0, 0.50, 0.1));
   } else if (scene.navigate_on_openpilot) {
     pe.setColorAt(0.0, QColor::fromHslF(205 / 360., 0.85, 0.56, 1.0));
     pe.setColorAt(0.5, QColor::fromHslF(205 / 360., 0.85, 0.56, 0.5));
@@ -1813,15 +1842,17 @@ void AnnotatedCameraWidget::drawStatusBar(QPainter &p) {
     {2, "Experimental Mode manually activated"},
     {3, "Conditional Experimental overridden"},
     {4, "Experimental Mode manually activated"},
-    {5, "Experimental Mode activated for" + (mapOpen ? " intersection" : QString(" upcoming intersection"))},
-    {6, "Experimental Mode activated for" + (mapOpen ? " turn" : QString(" upcoming turn"))},
-    {7, "Experimental Mode activated due to" + (mapOpen ? "SLC" : QString(" no speed limit set"))},
-    {8, "Experimental Mode activated due to" + (mapOpen ? " speed" : " speed being less than " + QString::number(conditionalSpeedLead) + (is_metric ? " kph" : " mph"))},
-    {9, "Experimental Mode activated due to" + (mapOpen ? " speed" : " speed being less than " + QString::number(conditionalSpeed) + (is_metric ? " kph" : " mph"))},
-    {10, "Experimental Mode activated for slower lead"},
-    {11, "Experimental Mode activated for turn" + (mapOpen ? "" : QString(" / lane change"))},
-    {12, "Experimental Mode activated for curve"},
-    {13, "Experimental Mode activated for stop" + (mapOpen ? "" : QString(" sign / stop light"))},
+    {5, "Conditional Experimental overridden"},
+    {6, "Experimental Mode manually activated"},
+    {7, "Experimental Mode activated for" + (mapOpen ? " intersection" : QString(" upcoming intersection"))},
+    {8, "Experimental Mode activated for" + (mapOpen ? " turn" : QString(" upcoming turn"))},
+    {9, "Experimental Mode activated due to" + (mapOpen ? "SLC" : QString(" no speed limit set"))},
+    {10, "Experimental Mode activated due to" + (mapOpen ? " speed" : " speed being less than " + QString::number(conditionalSpeedLead) + (is_metric ? " kph" : " mph"))},
+    {11, "Experimental Mode activated due to" + (mapOpen ? " speed" : " speed being less than " + QString::number(conditionalSpeed) + (is_metric ? " kph" : " mph"))},
+    {12, "Experimental Mode activated for slower lead"},
+    {13, "Experimental Mode activated for turn" + (mapOpen ? "" : QString(" / lane change"))},
+    {14, "Experimental Mode activated for curve"},
+    {15, "Experimental Mode activated for stop" + (mapOpen ? "" : QString(" sign / stop light"))},
   };
 
   QString roadName = roadNameUI ? QString::fromStdString(paramsMemory.get("RoadName")) : QString();
