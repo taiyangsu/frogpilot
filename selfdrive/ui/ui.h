@@ -176,6 +176,7 @@ typedef struct UIScene {
 
   // FrogPilot variables
   bool acceleration_path;
+  bool active_alert;
   bool adjacent_path;
   bool adjacent_path_metrics;
   bool always_on_lateral;
@@ -185,7 +186,6 @@ typedef struct UIScene {
   bool blind_spot_right;
   bool compass;
   bool conditional_experimental;
-  bool critical_alert;
   bool disable_smoothing_mtsc;
   bool disable_smoothing_vtsc;
   bool driver_camera;

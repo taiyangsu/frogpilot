@@ -411,7 +411,7 @@ void UIState::updateStatus() {
     }
 
     // Trigger standby mode on critical alerts and status changes
-    scene.critical_alert = controls_state.getAlertStatus() == cereal::ControlsState::AlertStatus::CRITICAL;
+    scene.active_alert = controls_state.getAlertStatus() != cereal::ControlsState::AlertStatus::NORMAL;
     scene.status_changed = status != previous_status;
 
     previous_status = status;
@@ -571,7 +571,7 @@ void Device::updateWakefulness(const UIState &s) {
   ignition_on = s.scene.ignition;
 
   if (ignition_on && s.scene.standby_mode) {
-    if (s.scene.critical_alert || s.scene.status_changed) {
+    if (s.scene.active_alert || s.scene.status_changed) {
       resetInteractiveTimeout(s.scene.screen_timeout, s.scene.screen_timeout_onroad);
     }
   }

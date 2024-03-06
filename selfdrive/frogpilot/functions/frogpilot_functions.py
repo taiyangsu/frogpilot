@@ -93,27 +93,27 @@ class FrogPilotFunctions:
   def personality_changed_via_ui(self):
     return self.params_memory.get_bool("PersonalityChangedViaUI")
 
-  def reset_personality_changed_param():
+  def reset_personality_changed_param(self):
     self.params_memory.put_bool("PersonalityChangedViaUI", False)
 
-  def update_cestatus_distance():
+  def update_cestatus_distance(self):
     # Set "CEStatus" to work with "Conditional Experimental Mode"
     conditional_status = self.params_memory.get_int("CEStatus")
-    override_value = 0 if conditional_status in (1, 2, 3, 4) else 3 if conditional_status >= 5 else 4
+    override_value = 0 if conditional_status in (1, 2, 3, 4, 5, 6) else 3 if conditional_status >= 7 else 4
     self.params_memory.put_int("CEStatus", override_value)
 
-  def update_cestatus_lkas():
+  def update_cestatus_lkas(self):
     # Set "CEStatus" to work with "Conditional Experimental Mode"
     conditional_status = self.params_memory.get_int("CEStatus")
-    override_value = 0 if conditional_status in (1, 2, 3, 4) else 5 if conditional_status >= 5 else 6
+    override_value = 0 if conditional_status in (1, 2, 3, 4, 5, 6) else 5 if conditional_status >= 7 else 6
     self.params_memory.put_int("CEStatus", override_value)
 
-  def update_experimental_mode():
+  def update_experimental_mode(self):
     experimental_mode = self.params.get_bool("ExperimentalMode")
     # Invert the value of "ExperimentalMode"
     self.params.put_bool("ExperimentalMode", not experimental_mode)
 
-  def update_traffic_mode():
+  def update_traffic_mode(self):
     traffic_mode = self.params_memory.get_bool("TrafficModeActive")
     # Invert the value of "TrafficModeActive"
     self.params_memory.put_bool("TrafficModeActive", not traffic_mode)
