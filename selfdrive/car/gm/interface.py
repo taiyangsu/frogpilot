@@ -330,7 +330,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.XT4:
       ret.mass = 3660. * CV.LB_TO_KG
-      ret.wheelbase = 2.78
+      ret.wheelbase = 2.70
       ret.steerRatio = 14.4
       ret.centerToFront = ret.wheelbase * 0.4
       ret.steerActuatorDelay = 0.2
