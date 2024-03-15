@@ -44,15 +44,14 @@ def only_offroad(started, params, params_memory, CP: car.CarParams) -> bool:
   return not started
 
 # FrogPilot functions
-def allow_uploads(started, params, params_memory, CP: car.CarParams) -> bool:
-  at_home = not started and HARDWARE.get_network_type() == WIFI
-  return at_home if params_memory.get_bool("DisableOnroadUploads") else True
-
 def enable_logging(started, params, params_memory, CP: car.CarParams) -> bool:
-  return not (params_memory.get_bool("FireTheBabysitter") and params_memory.get_bool("NoLogging"))
+  no_logging = params_memory.get_bool("FireTheBabysitter") and params_memory.get_bool("NoLogging")
+  return not no_logging and logging(started, params, params_memory, CP)
 
 def enable_uploading(started, params, params_memory, CP: car.CarParams) -> bool:
-  return not (params_memory.get_bool("FireTheBabysitter") and params_memory.get_bool("NoUploads"))
+  allow_uploads = not started and HARDWARE.get_network_type() == WIFI or not params_memory.get_bool("DisableOnroadUploads")
+  no_uploads = params_memory.get_bool("FireTheBabysitter") and params_memory.get_bool("NoUploads")
+  return not no_uploads and allow_uploads
 
 def osm(started, params, params_memory, CP: car.CarParams) -> bool:
   return params_memory.get_bool("RoadNameUI") or params_memory.get_bool("SpeedLimitController")
@@ -61,16 +60,16 @@ procs = [
   DaemonProcess("manage_athenad", "selfdrive.athena.manage_athenad", "AthenadPid"),
 
   NativeProcess("camerad", "system/camerad", ["./camerad"], driverview),
-  NativeProcess("logcatd", "system/logcatd", ["./logcatd"], (enable_logging and only_onroad)),
-  NativeProcess("proclogd", "system/proclogd", ["./proclogd"], (enable_logging and only_onroad)),
+  NativeProcess("logcatd", "system/logcatd", ["./logcatd"], enable_logging),
+  NativeProcess("proclogd", "system/proclogd", ["./proclogd"], enable_logging),
   PythonProcess("logmessaged", "system.logmessaged", enable_logging),
   PythonProcess("micd", "system.micd", iscar),
   PythonProcess("timed", "system.timed", always_run, enabled=not PC),
 
   PythonProcess("dmonitoringmodeld", "selfdrive.modeld.dmonitoringmodeld", driverview, enabled=(not PC or WEBCAM)),
-  NativeProcess("encoderd", "system/loggerd", ["./encoderd"], (enable_logging and only_onroad)),
+  NativeProcess("encoderd", "system/loggerd", ["./encoderd"], enable_logging),
   NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], notcar),
-  NativeProcess("loggerd", "system/loggerd", ["./loggerd"], (enable_logging and logging)),
+  NativeProcess("loggerd", "system/loggerd", ["./loggerd"], enable_logging),
   NativeProcess("modeld", "selfdrive/modeld", ["./modeld"], only_onroad),
   NativeProcess("mapsd", "selfdrive/navd", ["./mapsd"], only_onroad),
   PythonProcess("navmodeld", "selfdrive.modeld.navmodeld", only_onroad),
@@ -95,7 +94,7 @@ procs = [
   PythonProcess("thermald", "selfdrive.thermald.thermald", always_run),
   PythonProcess("tombstoned", "selfdrive.tombstoned", enable_logging, enabled=not PC),
   PythonProcess("updated", "selfdrive.updated", only_offroad, enabled=not PC),
-  PythonProcess("uploader", "system.loggerd.uploader", (allow_uploads and enable_uploading)),
+  PythonProcess("uploader", "system.loggerd.uploader", enable_uploading),
   PythonProcess("statsd", "selfdrive.statsd", enable_logging),
 
   # debug procs
