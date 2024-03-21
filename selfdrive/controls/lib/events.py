@@ -228,10 +228,11 @@ def user_soft_disable_alert(alert_text_2: str) -> AlertCallbackType:
 
 def startup_master_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
   branch = get_short_branch()  # Ensure get_short_branch is cached to avoid lags on startup
+  self.params = Params()
   if "REPLAY" in os.environ:
     branch = "replay"
 
-  return StartupAlert(params_memory.get("StartupAlertLine1"), params_memory.get("StartupAlertLine2"), alert_status=AlertStatus.frogpilot)
+  return StartupAlert(self.params.get("StartupAlertLine1"), self.params.get("StartupAlertLine2"), alert_status=AlertStatus.frogpilot)
 
 def below_engage_speed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
   return NoEntryAlert(f"Drive above {get_display_speed(CP.minEnableSpeed, metric)} to engage")
