@@ -18,7 +18,7 @@ from openpilot.selfdrive.controls.lib.longitudinal_planner import A_CRUISE_MIN, 
 from openpilot.system.version import get_short_branch
 
 from openpilot.selfdrive.frogpilot.controls.lib.conditional_experimental_mode import ConditionalExperimentalMode
-from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_functions import CITY_SPEED_LIMIT, CRUISING_SPEED, STAGING_BRANCHES, calculate_lane_width, calculate_road_curvature
+from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_functions import CITY_SPEED_LIMIT, CRUISING_SPEED, calculate_lane_width, calculate_road_curvature
 from openpilot.selfdrive.frogpilot.controls.lib.map_turn_speed_controller import MapTurnSpeedController
 from openpilot.selfdrive.frogpilot.controls.lib.model_manager import RADARLESS_MODELS
 
@@ -143,6 +143,15 @@ class FrogPilotPlanner:
       standstill_offset = max(STOP_DISTANCE - (v_ego**COMFORT_BRAKE), 0)
       acceleration_offset = np.clip((v_lead - v_ego) + standstill_offset - COMFORT_BRAKE, 1, distance_factor)
       t_follow /= acceleration_offset
+
+    # Offset by FrogAi for FrogPilot for a more natural approach to a slower lead
+    if frogpilot_toggles.smoother_braking and v_lead < v_ego:
+      distance_factor = np.maximum(lead_distance - (v_lead * t_follow), 1)
+      far_lead_offset = max(lead_distance - (v_ego * t_follow) - stopping_distance, 0) if frogpilot_toggles.smoother_braking_far_lead else 0
+      braking_offset = np.clip((v_ego - v_lead) + far_lead_offset - COMFORT_BRAKE, 1, distance_factor)
+      if frogpilot_toggles.smoother_braking_jerk:
+        jerk *= np.minimum(braking_offset, COMFORT_BRAKE)
+      t_follow /= braking_offset
 
     return jerk, t_follow
 
