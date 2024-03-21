@@ -255,6 +255,8 @@ def manager_init() -> None:
     ("StandardFollow", "1.45"),
     ("StandardJerk", "1.0"),
     ("StandbyMode", "0"),
+    ("StartupAlertLine1", "Frogger Mode Activated 🐸"),
+    ("StartupAlertLine2", "Swampin' through traffic like it's fly season."),
     ("SteerRatio", "0"),
     ("StockTune", "0"),
     ("StoppingDistance", "0"),
