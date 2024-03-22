@@ -679,6 +679,7 @@ public:
 
       connect(button, &QPushButton::clicked, [this, button_params, i](bool checked) {
         params.putBool(button_params[i].toStdString(), checked);
+        emit buttonClicked();
         refresh();
       });
 
@@ -696,6 +697,9 @@ public:
       button->setChecked(params.getBool(param.toStdString()));
     }
   }
+
+signals:
+  void buttonClicked();
 
 private:
   Params params;
