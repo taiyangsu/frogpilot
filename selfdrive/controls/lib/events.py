@@ -245,12 +245,10 @@ def startup_master_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubM
   # Check if the retrieved index exists in startupMessages
   if alertIndex in startupMessages:
       message = startupMessages[alertIndex]
-      alert = StartupAlert(message[0], message[1], alert_status=AlertStatus.frogpilot)
+      return StartupAlert(message[0], message[1], alert_status=AlertStatus.frogpilot)
   else:
       message = startupMessages[-1]
-      alert = StartupAlert(message[0], message[1], alert_status=AlertStatus.frogpilot)
-    
-  return alert
+      return StartupAlert(message[0], message[1], alert_status=AlertStatus.frogpilot)
 
 def below_engage_speed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
   return NoEntryAlert(f"Drive above {get_display_speed(CP.minEnableSpeed, metric)} to engage")
