@@ -234,7 +234,7 @@ def startup_master_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubM
 
   # Custom startup messages
   startupMessages = {
-    -1: ["Something went wrong...", "Keep driving and pray! 🙏"]
+    -1: ["Something went wrong...", "Keep driving and pray! 🙏"],
     0: ["Welcome to openpilot", "Always keep hands on wheel and eyes on road"],
     1: ["Frogger Mode Activated 🐸", "Swampin' through traffic like it's fly season."]
   }
