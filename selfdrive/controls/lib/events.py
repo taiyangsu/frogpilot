@@ -240,7 +240,7 @@ def startup_master_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubM
   }
 
   # Default to 0 if "StartupAlert" is not a valid key
-  alertIndex = params.get("StartupAlert", -1)
+  alertIndex = params.get_int("StartupAlert", 1)
 
   # Check if the retrieved index exists in startupMessages
   if alertIndex in startupMessages:
