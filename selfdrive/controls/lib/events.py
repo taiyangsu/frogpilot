@@ -238,7 +238,7 @@ def startup_master_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubM
     1: ["Frogger Mode Activated 🐸", "Swampin' through traffic like it's fly season."]
   }
   
-  return StartupAlert(startupMessages.get(params.get("StartupAlert"), 1)[0], startupMessages.get(params.get("StartupAlert"), 1)[1], alert_status=AlertStatus.frogpilot)
+  return StartupAlert(startupMessages.get(params.get("StartupAlert"))[0], startupMessages.get(params.get("StartupAlert"))[1], alert_status=AlertStatus.frogpilot)
 
 def below_engage_speed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
   return NoEntryAlert(f"Drive above {get_display_speed(CP.minEnableSpeed, metric)} to engage")
