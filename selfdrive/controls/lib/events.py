@@ -234,11 +234,23 @@ def startup_master_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubM
 
   # Custom startup messages
   startupMessages = {
+    -1: ["Something went wrong...", "Keep driving and pray! 🙏"]
     0: ["Welcome to openpilot", "Always keep hands on wheel and eyes on road"],
     1: ["Frogger Mode Activated 🐸", "Swampin' through traffic like it's fly season."]
   }
-  
-  return StartupAlert(startupMessages.get(params.get("StartupAlert"), ["", ""])[0], startupMessages.get(params.get("StartupAlert"), ["", ""])[1], alert_status=AlertStatus.frogpilot)
+
+  # Default to 0 if "StartupAlert" is not a valid key
+  alertIndex = params.get("StartupAlert", -1)
+
+  # Check if the retrieved index exists in startupMessages
+  if alertIndex in startupMessages:
+      message = startupMessages[alertIndex]
+      alert = StartupAlert(message[0], message[1], alert_status=AlertStatus.frogpilot)
+  else:
+      message = startupMessages[-1]
+      alert = StartupAlert(message[0], message[1], alert_status=AlertStatus.frogpilot)
+    
+  return alert
 
 def below_engage_speed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
   return NoEntryAlert(f"Drive above {get_display_speed(CP.minEnableSpeed, metric)} to engage")
