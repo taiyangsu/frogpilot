@@ -393,6 +393,7 @@ void UIState::updateStatus() {
     started_prev = scene.started;
     scene.world_objects_visible = false;
     emit offroadTransition(!scene.started);
+    wifi->setTetheringEnabled(scene.started && scene.tethering_enabled);
   }
 }
 
