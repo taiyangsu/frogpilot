@@ -17,6 +17,7 @@ from openpilot.system.hardware import HARDWARE
 from openpilot.selfdrive.frogpilot.controls.frogpilot_planner import FrogPilotPlanner
 from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_functions import FrogPilotFunctions
 from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import FrogPilotVariables
+from openpilot.selfdrive.frogpilot.controls.lib.theme_manager import ThemeManager
 
 WIFI = log.DeviceState.NetworkType.wifi
 
@@ -54,6 +55,7 @@ def frogpilot_thread(frogpilot_toggles):
   params_memory = Params("/dev/shm/params")
 
   frogpilot_functions = FrogPilotFunctions()
+  theme_manager = ThemeManager()
 
   CP = None
 
@@ -90,6 +92,8 @@ def frogpilot_thread(frogpilot_toggles):
     if datetime.datetime.now().second == 0 or first_run or params_memory.get_bool("ManualUpdateInitiated"):
       if not started:
         time_checks(frogpilot_toggles.automatic_updates, deviceState, params)
+
+      theme_manager.update_holiday()
 
       first_run = False
 
