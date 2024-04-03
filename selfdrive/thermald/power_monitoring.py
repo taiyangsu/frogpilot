@@ -84,6 +84,7 @@ class PowerMonitoring:
 
         # Do the integration
         self._perform_integration(now, current_power)
+
     except Exception:
       cloudlog.exception("Power monitoring calculation failed")
 
@@ -116,9 +117,9 @@ class PowerMonitoring:
     now = time.monotonic()
     should_shutdown = False
     offroad_time = (now - offroad_timestamp)
-    low_voltage_shutdown = (self.car_voltage_mV < (VBATT_PAUSE_CHARGING * 1e3) and
+    low_voltage_shutdown = (self.car_voltage_mV < (max(frogpilot_toggles.low_voltage_shutdown, VBATT_PAUSE_CHARGING) * 1e3) and
                             offroad_time > VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S)
-    should_shutdown |= offroad_time > MAX_TIME_OFFROAD_S
+    should_shutdown |= offroad_time > frogpilot_toggles.device_shutdown_time
     should_shutdown |= low_voltage_shutdown
     should_shutdown |= (self.car_battery_capacity_uWh <= 0)
     should_shutdown &= not ignition
