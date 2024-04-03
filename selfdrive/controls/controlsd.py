@@ -79,6 +79,8 @@ class Controls:
     self.holiday_theme_alerted = False
     self.previously_enabled = False
 
+    self.previous_lead_distance = 0
+
     self.card = CarD(CI)
 
     self.params = Params()
@@ -913,6 +915,20 @@ class Controls:
     if self.sm.frame >= 1000 and self.frogpilot_toggles.current_holiday_theme != 0 and not self.holiday_theme_alerted:
       self.events.add(EventName.holidayActive)
       self.holiday_theme_alerted = True
+
+    if self.frogpilot_toggles.lead_departing_alert and self.sm.frame % 50 == 0:
+      lead = self.sm['radarState'].leadOne
+      lead_distance = lead.dRel
+
+      lead_departing = lead_distance - self.previous_lead_distance > 0.5 and self.previous_lead_distance != 0 and CS.standstill
+      self.previous_lead_distance = lead_distance
+
+      lead_departing &= not CS.gasPressed
+      lead_departing &= lead.vLead > 1
+      lead_departing &= self.driving_gear
+
+      if lead_departing:
+        self.events.add(EventName.leadDeparting)
 
   def update_frogpilot_variables(self, CS):
     self.driving_gear = CS.gearShifter not in (GearShifter.neutral, GearShifter.park, GearShifter.reverse, GearShifter.unknown)
