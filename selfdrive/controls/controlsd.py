@@ -69,6 +69,9 @@ class Controls:
     # FrogPilot variables
     self.frogpilot_toggles = FrogPilotVariables.toggles
 
+    self.always_on_lateral = self.params.get_bool("AlwaysOnLateral")
+    self.always_on_lateral_main = self.always_on_lateral and self.params.get_bool("AlwaysOnLateralMain")
+
     self.block_user = get_short_branch() == "FrogPilot-Development" and not self.params_storage.get_bool("FrogsGoMoo")
 
     self.card = CarD(CI)
@@ -544,6 +547,9 @@ class Controls:
     if self.active:
       self.current_alert_types.append(ET.WARNING)
 
+    if self.FPCC.alwaysOnLateral:
+      self.current_alert_types.append(ET.WARNING)
+
   def state_control(self, CS):
     """Given the state, this function returns a CarControl packet"""
 
@@ -568,7 +574,7 @@ class Controls:
 
     # Check which actuators can be enabled
     standstill = CS.vEgo <= max(self.CP.minSteerSpeed, MIN_LATERAL_CONTROL_SPEED) or CS.standstill
-    CC.latActive = self.active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
+    CC.latActive = (self.active or self.FPCC.alwaysOnLateral) and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
                    (not standstill or self.joystick_mode)
     CC.longActive = self.enabled and not self.events.contains(ET.OVERRIDE_LONGITUDINAL) and self.CP.openpilotLongitudinalControl
 
@@ -884,6 +890,12 @@ class Controls:
 
   def update_frogpilot_variables(self, CS):
     self.driving_gear = CS.gearShifter not in (GearShifter.neutral, GearShifter.park, GearShifter.reverse, GearShifter.unknown)
+
+    self.FPCC.alwaysOnLateral |= CS.cruiseState.enabled or self.always_on_lateral_main
+    self.FPCC.alwaysOnLateral &= CS.cruiseState.available
+    self.FPCC.alwaysOnLateral &= self.always_on_lateral
+    self.FPCC.alwaysOnLateral &= self.driving_gear
+    self.FPCC.alwaysOnLateral &= not (CS.brakePressed and CS.vEgo < self.frogpilot_toggles.always_on_lateral_pause_speed) or CS.standstill
 
     fpcc_send = messaging.new_message('frogpilotCarControl')
     fpcc_send.valid = CS.canValid
