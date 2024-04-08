@@ -1136,6 +1136,8 @@ class Controls:
     signal_check = CS.vEgo >= self.frogpilot_toggles.pause_lateral_below_speed or not (CS.leftBlinker or CS.rightBlinker) or CS.standstill
     self.speed_check = CS.vEgo >= self.frogpilot_toggles.pause_lateral_below_speed or CS.standstill or signal_check and self.frogpilot_toggles.pause_lateral_below_signal
 
+    self.FPCC.trafficModeActive = self.frogpilot_toggles.traffic_mode and self.params_memory.get_bool("TrafficModeActive")
+
     fpcc_send = messaging.new_message('frogpilotCarControl')
     fpcc_send.valid = CS.canValid
     fpcc_send.frogpilotCarControl = self.FPCC
