@@ -467,7 +467,8 @@ void ExperimentalButton::paintEvent(QPaintEvent *event) {
     (scene.always_on_lateral_active ? QColor(10, 186, 181, 255) :
     (scene.conditional_status == 1 || scene.conditional_status == 3 || scene.conditional_status == 5 ? QColor(255, 246, 0, 255) :
     (experimental_mode ? QColor(218, 111, 37, 241) :
-    (scene.navigate_on_openpilot ? QColor(49, 161, 238, 255) : QColor(0, 0, 0, 166))))) :
+    (scene.traffic_mode_active ? QColor(201, 34, 49, 255) :
+    (scene.navigate_on_openpilot ? QColor(49, 161, 238, 255) : QColor(0, 0, 0, 166)))))) :
     QColor(0, 0, 0, 166);
 
   if (!(scene.map_open && scene.big_map)) {
@@ -634,6 +635,8 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
       ), 10));
     } else if (scene.reverse_cruise) {
       p.setPen(QPen(blueColor(), 6));
+    } else if (trafficModeActive) {
+      p.setPen(QPen(redColor(), 10));
     } else {
       p.setPen(QPen(whiteColor(75), 6));
     }
@@ -883,6 +886,10 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     pe.setColorAt(0.0, QColor::fromHslF(25 / 360., 0.71, 0.50, 1.0));
     pe.setColorAt(0.5, QColor::fromHslF(25 / 360., 0.71, 0.50, 0.5));
     pe.setColorAt(1.0, QColor::fromHslF(25 / 360., 0.71, 0.50, 0.1));
+  } else if (trafficModeActive) {
+    pe.setColorAt(0.0, QColor::fromHslF(355 / 360., 0.71, 0.46, 1.0));
+    pe.setColorAt(0.5, QColor::fromHslF(355 / 360., 0.71, 0.46, 0.5));
+    pe.setColorAt(1.0, QColor::fromHslF(355 / 360., 0.71, 0.46, 0.1));
   } else if (scene.navigate_on_openpilot) {
     pe.setColorAt(0.0, QColor::fromHslF(205 / 360., 0.85, 0.56, 1.0));
     pe.setColorAt(0.5, QColor::fromHslF(205 / 360., 0.85, 0.56, 0.5));
@@ -1307,6 +1314,8 @@ void AnnotatedCameraWidget::updateFrogPilotWidgets() {
   slcSpeedLimitOffset = scene.speed_limit_offset * (is_metric ? MS_TO_KPH : MS_TO_MPH);
   useViennaSLCSign = scene.use_vienna_slc_sign;
 
+  trafficModeActive = scene.traffic_mode_active;
+
   turnSignalLeft = scene.turn_signal_left;
   turnSignalRight = scene.turn_signal_right;
 
@@ -1447,9 +1456,10 @@ Compass::Compass(QWidget *parent) : QWidget(parent), scene(uiState()->scene) {
 }
 
 void Compass::updateState() {
-  if (bearingDeg != scene.bearing_deg) {
+  if (bearingDeg != scene.bearing_deg || trafficModeActive != scene.traffic_mode_active) {
     update();
     bearingDeg = scene.bearing_deg;
+    trafficModeActive = scene.traffic_mode_active;
   }
 }
 
@@ -1475,7 +1485,7 @@ void Compass::paintEvent(QPaintEvent *event) {
     bool isBold = abs(i - bearingDeg) <= 7;
     font.setWeight(isBold ? QFont::Bold : QFont::Normal);
     p.setFont(font);
-    p.setPen(QPen(Qt::white, i % 90 == 0 ? 2 : 1));
+    p.setPen(QPen(trafficModeActive ? Qt::red : Qt::white, i % 90 == 0 ? 2 : 1));
 
     p.save();
     p.translate(x, y);
@@ -1489,10 +1499,10 @@ void Compass::paintEvent(QPaintEvent *event) {
 
   p.setFont(InterFont(20, QFont::Bold));
   std::map<QString, std::tuple<QPair<float, float>, int, QColor>> directionInfo = {
-    {"N", {{292.5, 67.5}, Qt::AlignTop | Qt::AlignHCenter, Qt::white}},
-    {"E", {{22.5, 157.5}, Qt::AlignRight | Qt::AlignVCenter, Qt::white}},
-    {"S", {{112.5, 247.5}, Qt::AlignBottom | Qt::AlignHCenter, Qt::white}},
-    {"W", {{202.5, 337.5}, Qt::AlignLeft | Qt::AlignVCenter, Qt::white}}
+    {"N", {{292.5, 67.5}, Qt::AlignTop | Qt::AlignHCenter, trafficModeActive ? Qt::red : Qt::white}},
+    {"E", {{22.5, 157.5}, Qt::AlignRight | Qt::AlignVCenter, trafficModeActive ? Qt::red : Qt::white}},
+    {"S", {{112.5, 247.5}, Qt::AlignBottom | Qt::AlignHCenter, trafficModeActive ? Qt::red : Qt::white}},
+    {"W", {{202.5, 337.5}, Qt::AlignLeft | Qt::AlignVCenter, trafficModeActive ? Qt::red : Qt::white}}
   };
   int directionOffset = 20;
 
@@ -1611,7 +1621,7 @@ void AnnotatedCameraWidget::drawLeadInfo(QPainter &p) {
   double acceleration = std::round(currentAcceleration * 100) / 100;
   int randomEvent = scene.current_random_event;
 
-  if (acceleration > maxAcceleration && status == STATUS_ENGAGED) {
+  if (acceleration > maxAcceleration && (status == STATUS_ENGAGED || status == STATUS_TRAFFIC_MODE_ACTIVE)) {
     maxAcceleration = acceleration;
     isFiveSecondsPassed = false;
     timer.start();

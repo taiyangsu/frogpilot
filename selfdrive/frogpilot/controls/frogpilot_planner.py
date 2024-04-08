@@ -31,6 +31,9 @@ A_CRUISE_MAX_VALS_ECO = [3.5, 3.2, 2.3, 2.0, 1.15, .80, .58, .36, .30, .091]
 A_CRUISE_MIN_VALS_SPORT = [-0.50, -0.52, -0.55, -0.57, -0.60]
 A_CRUISE_MAX_VALS_SPORT = [3.5, 3.5, 3.3, 2.8, 1.5, 1.0, .75, .6, .38, .2]
 
+TRAFFIC_MODE_BP = [0., CITY_SPEED_LIMIT]
+TRAFFIC_MODE_T_FOLLOW = [.50, 1.]
+
 def get_min_accel_eco(v_ego):
   return interp(v_ego, A_CRUISE_MIN_BP_CUSTOM, A_CRUISE_MIN_VALS_ECO)
 
@@ -103,7 +106,7 @@ class FrogPilotPlanner:
       self.safe_obstacle_distance = int(np.mean(get_safe_obstacle_distance(v_ego, self.t_follow)))
       self.safe_obstacle_distance_stock = int(np.mean(get_safe_obstacle_distance(v_ego, base_t_follow)))
       self.stopped_equivalence_factor = int(np.mean(get_stopped_equivalence_factor(v_lead)))
-      self.jerk, self.t_follow = self.update_follow_values(base_jerk, radarState, base_t_follow, v_ego, v_lead)
+      self.jerk, self.t_follow = self.update_follow_values(base_jerk, radarState, base_t_follow, frogpilotCarControl.trafficModeActive, v_ego, v_lead)
     else:
       self.safe_obstacle_distance = 0
       self.safe_obstacle_distance_stock = 0
@@ -115,8 +118,11 @@ class FrogPilotPlanner:
     if self.conditional_experimental_mode and self.CP.openpilotLongitudinalControl or self.green_light_alert:
       self.cem.update(carState, controlsState.enabled, frogpilotNavigation, modelData, radarState, road_curvature, self.t_follow, v_ego)
 
-  def update_follow_values(self, jerk, radarState, t_follow, v_ego, v_lead):
-    increased_stopping_distance = self.increased_stopping_distance
+  def update_follow_values(self, jerk, radarState, t_follow, trafficModeActive, v_ego, v_lead):
+    if trafficModeActive:
+      t_follow = interp(v_ego, TRAFFIC_MODE_BP, TRAFFIC_MODE_T_FOLLOW)
+
+    increased_stopping_distance = self.increased_stopping_distance if not trafficModeActive else 0
     lead_distance = radarState.leadOne.dRel + increased_stopping_distance
 
     # Offset by FrogAi for FrogPilot for a more natural takeoff with a lead
