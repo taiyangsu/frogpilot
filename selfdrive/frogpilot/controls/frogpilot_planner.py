@@ -103,7 +103,7 @@ class FrogPilotPlanner:
 
     self.v_cruise = self.update_v_cruise(carState, controlsState, controlsState.enabled, liveLocationKalman, modelData, road_curvature, v_cruise, v_ego, frogpilot_toggles)
 
-    if frogpilot_toggles.conditional_experimental_mode:
+    if frogpilot_toggles.conditional_experimental_mode or frogpilot_toggles.green_light_alert:
       self.cem.update(carState, controlsState.enabled, frogpilotNavigation, modelData, radarState, road_curvature, self.t_follow, v_ego, frogpilot_toggles)
 
   def update_follow_values(self, jerk, radarState, t_follow, v_ego, v_lead, frogpilot_toggles):
@@ -159,5 +159,7 @@ class FrogPilotPlanner:
     frogpilotPlan.maxAcceleration = self.max_accel
     frogpilotPlan.tFollow = float(self.t_follow)
     frogpilotPlan.vCruise = float(self.v_cruise)
+
+    frogpilotPlan.redLight = self.cem.red_light_detected
 
     pm.send('frogpilotPlan', frogpilot_plan_send)
