@@ -23,8 +23,11 @@ private:
   void updateMetric();
   void updateState();
 
+  FrogPilotDualParamControl *conditionalSpeedsImperial;
+  FrogPilotDualParamControl *conditionalSpeedsMetric;
+
   std::set<QString> aolKeys = {"AlwaysOnLateralMain", "HideAOLStatusBar", "PauseAOLOnBrake"};
-  std::set<QString> conditionalExperimentalKeys = {};
+  std::set<QString> conditionalExperimentalKeys = {"CECurves", "CECurvesLead", "CENavigation", "CESignal", "CESlowerLead", "CEStopLights", "HideCEMStatusBar"};
   std::set<QString> deviceManagementKeys = {};
   std::set<QString> experimentalModeActivationKeys = {};
   std::set<QString> laneChangeKeys = {};
