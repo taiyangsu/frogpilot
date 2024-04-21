@@ -57,9 +57,10 @@ class CarControllerParams:
         self.ACCEL_MAX_PLUS = 2
 
     elif CP.carFingerprint in SDGM_CAR:
-      self.MAX_GAS = 3400
-      self.MAX_ACC_REGEN = 1514
-      self.INACTIVE_REGEN = 1554
+      self.MAX_GAS = 7496
+      self.MAX_GAS_PLUS = 8848
+      self.MAX_ACC_REGEN = 5610
+      self.INACTIVE_REGEN = 5650
       max_regen_acceleration = 0.
 
     else:
