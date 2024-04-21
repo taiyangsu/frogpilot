@@ -491,7 +491,7 @@ class CarInterfaceBase(ABC):
     elif not prev_distance_button:
       self.gap_counter = 0
 
-    if self.gap_counter == CRUISE_LONG_PRESS and frogpilot_variables.experimental_mode_via_distance or self.traffic_mode_changed:
+    if self.gap_counter == CRUISE_LONG_PRESS * 1.5 and frogpilot_variables.experimental_mode_via_distance or self.traffic_mode_changed:
       if frogpilot_variables.conditional_experimental_mode:
         conditional_status = self.params_memory.get_int("CEStatus")
         override_value = 0 if conditional_status in {1, 2, 3, 4, 5, 6} else 1 if conditional_status >= 7 else 2
