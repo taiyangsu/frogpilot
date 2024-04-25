@@ -172,6 +172,10 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
   updateMetric();
 }
 
+void FrogPilotVisualsPanel::showEvent(QShowEvent *event) {
+  hasOpenpilotLongitudinal = hasOpenpilotLongitudinal && !params.getBool("DisableOpenpilotLongitudinal");
+}
+
 void FrogPilotVisualsPanel::updateState(const UIState &s) {
   if (!isVisible()) return;
 
@@ -186,7 +190,7 @@ void FrogPilotVisualsPanel::updateCarToggles() {
     cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
 
     hasBSM = CP.getEnableBsm();
-    hasOpenpilotLongitudinal = CP.getOpenpilotLongitudinalControl();
+    hasOpenpilotLongitudinal = CP.getOpenpilotLongitudinalControl() && !params.getBool("DisableOpenpilotLongitudinal");
   } else {
     hasBSM = true;
     hasOpenpilotLongitudinal = true;
