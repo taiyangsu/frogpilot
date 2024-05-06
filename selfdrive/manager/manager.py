@@ -69,6 +69,8 @@ def manager_init(frogpilot_functions) -> None:
     params.remove("CameraView")
     params.put_bool("CameraViewReset", True)
 
+  params.remove("ExperimentalLongitudinalEnabled")
+
   default_params: list[tuple[str, str | bytes]] = [
     ("CarParamsPersistent", ""),
     ("CompletedTrainingVersion", "0"),
