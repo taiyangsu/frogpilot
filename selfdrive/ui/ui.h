@@ -209,6 +209,12 @@ typedef struct UIScene {
   bool hide_speed;
   bool hide_speed_ui;
   bool holiday_themes;
+  bool is_CPU;
+  bool is_GPU;
+  bool is_IP;
+  bool is_memory;
+  bool is_storage_left;
+  bool is_storage_used;
   bool lead_info;
   bool live_valid;
   bool map_open;
@@ -231,7 +237,9 @@ typedef struct UIScene {
   bool show_jerk;
   bool show_slc_offset;
   bool show_slc_offset_ui;
+  bool show_steering;
   bool show_tuning;
+  bool sidebar_metrics;
   bool speed_limit_changed;
   bool speed_limit_controller;
   bool speed_limit_overridden;
