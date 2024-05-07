@@ -94,6 +94,7 @@ class FrogPilotVariables:
     longitudinal_tune = CP.openpilotLongitudinalControl and self.params.get_bool("LongitudinalTune")
     toggles.acceleration_profile = self.params.get_int("AccelerationProfile") if longitudinal_tune else 0
     toggles.aggressive_acceleration = longitudinal_tune and self.params.get_bool("AggressiveAcceleration")
+    toggles.aggressive_acceleration = toggles.aggressive_acceleration and self.params.get_bool("AggressiveAccelerationExperimental")
     toggles.deceleration_profile = self.params.get_int("DecelerationProfile") if longitudinal_tune else 0
     toggles.increased_stopping_distance = self.params.get_int("StoppingDistance") * (1 if toggles.is_metric else CV.FOOT_TO_METER) if longitudinal_tune else 0
     toggles.lead_detection_threshold = self.params.get_int("LeadDetectionThreshold") / 100 if longitudinal_tune else 0.5
