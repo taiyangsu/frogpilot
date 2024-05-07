@@ -106,6 +106,8 @@ class FrogPilotVariables:
     quality_of_life = self.params.get_bool("QOLControls")
     toggles.custom_cruise_increase = self.params.get_int("CustomCruise") if quality_of_life else 1
     toggles.custom_cruise_increase_long = self.params.get_int("CustomCruiseLong") if quality_of_life else 5
+    toggles.map_acceleration = quality_of_life and self.params.get_bool("MapAcceleration")
+    toggles.map_deceleration = quality_of_life and self.params.get_bool("MapDeceleration")
     toggles.pause_lateral_below_speed = self.params.get_int("PauseLateralSpeed") * (CV.KPH_TO_MS if toggles.is_metric else CV.MPH_TO_MS) if quality_of_life else 0
     toggles.pause_lateral_below_signal = quality_of_life and self.params.get_bool("PauseLateralOnSignal")
     toggles.reverse_cruise_increase = quality_of_life and self.params.get_bool("ReverseCruise")
