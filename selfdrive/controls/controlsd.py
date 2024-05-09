@@ -35,9 +35,8 @@ from openpilot.system.hardware import HARDWARE
 from openpilot.system.version import get_short_branch
 
 from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_functions import CRUISING_SPEED, PROBABILITY, MovingAverageCalculator
-from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import FrogPilotVariables
 
-from openpilot.selfdrive.frogpilot.controls.lib.model_manager import RADARLESS_MODELS
+from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import FrogPilotVariables
 from openpilot.selfdrive.frogpilot.controls.lib.speed_limit_controller import SpeedLimitController
 
 SOFT_DISABLE_TIME = 3  # seconds
@@ -74,13 +73,6 @@ class Controls:
     # FrogPilot variables
     self.frogpilot_toggles = FrogPilotVariables.toggles
 
-    self.always_on_lateral = self.params.get_bool("AlwaysOnLateral")
-    self.always_on_lateral_main = self.always_on_lateral and self.params.get_bool("AlwaysOnLateralMain")
-
-    self.block_user = get_short_branch() == "FrogPilot-Development" and not self.params_storage.get_bool("FrogsGoMoo")
-
-    self.green_light_mac = MovingAverageCalculator()
-
     self.drive_added = False
     self.fcw_random_event_triggered = False
     self.holiday_theme_alerted = False
@@ -98,13 +90,13 @@ class Controls:
     self.random_event_timer = 0
     self.speed_limit_timer = 0
 
+    self.green_light_mac = MovingAverageCalculator()
+
     self.card = CarD(CI)
 
     self.params = Params()
     self.params_memory = Params("/dev/shm/params")
     self.params_storage = Params("/persist/params")
-
-    self.radarless_model = self.params.get("Model", block=True, encoding='utf-8') in RADARLESS_MODELS
 
     with car.CarParams.from_bytes(self.params.get("CarParams", block=True)) as msg:
       # TODO: this shouldn't need to be a builder
@@ -115,6 +107,7 @@ class Controls:
 
     # Ensure the current branch is cached, otherwise the first iteration of controlsd lags
     self.branch = get_short_branch()
+    self.block_user = self.branch == "FrogPilot-Development" and not self.params_storage.get_bool("FrogsGoMoo")
 
     # Setup sockets
     self.pm = messaging.PubMaster(['controlsState', 'carControl', 'onroadEvents', 'frogpilotCarControl'])
@@ -127,12 +120,12 @@ class Controls:
     ignore = self.sensor_packets + ['testJoystick']
     if SIMULATION:
       ignore += ['driverCameraState', 'managerState']
-    if self.radarless_model:
+    if self.frogpilot_toggles.radarless_model:
       ignore += ['radarState']
     self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                    'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'liveLocationKalman',
                                    'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
-                                   'testJoystick', 'frogpilotPlan'] + self.camera_packets + self.sensor_packets,
+                                   'testJoystick', 'frogpilotCarState', 'frogpilotPlan'] + self.camera_packets + self.sensor_packets,
                                   ignore_alive=ignore, ignore_avg_freq=ignore+['radarState', 'testJoystick'], ignore_valid=['testJoystick', ],
                                   frequency=int(1/DT_CTRL))
 
@@ -271,7 +264,7 @@ class Controls:
 
     # Create events for temperature, disk space, and memory
     if self.sm['deviceState'].thermalStatus >= ThermalStatus.red:
-      if not frogpilot_toggles.increase_thermal_limits or self.sm['deviceState'].thermalStatus == ThermalStatus.danger:
+      if not self.frogpilot_toggles.increase_thermal_limits or self.sm['deviceState'].thermalStatus == ThermalStatus.danger:
         self.events.add(EventName.overheat)
     if self.sm['deviceState'].freeSpacePercent < 7 and not SIMULATION:
       # under 7% of space free no enable allowed
@@ -311,7 +304,7 @@ class Controls:
       direction = self.sm['modelV2'].meta.laneChangeDirection
       if (CS.leftBlindspot and direction == LaneChangeDirection.left) or \
          (CS.rightBlindspot and direction == LaneChangeDirection.right):
-        if self.loud_blindspot_alert:
+        if self.frogpilot_toggles.loud_blindspot_alert:
           self.events.add(EventName.laneChangeBlockedLoud)
         else:
           self.events.add(EventName.laneChangeBlocked)
@@ -365,7 +358,7 @@ class Controls:
           self.events.add(EventName.cameraFrameRate)
     if not REPLAY and self.rk.lagging:
       self.events.add(EventName.controlsdLagging)
-    if not self.radarless_model:
+    if not self.frogpilot_toggles.radarless_model:
       if len(self.sm['radarState'].radarErrors) or (not self.rk.lagging and not self.sm.all_checks(['radarState'])):
         self.events.add(EventName.radarFault)
     if not self.sm.valid['pandaStates']:
@@ -426,7 +419,7 @@ class Controls:
     if planner_fcw or model_fcw:
       self.events.add(EventName.fcw)
       self.fcw_random_event_triggered = True
-    elif self.fcw_random_event_triggered and self.random_events:
+    elif self.fcw_random_event_triggered and self.frogpilot_toggles.random_events:
       self.events.add(EventName.yourFrogTriedToKillMe)
       self.fcw_random_event_triggered = False
 
@@ -599,7 +592,7 @@ class Controls:
     # Update VehicleModel
     lp = self.sm['liveParameters']
     x = max(lp.stiffnessFactor, 0.1)
-    sr = max(self.steer_ratio, 0.1) if self.use_custom_steer_ratio else max(lp.steerRatio, 0.1)
+    sr = max(self.frogpilot_toggles.steer_ratio, 0.1) if self.frogpilot_toggles.use_custom_steer_ratio else max(lp.steerRatio, 0.1)
     self.VM.update_params(x, sr)
 
     # Update Torque Params
@@ -731,7 +724,7 @@ class Controls:
     # decrement personality on distance button press
     if self.CP.openpilotLongitudinalControl:
       if any(not be.pressed and be.type == ButtonType.gapAdjustCruise for be in CS.buttonEvents) or self.onroad_distance_pressed:
-        if not (self.params_memory.get_bool("DistanceLongPressed") or self.params_memory.get_bool("OnroadDistanceButtonPressed")):
+        if not (self.sm['frogpilotCarState'].distanceLongPressed or self.params_memory.get_bool("OnroadDistanceButtonPressed")):
           self.personality = (self.personality - 1) % 3
           self.params.put_nonblocking('LongitudinalPersonality', str(self.personality))
       self.onroad_distance_pressed = self.params_memory.get_bool("OnroadDistanceButtonPressed")
@@ -920,8 +913,8 @@ class Controls:
   def params_thread(self, evt):
     while not evt.is_set():
       self.is_metric = self.params.get_bool("IsMetric")
-      if self.CP.openpilotLongitudinalControl and not self.frogpilot_variables.conditional_experimental_mode:
-        self.experimental_mode = self.params.get_bool("ExperimentalMode") or self.speed_limit_controller and SpeedLimitController.experimental_mode
+      if self.CP.openpilotLongitudinalControl and not self.frogpilot_toggles.conditional_experimental_mode:
+        self.experimental_mode = self.params.get_bool("ExperimentalMode") or self.frogpilot_toggles.speed_limit_controller and SpeedLimitController.experimental_mode
       self.personality = self.read_personality_param()
       if self.CP.notCar:
         self.joystick_mode = self.params.get_bool("JoystickDebugMode")
@@ -1010,14 +1003,14 @@ class Controls:
         self.events.add(EventName.turningRight)
 
     if os.path.isfile(os.path.join(sentry.CRASHES_DIR, 'error.txt')) and not self.openpilot_crashed_triggered:
-      if self.random_events:
+      if self.frogpilot_toggles.random_events:
         self.events.add(EventName.openpilotCrashedRandomEvents)
       else:
         self.events.add(EventName.openpilotCrashed)
 
       self.openpilot_crashed_triggered = True
 
-    if self.frogpilot_toggles.speed_limit_alert or self.speed_limit_confirmation:
+    if self.frogpilot_toggles.speed_limit_alert or self.frogpilot_toggles.speed_limit_confirmation:
       current_speed_limit = self.sm['frogpilotPlan'].slcSpeedLimit
       desired_speed_limit = self.sm['frogpilotPlan'].unconfirmedSlcSpeedLimit
 
@@ -1067,7 +1060,7 @@ class Controls:
     if self.sm.frame == 550 and self.CP.lateralTuning.which() == 'torque' and self.CI.use_nnff:
       self.events.add(EventName.torqueNNLoad)
 
-    if self.random_events:
+    if self.frogpilot_toggles.random_events:
       conversion = 1 if self.is_metric else CV.KPH_TO_MPH
       v_cruise = max(self.v_cruise_helper.v_cruise_cluster_kph, self.v_cruise_helper.v_cruise_kph) * conversion
 
@@ -1081,9 +1074,9 @@ class Controls:
   def update_frogpilot_variables(self, CS):
     self.driving_gear = CS.gearShifter not in (GearShifter.neutral, GearShifter.park, GearShifter.reverse, GearShifter.unknown)
 
-    self.FPCC.alwaysOnLateral |= CS.cruiseState.enabled or self.always_on_lateral_main
+    self.FPCC.alwaysOnLateral |= CS.cruiseState.enabled or self.frogpilot_toggles.always_on_lateral_main
     self.FPCC.alwaysOnLateral &= CS.cruiseState.available
-    self.FPCC.alwaysOnLateral &= self.always_on_lateral
+    self.FPCC.alwaysOnLateral &= self.frogpilot_toggles.always_on_lateral
     self.FPCC.alwaysOnLateral &= self.driving_gear
     self.FPCC.alwaysOnLateral &= self.speed_check
     self.FPCC.alwaysOnLateral &= not (CS.brakePressed and CS.vEgo < self.frogpilot_toggles.always_on_lateral_pause_speed) or CS.standstill

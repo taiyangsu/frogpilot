@@ -101,10 +101,7 @@ class CarState(CarStateBase):
     )
     ret.vEgoRaw = mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr])
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    if self.CP.carFingerprint == CAR.LEXUS_ES_TSS2:
-      ret.vEgoCluster = ret.vEgo * 1.023456789
-    else:
-      ret.vEgoCluster = ret.vEgo * 1.015  # minimum of all the cars
+    ret.vEgoCluster = ret.vEgo * frogpilot_variables.cluster_offset
 
     ret.standstill = abs(ret.vEgoRaw) < 1e-3
 
@@ -215,13 +212,16 @@ class CarState(CarStateBase):
       message_keys = ["LDA_ON_MESSAGE", "SET_ME_X02"]
       self.lkas_enabled = any(self.lkas_hud.get(key) == 1 for key in message_keys)
 
-    self.params_memory.put_float("CarSpeedLimit", self.calculate_speed_limit(cp_cam, frogpilot_variables))
-
     self.cruise_decreased_previously = self.cruise_decreased
     self.cruise_increased_previously = self.cruise_increased
 
     self.cruise_decreased = self.pcm_acc_status == 10
     self.cruise_increased = self.pcm_acc_status == 9
+
+    fp_ret.dashboardSpeedLimit = self.calculate_speed_limit(cp_cam, frogpilot_variables)
+
+    fp_ret.ecoGear = cp.vl["GEAR_PACKET"]['ECON_ON'] == 1
+    fp_ret.sportGear = cp.vl["GEAR_PACKET"]['SPORT_ON_2' if self.CP.flags & ToyotaFlags.NO_DSU else 'SPORT_ON'] == 1
 
     self.pcm_accel_net = cp.vl["PCM_CRUISE"]["ACCEL_NET"]
     self.pcm_neutral_force = cp.vl["PCM_CRUISE"]["NEUTRAL_FORCE"]

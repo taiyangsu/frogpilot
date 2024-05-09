@@ -2,7 +2,7 @@ import numpy as np
 
 import cereal.messaging as messaging
 
-from cereal import log
+from cereal import car, log
 
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import interp
@@ -20,8 +20,9 @@ from openpilot.system.version import get_short_branch
 from openpilot.selfdrive.frogpilot.controls.lib.conditional_experimental_mode import ConditionalExperimentalMode
 from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_functions import CITY_SPEED_LIMIT, CRUISING_SPEED, calculate_lane_width, calculate_road_curvature
 from openpilot.selfdrive.frogpilot.controls.lib.map_turn_speed_controller import MapTurnSpeedController
-from openpilot.selfdrive.frogpilot.controls.lib.model_manager import RADARLESS_MODELS
 from openpilot.selfdrive.frogpilot.controls.lib.speed_limit_controller import SpeedLimitController
+
+GearShifter = car.CarState.GearShifter
 
 # Acceleration profiles - Credit goes to the DragonPilot team!
                  # MPH = [0., 18,  36,  63,  94]
@@ -55,44 +56,48 @@ class FrogPilotPlanner:
   def __init__(self, CP):
     self.CP = CP
 
-    self.params = Params()
     self.params_memory = Params("/dev/shm/params")
 
     self.cem = ConditionalExperimentalMode()
     self.lead_one = Lead()
     self.mtsc = MapTurnSpeedController()
 
-    self.radarless_model = self.params.get("Model", block=True, encoding='utf-8') in RADARLESS_MODELS
+    self.release = get_short_branch() == "FrogPilot"
 
     self.override_slc = False
 
+    self.base_jerk = 0
     self.jerk = 0
     self.overridden_speed = 0
     self.mtsc_target = 0
+    self.road_curvature = 0
     self.slc_target = 0
     self.t_follow = 0
     self.vtsc_target = 0
 
-  def update(self, carState, controlsState, frogpilotCarControl, frogpilotNavigation, liveLocationKalman, modelData, radarState, frogpilot_toggles):
+  def update(self, carState, controlsState, frogpilotCarControl, frogpilotCarState, frogpilotNavigation, liveLocationKalman, modelData, radarState, frogpilot_toggles):
     v_cruise_kph = min(controlsState.vCruise, V_CRUISE_UNSET)
     v_cruise = v_cruise_kph * CV.KPH_TO_MS
+    v_cruise_changed = (self.mtsc_target or self.vtsc_target) < v_cruise
+
     v_ego = max(carState.vEgo, 0)
     v_lead = self.lead_one.vLead
 
-    if frogpilot_toggles.acceleration_profile == 1:
+    eco_gear = carState.gearShifter == GearShifter.eco or frogpilotCarState.ecoGear
+    sport_gear = carState.gearShifter == GearShifter.sport or frogpilotCarState.sportGear
+
+    if frogpilot_toggles.acceleration_profile == 1 or eco_gear and frogpilot_toggles.map_acceleration:
       self.max_accel = get_max_accel_eco(v_ego)
-    elif frogpilot_toggles.acceleration_profile in (2, 3):
+    elif frogpilot_toggles.acceleration_profile in {2, 3} or sport_gear and frogpilot_toggles.map_acceleration:
       self.max_accel = get_max_accel_sport(v_ego)
     elif not controlsState.experimentalMode:
       self.max_accel = get_max_accel(v_ego)
     else:
       self.max_accel = ACCEL_MAX
 
-    v_cruise_changed = (self.mtsc_target or self.vtsc_target) < v_cruise
-
-    if frogpilot_toggles.deceleration_profile == 1 and not v_cruise_changed:
+    if frogpilot_toggles.deceleration_profile == 1 or eco_gear and frogpilot_toggles.map_deceleration:
       self.min_accel = get_min_accel_eco(v_ego)
-    elif frogpilot_toggles.deceleration_profile == 2 and not v_cruise_changed:
+    elif frogpilot_toggles.deceleration_profile == 2 or sport_gear and frogpilot_toggles.map_deceleration:
       self.min_accel = get_min_accel_sport(v_ego)
     elif not controlsState.experimentalMode:
       self.min_accel = A_CRUISE_MIN
@@ -107,29 +112,38 @@ class FrogPilotPlanner:
       self.lane_width_left = 0
       self.lane_width_right = 0
 
-    road_curvature = calculate_road_curvature(modelData, v_ego)
+    if frogpilot_toggles.conditional_experimental_mode or frogpilot_toggles.green_light_alert:
+      self.cem.update(carState, controlsState.enabled, frogpilotNavigation, self.lead_one, modelData, self.road_curvature, self.t_follow, v_ego, frogpilot_toggles)
 
     if self.lead_one.status and self.CP.openpilotLongitudinalControl:
-      base_jerk = get_jerk_factor(frogpilot_toggles.custom_personalities, frogpilot_toggles.aggressive_jerk, frogpilot_toggles.standard_jerk, frogpilot_toggles.relaxed_jerk, controlsState.personality)
-      base_t_follow = get_T_FOLLOW(frogpilot_toggles.custom_personalities, frogpilot_toggles.aggressive_follow, frogpilot_toggles.standard_follow, frogpilot_toggles.relaxed_follow, controlsState.personality)
+      if frogpilotCarControl.trafficModeActive:
+        self.base_jerk = interp(v_ego, TRAFFIC_MODE_BP, frogpilot_toggles.traffic_mode_jerk)
+        base_t_follow = interp(v_ego, TRAFFIC_MODE_BP, frogpilot_toggles.traffic_mode_t_follow)
+      else:
+        self.base_jerk = get_jerk_factor(frogpilot_toggles.custom_personalities, frogpilot_toggles.aggressive_jerk,
+                                         frogpilot_toggles.standard_jerk, frogpilot_toggles.relaxed_jerk, controlsState.personality)
+        base_t_follow = get_T_FOLLOW(frogpilot_toggles.custom_personalities, frogpilot_toggles.aggressive_follow,
+                                     frogpilot_toggles.standard_follow, frogpilot_toggles.relaxed_follow, controlsState.personality)
+
+      self.jerk, self.t_follow = self.update_follow_values(self.base_jerk, self.lead_one, base_t_follow, frogpilotCarControl.trafficModeActive, v_ego, v_lead, frogpilot_toggles)
+
       self.safe_obstacle_distance = int(np.mean(get_safe_obstacle_distance(v_ego, self.t_follow)))
       self.safe_obstacle_distance_stock = int(np.mean(get_safe_obstacle_distance(v_ego, base_t_follow)))
       self.stopped_equivalence_factor = int(np.mean(get_stopped_equivalence_factor(v_lead)))
-      self.jerk, self.t_follow = self.update_follow_values(base_jerk, self.lead_one, base_t_follow, frogpilotCarControl.trafficModeActive, v_ego, v_lead, frogpilot_toggles)
     else:
+      self.jerk = get_jerk_factor(frogpilot_toggles.custom_personalities, frogpilot_toggles.aggressive_jerk,
+                                  frogpilot_toggles.standard_jerk, frogpilot_toggles.relaxed_jerk, controlsState.personality)
+      self.t_follow = get_T_FOLLOW(frogpilot_toggles.custom_personalities, frogpilot_toggles.aggressive_follow,
+                                   frogpilot_toggles.standard_follow, frogpilot_toggles.relaxed_follow, controlsState.personality)
+
       self.safe_obstacle_distance = 0
       self.safe_obstacle_distance_stock = 0
       self.stopped_equivalence_factor = 0
-      self.t_follow = 1.45
 
-    self.v_cruise = self.update_v_cruise(carState, controlsState, controlsState.enabled, liveLocationKalman, modelData, road_curvature, v_cruise, v_ego, frogpilot_toggles)
-
-    if frogpilot_toggles.conditional_experimental_mode or frogpilot_toggles.green_light_alert:
-      self.cem.update(carState, controlsState.enabled, frogpilotNavigation, self.lead_one, modelData, road_curvature, self.t_follow, v_ego, frogpilot_toggles)
-
-    if self.radarless_model:
+    if frogpilot_toggles.radarless_model:
       model_leads = list(modelData.leadsV3)
-      if len(model_leads) > 0:
+
+      if len(list(modelData.leadsV3)) > 0:
         model_lead = model_leads[0]
         self.lead_one.update(model_lead.x[0], model_lead.y[0], model_lead.v[0], model_lead.a[0], model_lead.prob)
       else:
@@ -137,13 +151,17 @@ class FrogPilotPlanner:
     else:
       self.lead_one = radarState.leadOne
 
-  def update_follow_values(self, jerk, lead_one, t_follow, trafficModeActive, v_ego, v_lead, frogpilot_toggles):
-    if trafficModeActive:
-      jerk = interp(v_ego, TRAFFIC_MODE_BP, frogpilot_toggles.traffic_mode_jerk)
-      t_follow = interp(v_ego, TRAFFIC_MODE_BP, frogpilot_toggles.traffic_mode_t_follow)
+    if v_ego > CRUISING_SPEED:
+      self.road_curvature = calculate_road_curvature(modelData, v_ego)
+    else:
+      self.road_curvature = 1
 
-    stopping_distance = STOP_DISTANCE + frogpilot_toggles.increased_stopping_distance if not trafficModeActive else 0
-    lead_distance = self.lead_one.dRel + stopping_distance
+    self.v_cruise = self.update_v_cruise(carState, controlsState, controlsState.enabled, frogpilotCarState, liveLocationKalman, modelData, v_cruise, v_ego, frogpilot_toggles)
+
+  def update_follow_values(self, jerk, lead_one, t_follow, trafficModeActive, v_ego, v_lead, frogpilot_toggles):
+    increased_distance = frogpilot_toggles.increased_stopping_distance if not trafficModeActive else 0
+    lead_distance = self.lead_one.dRel - increased_distance
+    stopping_distance = STOP_DISTANCE + increased_distance
 
     # Offset by FrogAi for FrogPilot for a more natural approach to a faster lead
     if frogpilot_toggles.aggressive_acceleration_experimental and v_lead > v_ego:
@@ -169,7 +187,7 @@ class FrogPilotPlanner:
 
     return jerk, t_follow
 
-  def update_v_cruise(self, carState, controlsState, enabled, liveLocationKalman, modelData, road_curvature, v_cruise, v_ego, frogpilot_toggles):
+  def update_v_cruise(self, carState, controlsState, enabled, frogpilotCarState, liveLocationKalman, modelData, v_cruise, v_ego, frogpilot_toggles):
     gps_check = (liveLocationKalman.status == log.LiveLocationKalman.Status.valid) and liveLocationKalman.positionGeodetic.valid and liveLocationKalman.gpsOK
 
     v_cruise_cluster = max(controlsState.vCruiseCluster, controlsState.vCruise) * CV.KPH_TO_MS
@@ -183,7 +201,7 @@ class FrogPilotPlanner:
       mtsc_active = self.mtsc_target < v_cruise
       self.mtsc_target = np.clip(self.mtsc.target_speed(v_ego, carState.aEgo), CRUISING_SPEED, v_cruise)
 
-      if frogpilot_toggles.mtsc_curvature_check and road_curvature < 1.0 and not mtsc_active:
+      if frogpilot_toggles.mtsc_curvature_check and self.road_curvature < 1.0 and not mtsc_active:
         self.mtsc_target = v_cruise
       if self.mtsc_target == CRUISING_SPEED:
         self.mtsc_target = v_cruise
@@ -192,7 +210,7 @@ class FrogPilotPlanner:
 
     # Pfeiferj's Speed Limit Controller
     if frogpilot_toggles.speed_limit_controller:
-      SpeedLimitController.update(v_ego)
+      SpeedLimitController.update(frogpilotCarState.dashboardSpeedLimit, v_ego, frogpilot_toggles)
       unconfirmed_slc_target = SpeedLimitController.desired_speed_limit
 
       # Check if the new speed limit has been confirmed by the user
@@ -209,7 +227,7 @@ class FrogPilotPlanner:
       self.override_slc &= enabled
 
       # Use the override speed if SLC is being overridden
-      if frogpilot_toggles.override_slc:
+      if self.override_slc:
         if frogpilot_toggles.speed_limit_controller_override == 1:
           # Set the speed limit to the manual set speed
           if carState.gasPressed:
@@ -224,15 +242,11 @@ class FrogPilotPlanner:
       self.slc_target = v_cruise
 
     # Pfeiferj's Vision Turn Controller
-    if frogpilot_toggles.vision_turn_controller and v_ego > CRUISING_SPEED and enabled:
-      orientation_rate = np.array(np.abs(modelData.orientationRate.z)) * self.curve_sensitivity
-      velocity = np.array(modelData.velocity.x)
-
-      max_pred_lat_acc = np.amax(orientation_rate * velocity)
-      max_curve = max_pred_lat_acc / (v_ego**2)
+    if frogpilot_toggles.vision_turn_controller and enabled:
+      adjusted_road_curvature = self.road_curvature * frogpilot_toggles.curve_sensitivity
       adjusted_target_lat_a = TARGET_LAT_A * frogpilot_toggles.turn_aggressiveness
 
-      self.vtsc_target = (adjusted_target_lat_a / max_curve)**0.5
+      self.vtsc_target = (adjusted_target_lat_a / adjusted_road_curvature)**0.5
       self.vtsc_target = np.clip(self.vtsc_target, CRUISING_SPEED, v_cruise)
     else:
       self.vtsc_target = v_cruise
@@ -247,13 +261,13 @@ class FrogPilotPlanner:
     frogpilot_plan_send.valid = sm.all_checks(service_list=['carState', 'controlsState'])
     frogpilotPlan = frogpilot_plan_send.frogpilotPlan
 
-    frogpilotPlan.accelerationJerk = A_CHANGE_COST * (float(self.jerk) if self.lead_one.status else 1)
-    frogpilotPlan.accelerationJerkStock = A_CHANGE_COST
-    frogpilotPlan.adjustedCruise = float(min(self.mtsc_target, self.vtsc_target) * (CV.MS_TO_KPH if self.is_metric else CV.MS_TO_MPH))
+    frogpilotPlan.accelerationJerk = A_CHANGE_COST * float(self.jerk)
+    frogpilotPlan.accelerationJerkStock = A_CHANGE_COST * float(self.base_jerk)
+    frogpilotPlan.adjustedCruise = float(min(self.mtsc_target, self.vtsc_target) * (CV.MS_TO_KPH if frogpilot_toggles.is_metric else CV.MS_TO_MPH))
     frogpilotPlan.conditionalExperimental = self.cem.experimental_mode
     frogpilotPlan.desiredFollowDistance = self.safe_obstacle_distance - self.stopped_equivalence_factor
-    frogpilotPlan.egoJerk = J_EGO_COST * (float(self.jerk) if self.lead_one.status else 1)
-    frogpilotPlan.egoJerkStock = J_EGO_COST
+    frogpilotPlan.egoJerk = J_EGO_COST * float(self.jerk)
+    frogpilotPlan.egoJerkStock = J_EGO_COST * float(self.base_jerk)
     frogpilotPlan.jerk = float(self.jerk)
     frogpilotPlan.safeObstacleDistance = self.safe_obstacle_distance
     frogpilotPlan.safeObstacleDistanceStock = self.safe_obstacle_distance_stock
