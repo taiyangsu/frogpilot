@@ -271,7 +271,7 @@ class CarInterface(CarInterfaceBase):
         ret.longitudinalTuning.kiBP = [0., 35.0]
         ret.longitudinalTuning.kiV = [0.1, 0.1]
         ret.longitudinalTuning.kf = 0.15
-        ret.stoppingDecelRate = 0.8
+        ret.stoppingDecelRate = 0.81 if params.get_bool("ExperimentalLongitudinalEnabled") else 0.80
       else:  # Pedal used for SNG, ACC for longitudinal control otherwise
         ret.safetyConfigs[0].safetyParam |= 1024
         ret.startingState = True
