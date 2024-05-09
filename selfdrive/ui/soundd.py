@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import os
 import time
 import wave
 
@@ -12,6 +13,8 @@ from openpilot.common.retry import retry
 from openpilot.common.swaglog import cloudlog
 
 from openpilot.system import micd
+
+from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import FrogPilotVariables
 
 SAMPLE_RATE = 48000
 SAMPLE_BUFFER = 4096 # (approx 100ms)
@@ -52,8 +55,6 @@ def check_controls_timeout_alert(sm):
 
 class Soundd:
   def __init__(self):
-    self.load_sounds()
-
     self.current_alert = AudibleAlert.none
     self.current_volume = MIN_VOLUME
     self.current_sound_frame = 0
@@ -61,6 +62,11 @@ class Soundd:
     self.controls_timeout_alert = False
 
     self.spl_filter_weighted = FirstOrderFilter(0, 2.5, FILTER_DT, initialized=False)
+
+    # FrogPilot variables
+    self.previous_sound_directory = None
+
+    self.update_frogpilot_params(FrogPilotVariables.toggles)
 
   def load_sounds(self):
     self.loaded_sounds: dict[int, np.ndarray] = {}
@@ -155,6 +161,17 @@ class Soundd:
 
         assert stream.active
 
+        # Update FrogPilot parameters
+        if FrogPilotVariables.toggles_updated:
+          FrogPilotVariables.update_frogpilot_params(True)
+          frogpilot_toggles = FrogPilotVariables.toggles
+          self.update_frogpilot_params(frogpilot_toggles)
+
+  def update_frogpilot_params(self, frogpilot_toggles):
+    if self.sound_directory != self.previous_sound_directory:
+      self.load_sounds()
+
+    self.previous_sound_directory = self.sound_directory
 
 def main():
   s = Soundd()

@@ -15,12 +15,11 @@
 #include "selfdrive/ui/qt/widgets/input.h"
 #include "system/hardware/hw.h"
 
-
 void SoftwarePanel::checkForUpdates() {
   std::system("pkill -SIGUSR1 -f selfdrive.updated.updated");
 }
 
-SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
+SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent), scene(uiState()->scene) {
   onroadLbl = new QLabel(tr("Updates are only downloaded while the car is off."));
   onroadLbl->setStyleSheet("font-size: 50px; font-weight: 400; text-align: left; padding-top: 30px; padding-bottom: 30px;");
   addItem(onroadLbl);
@@ -54,6 +53,11 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   connect(targetBranchBtn, &ButtonControl::clicked, [=]() {
     auto current = params.get("GitBranch");
     QStringList branches = QString::fromStdString(params.get("UpdaterAvailableBranches")).split(",");
+    if (!Params("/persist/params").getBool("FrogsGoMoo")) {
+      branches.removeAll("FrogPilot-Development");
+      branches.removeAll("FrogPilot-New");
+      branches.removeAll("MAKE-PRS-HERE");
+    }
     for (QString b : {current.c_str(), "devel-staging", "devel", "nightly", "master-ci", "master"}) {
       auto i = branches.indexOf(b);
       if (i >= 0) {

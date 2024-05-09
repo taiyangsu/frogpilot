@@ -21,6 +21,8 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
 from openpilot.system.version import is_tested_branch
 
+from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import FrogPilotVariables
+
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
 STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
 
@@ -236,6 +238,8 @@ class Updater:
     self.branches = defaultdict(str)
     self._has_internet: bool = False
 
+    # FrogPilot variables
+
   @property
   def has_internet(self) -> bool:
     return self._has_internet
@@ -409,6 +413,7 @@ class Updater:
 
 def main() -> None:
   params = Params()
+  params_memory = Params("/dev/shm/params")
 
   if params.get_bool("DisableUpdates"):
     cloudlog.warning("updates are disabled by the DisableUpdates param")

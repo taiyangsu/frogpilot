@@ -25,6 +25,8 @@ from openpilot.selfdrive.thermald.power_monitoring import PowerMonitoring
 from openpilot.selfdrive.thermald.fan_controller import TiciFanController
 from openpilot.system.version import terms_version, training_version
 
+from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import FrogPilotVariables
+
 ThermalStatus = log.DeviceState.ThermalStatus
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
@@ -162,8 +164,8 @@ def hw_state_thread(end_event, hw_queue):
     time.sleep(DT_TRML)
 
 
-def thermald_thread(end_event, hw_queue) -> None:
-  pm = messaging.PubMaster(['deviceState'])
+def thermald_thread(end_event, hw_queue, frogpilot_toggles) -> None:
+  pm = messaging.PubMaster(['deviceState', 'frogpilotDeviceState'])
   sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "controlsState", "pandaStates"], poll="pandaStates")
 
   count = 0
@@ -241,6 +243,10 @@ def thermald_thread(end_event, hw_queue) -> None:
       last_hw_state = hw_queue.get_nowait()
     except queue.Empty:
       pass
+
+    fpmsg = messaging.new_message('frogpilotDeviceState')
+
+    pm.send("frogpilotDeviceState", fpmsg)
 
     msg.deviceState.freeSpacePercent = get_available_percent(default=100.0)
     msg.deviceState.memoryUsagePercent = int(round(psutil.virtual_memory().percent))
@@ -386,7 +392,7 @@ def thermald_thread(end_event, hw_queue) -> None:
     msg.deviceState.somPowerDrawW = som_power_draw
 
     # Check if we need to shut down
-    if power_monitor.should_shutdown(onroad_conditions["ignition"], in_car, off_ts, started_seen):
+    if power_monitor.should_shutdown(onroad_conditions["ignition"], in_car, off_ts, started_seen, frogpilot_toggles):
       cloudlog.warning(f"shutting device down, offroad since {off_ts}")
       params.put_bool("DoShutdown", True)
 
@@ -444,6 +450,9 @@ def thermald_thread(end_event, hw_queue) -> None:
     count += 1
     should_start_prev = should_start
 
+    if FrogPilotVariables.toggles_updated:
+      FrogPilotVariables.update_frogpilot_params(started_ts)
+      frogpilot_toggles = FrogPilotVariables.toggles
 
 def main():
   hw_queue = queue.Queue(maxsize=1)
@@ -451,7 +460,7 @@ def main():
 
   threads = [
     threading.Thread(target=hw_state_thread, args=(end_event, hw_queue)),
-    threading.Thread(target=thermald_thread, args=(end_event, hw_queue)),
+    threading.Thread(target=thermald_thread, args=(end_event, hw_queue, FrogPilotVariables.toggles)),
   ]
 
   for t in threads:
