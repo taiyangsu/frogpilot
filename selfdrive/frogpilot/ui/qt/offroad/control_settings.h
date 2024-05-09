@@ -21,13 +21,19 @@ private:
   void showEvent(QShowEvent *event, const UIState &s);
   void updateCarToggles();
   void updateMetric();
-  void updateState();
+  void updateState(const UIState &s);
+
+  ButtonControl *deleteModelBtn;
+  ButtonControl *downloadModelBtn;
+  ButtonControl *selectModelBtn;
 
   FrogPilotDualParamControl *aggressiveProfile;
   FrogPilotDualParamControl *conditionalSpeedsImperial;
   FrogPilotDualParamControl *conditionalSpeedsMetric;
   FrogPilotDualParamControl *standardProfile;
   FrogPilotDualParamControl *relaxedProfile;
+
+  FrogPilotParamManageControl *modelManagerToggle;
 
   std::set<QString> aolKeys = {"AlwaysOnLateralMain", "HideAOLStatusBar", "PauseAOLOnBrake"};
   std::set<QString> conditionalExperimentalKeys = {"CECurves", "CECurvesLead", "CENavigation", "CESignal", "CESlowerLead", "CEStopLights", "HideCEMStatusBar"};
@@ -58,6 +64,5 @@ private:
   bool isMetric = params.getBool("IsMetric");
   bool isStaging;
   bool isToyota;
-  bool online;
   bool started;
 };
