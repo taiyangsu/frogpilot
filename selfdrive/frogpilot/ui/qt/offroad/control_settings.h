@@ -69,6 +69,7 @@ private:
   bool isMetric = params.getBool("IsMetric");
   bool isRelease;
   bool isToyota;
+  bool isGM;
   bool started;
 
   float steerRatioStock;
