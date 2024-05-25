@@ -42,6 +42,7 @@ class FrogPilotVariables:
     if msg_bytes is None:
       toggles.always_on_lateral = False
       car_name = "mock"
+      toggles.CSLC = False
       openpilot_longitudinal = False
       pcm_cruise = False
     else:
@@ -52,8 +53,9 @@ class FrogPilotVariables:
         else:
           toggles.always_on_lateral = False
         car_name = CP.carName
+        toggles.CSLC = self.params.get_bool("CSLCEnabled")
         openpilot_longitudinal = CP.openpilotLongitudinalControl
-        pcm_cruise = CP.pcmCruise
+        pcm_cruise = CP.pcmCruise and not toggles.CSLC
 
     toggles.is_metric = self.params.get_bool("IsMetric")
     distance_conversion = 1 if toggles.is_metric else CV.FOOT_TO_METER
