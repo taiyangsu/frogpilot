@@ -152,7 +152,7 @@ class CarInterface(CarInterfaceBase):
         ret.openpilotLongitudinalControl = True
         ret.longitudinalTuning.deadzoneBP = [0.]
         ret.longitudinalTuning.deadzoneV = [0.9]  # == 2 mph allowable delta
-        ret.stoppingDecelRate = 7.45  # == 16.67 mph/s (OFF + ON = 30 frames)
+        ret.stoppingDecelRate = 3.25  # == 8.33 mph/s (OFF + ON = 12 frames)
         ret.longitudinalActuatorDelayLowerBound = 1.
         ret.longitudinalActuatorDelayUpperBound = 2.
 

@@ -265,7 +265,7 @@ def create_gm_acc_spam_command(packer, controller, CS, slcSet, bus, Vego, frogpi
   slcSet = int(round(slcSet * MS_CONVERT))
 
   FRAMES_ON = 6
-  FRAMES_OFF = 30 - FRAMES_ON
+  FRAMES_OFF = (30 if sdgm else 12) - FRAMES_ON
 
   if not frogpilot_variables.experimentalMode:
     if slcSet + 5 < Vego * MS_CONVERT:
@@ -291,7 +291,7 @@ def create_gm_acc_spam_command(packer, controller, CS, slcSet, bus, Vego, frogpi
 
   if (cruiseBtn != CruiseButtons.INIT) and controller.frame % (FRAMES_ON + FRAMES_OFF) < FRAMES_ON:
     controller.last_button_frame = controller.frame
-    idx = (CS.buttons_counter + 1) % 4
-    return [create_buttons_five(packer, bus, idx, cruiseBtn, byfive)]*(23 if sdgm else 1)
+    idx = (CS.buttons_counter + (1 if sdgm else 2)) % 4
+    return [create_buttons_five(packer, bus, idx, cruiseBtn, byfive)]*(23 if sdgm else 3)
   else:
     return []
