@@ -26,6 +26,8 @@ class FrogPilotPlanner:
 
     self.cem = ConditionalExperimentalMode()
 
+    self.slower_lead = False
+
     self.road_curvature = 0
 
   def update(self, carState, controlsState, frogpilotCarControl, frogpilotCarState, frogpilotNavigation, liveLocationKalman, modelData, radarState, frogpilot_toggles):
@@ -50,10 +52,16 @@ class FrogPilotPlanner:
     self.v_cruise = self.update_v_cruise(carState, controlsState, frogpilotCarState, frogpilotNavigation, liveLocationKalman, modelData, v_cruise, v_ego, frogpilot_toggles)
 
     if frogpilot_toggles.conditional_experimental_mode:
-      self.cem.update(carState, controlsState.enabled, frogpilotNavigation, self.lead_one, modelData, self.road_curvature, v_ego, v_lead, frogpilot_toggles)
+      self.cem.update(carState, controlsState.enabled, frogpilotNavigation, self.lead_one, modelData, self.road_curvature, self.slower_lead, v_ego, v_lead, frogpilot_toggles)
 
   def update_follow_values(self, v_ego, v_lead, frogpilot_toggles):
     lead_distance = self.lead_one.dRel
+
+    # Offset by FrogAi for FrogPilot for a more natural approach to a slower lead
+    if frogpilot_toggles.conditional_experimental_mode and v_lead < v_ego:
+      distance_factor = max(lead_distance - (v_lead * self.t_follow), 1)
+      braking_offset = np.clip((v_ego - v_lead) - COMFORT_BRAKE, 1, distance_factor)
+      self.slower_lead = max(braking_offset, 1) > 1
 
   def update_v_cruise(self, carState, controlsState, frogpilotCarState, frogpilotNavigation, liveLocationKalman, modelData, v_cruise, v_ego, frogpilot_toggles):
     v_cruise_cluster = max(controlsState.vCruiseCluster, controlsState.vCruise) * CV.KPH_TO_MS
