@@ -11,3 +11,6 @@ if [ -z "$AGNOS_VERSION" ]; then
 fi
 
 export STAGING_ROOT="/data/safe_staging"
+
+# clean backups on startup
+rm -rf /data/backups/*
