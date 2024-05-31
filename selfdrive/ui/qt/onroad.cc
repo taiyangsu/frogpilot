@@ -614,8 +614,9 @@ void ExperimentalButton::paintEvent(QPaintEvent *event) {
     (scene.always_on_lateral_active ? bg_colors[STATUS_ALWAYS_ON_LATERAL_ACTIVE] :
     (scene.conditional_status == 1 || scene.conditional_status == 3 || scene.conditional_status == 5 ? bg_colors[STATUS_CONDITIONAL_OVERRIDDEN] :
     (experimental_mode ? bg_colors[STATUS_EXPERIMENTAL_MODE_ACTIVE] :
-    (scene.traffic_mode_active ? bg_colors[STATUS_TRAFFIC_MODE_ACTIVE] :
-    (scene.navigate_on_openpilot ? bg_colors[STATUS_NAVIGATION_ACTIVE] : QColor(0, 0, 0, 166)))))) :
+    (scene.eco_gear ? QColor(23, 134, 68, 242) :
+    (scene.traffic_mode_active || scene.sport_gear ? bg_colors[STATUS_TRAFFIC_MODE_ACTIVE] :
+    (scene.navigate_on_openpilot ? bg_colors[STATUS_NAVIGATION_ACTIVE] : QColor(0, 0, 0, 166))))))) :
     QColor(0, 0, 0, 166);
 
   if (!(scene.map_open && scene.big_map)) {

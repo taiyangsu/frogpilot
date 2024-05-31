@@ -262,6 +262,8 @@ static void update_state(UIState *s) {
   if (sm.updated("frogpilotCarState")) {
     auto frogpilotCarState = sm["frogpilotCarState"].getFrogpilotCarState();
     scene.brake_lights_on = frogpilotCarState.getBrakeLights();
+    scene.eco_gear = frogpilotCarState.getEcoGear();
+    scene.sport_gear = frogpilotCarState.getSportGear();
   }
   if (sm.updated("frogpilotPlan")) {
     auto frogpilotPlan = sm["frogpilotPlan"].getFrogpilotPlan();

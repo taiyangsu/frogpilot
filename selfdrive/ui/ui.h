@@ -202,6 +202,7 @@ typedef struct UIScene {
   bool driver_camera;
   bool dynamic_path_width;
   bool dynamic_pedals_on_ui;
+  bool eco_gear;
   bool enabled;
   bool experimental_mode;
   bool experimental_mode_via_screen;
@@ -252,6 +253,7 @@ typedef struct UIScene {
   bool speed_limit_changed;
   bool speed_limit_controller;
   bool speed_limit_overridden;
+  bool sport_gear;
   bool standby_mode;
   bool standstill;
   bool static_pedals_on_ui;
