@@ -212,7 +212,7 @@ class CarInterfaceBase(ABC):
     self.params_memory = Params("/dev/shm/params")
 
     lateral_tune = self.params.get_bool("LateralTune")
-    nnff_supported = self.initialize_lat_torque_nn(CP.carFingerprint, eps_firmware)
+    nnff_supported = self.initialize_lat_torque_nn("TOYOTA PRIUS TSS2 2021" if CP.carFingerprint == "TOYOTA PRIUS 2017" and any(fw.ecu == "eps" and fw.fwVersion == b'8965B47070\x00\x00\x00\x00\x00\x00' for fw in CP.carFw) else CP.carFingerprint, eps_firmware)
     use_comma_nnff = self.check_comma_nn_ff_support(CP.carFingerprint)
     self.use_nnff = not use_comma_nnff and nnff_supported and lateral_tune and self.params.get_bool("NNFF")
     self.use_nnff_lite = not use_comma_nnff and not self.use_nnff and lateral_tune and self.params.get_bool("NNFFLite")
