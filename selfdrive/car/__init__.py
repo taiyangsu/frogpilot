@@ -1,4 +1,5 @@
 # functions common among cars
+import logging
 from collections import namedtuple
 from dataclasses import dataclass
 from enum import IntFlag, ReprEnum, EnumType
@@ -11,6 +12,10 @@ from openpilot.common.numpy_fast import clip, interp
 from openpilot.common.utils import Freezable
 from openpilot.selfdrive.car.docs_definitions import CarDocs
 
+# set up logging
+carlog = logging.getLogger('carlog')
+carlog.setLevel(logging.INFO)
+carlog.propagate = False
 
 # kg of standard extra cargo to count for drive, gas, etc...
 STD_CARGO_KG = 136.
@@ -163,6 +168,45 @@ def common_fault_avoidance(fault_condition: bool, request: bool, above_limit_fra
     above_limit_frames = 0
 
   return above_limit_frames, request
+
+
+def rate_limit(new_value, last_value, dw_step, up_step):
+  return clip(new_value, last_value + dw_step, last_value + up_step)
+
+
+def crc8_pedal(data):
+  crc = 0xFF    # standard init value
+  poly = 0xD5   # standard crc8: x8+x7+x6+x4+x2+1
+  size = len(data)
+  for i in range(size - 1, -1, -1):
+    crc ^= data[i]
+    for _ in range(8):
+      if ((crc & 0x80) != 0):
+        crc = ((crc << 1) ^ poly) & 0xFF
+      else:
+        crc <<= 1
+  return crc
+
+
+def create_gas_interceptor_command(packer, gas_amount, idx):
+  # Common gas pedal msg generator
+  enable = gas_amount > 0.001
+
+  values = {
+    "ENABLE": enable,
+    "COUNTER_PEDAL": idx & 0xF,
+  }
+
+  if enable:
+    values["GAS_COMMAND"] = gas_amount * 255.
+    values["GAS_COMMAND2"] = gas_amount * 255.
+
+  dat = packer.make_can_msg("GAS_COMMAND", 0, values)[2]
+
+  checksum = crc8_pedal(dat[:-1])
+  values["CHECKSUM_PEDAL"] = checksum
+
+  return packer.make_can_msg("GAS_COMMAND", 0, values)
 
 
 def make_can_msg(addr, dat, bus):
