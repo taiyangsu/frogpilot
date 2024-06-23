@@ -976,7 +976,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       float lin_grad_point = (height() - scene.track_vertices[i].y()) / height();
       float acceleration_abs = fabs(acceleration[i]);
 
-    if (acceleration_abs < 1.1) && (scene.rainbow_path) {
+    if (acceleration_abs < 1.1 && scene.rainbow_path) {
             float saturation = util::map_val(acceleration_abs, 0.0f, 1.0f, 0.6f, 0.8f); // higher saturation when acceleration_abs is 0
             float lightness = util::map_val(acceleration_abs, 0.0f, 1.0f, 0.7f, 0.5f);
             float alpha = util::map_val(acceleration_abs, 0.0f, 1.0f, 0.5f, 0.8f);
