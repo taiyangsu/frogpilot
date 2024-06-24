@@ -18,6 +18,8 @@
 #include "selfdrive/ui/qt/network/wifi_manager.h"
 #include "system/hardware/hw.h"
 
+#include "selfdrive/frogpilot/ui/qt/widgets/frogpilot_controls.h"
+
 const int UI_BORDER_SIZE = 30;
 const int UI_HEADER_HEIGHT = 420;
 
@@ -81,7 +83,7 @@ struct Alert {
         alert = {"openpilot crashed", "Please post the error log in the FrogPilot Discord!",
                  "controlsWaiting", cereal::ControlsState::AlertSize::MID,
                  cereal::ControlsState::AlertStatus::NORMAL,
-                 Params().getBool("RandomEvents") ? AudibleAlert::FART : AudibleAlert::NONE};
+                 AudibleAlert::NONE};
       } else if (controls_frame < started_frame) {
         // car is started, but controlsState hasn't been seen at all
         alert = {"openpilot Unavailable", "Waiting for controls to start",
@@ -113,7 +115,11 @@ typedef enum UIStatus {
   STATUS_ENGAGED,
 
   // FrogPilot statuses
-  STATUS_LATERAL_ACTIVE,
+  STATUS_ALWAYS_ON_LATERAL_ACTIVE,
+  STATUS_CONDITIONAL_OVERRIDDEN,
+  STATUS_EXPERIMENTAL_MODE_ACTIVE,
+  STATUS_NAVIGATION_ACTIVE,
+  STATUS_TRAFFIC_MODE_ACTIVE,
 } UIStatus;
 
 enum PrimeType {
@@ -132,7 +138,11 @@ const QColor bg_colors [] = {
   [STATUS_ENGAGED] = QColor(0x17, 0x86, 0x44, 0xf1),
 
   // FrogPilot colors
-  [STATUS_LATERAL_ACTIVE] = QColor(0x0a, 0xba, 0xb5, 0xf1),
+  [STATUS_ALWAYS_ON_LATERAL_ACTIVE] = QColor(0x0a, 0xba, 0xb5, 0xf1),
+  [STATUS_CONDITIONAL_OVERRIDDEN] = QColor(0xff, 0xff, 0x00, 0xf1),
+  [STATUS_EXPERIMENTAL_MODE_ACTIVE] = QColor(0xda, 0x6f, 0x25, 0xf1),
+  [STATUS_NAVIGATION_ACTIVE] = QColor(0x31, 0xa1, 0xee, 0xf1),
+  [STATUS_TRAFFIC_MODE_ACTIVE] = QColor(0xc9, 0x22, 0x31, 0xf1),
 };
 
 static std::map<cereal::ControlsState::AlertStatus, QColor> alert_colors = {
@@ -168,6 +178,7 @@ typedef struct UIScene {
   vec3 face_kpts_draw[std::size(default_face_kpts_3d)];
 
   bool navigate_on_openpilot = false;
+  cereal::LongitudinalPersonality personality;
 
   float light_sensor;
   bool started, ignition, is_metric, map_on_left, longitudinal_control;
@@ -176,80 +187,110 @@ typedef struct UIScene {
 
   // FrogPilot variables
   bool acceleration_path;
-  bool active_alert;
   bool adjacent_path;
   bool adjacent_path_metrics;
-  bool always_on_lateral;
   bool always_on_lateral_active;
+  bool big_map;
   bool blind_spot_left;
   bool blind_spot_path;
   bool blind_spot_right;
+  bool brake_lights_on;
   bool compass;
   bool conditional_experimental;
   bool disable_smoothing_mtsc;
   bool disable_smoothing_vtsc;
   bool driver_camera;
   bool dynamic_path_width;
+  bool dynamic_pedals_on_ui;
   bool enabled;
   bool experimental_mode;
   bool experimental_mode_via_screen;
   bool fahrenheit;
   bool fps_counter;
   bool full_map;
+  bool has_auto_tune;
   bool hide_alerts;
-  bool hide_aol_status_bar;
-  bool hide_cem_status_bar;
   bool hide_lead_marker;
   bool hide_map_icon;
   bool hide_max_speed;
   bool hide_speed;
   bool hide_speed_ui;
   bool holiday_themes;
+  bool is_CPU;
+  bool is_GPU;
+  bool is_IP;
+  bool is_memory;
+  bool is_storage_left;
+  bool is_storage_used;
   bool lead_info;
+  bool live_valid;
   bool map_open;
   bool model_ui;
   bool numerical_temp;
+  bool online;
+  bool onroad_distance_button;
   bool parked;
   bool pedals_on_ui;
-  bool personalities_via_screen;
   bool random_events;
+  bool reverse;
   bool reverse_cruise;
   bool reverse_cruise_ui;
   bool right_hand_drive;
   bool road_name_ui;
   bool rotating_wheel;
   bool screen_recorder;
-  bool show_driver_camera;
+  bool show_aol_status_bar;
+  bool show_blind_spot;
+  bool show_cem_status_bar;
+  bool show_jerk;
+  bool show_signal;
   bool show_slc_offset;
   bool show_slc_offset_ui;
+  bool show_steering;
+  bool show_tuning;
+  bool sidebar_metrics;
   bool speed_limit_changed;
   bool speed_limit_controller;
   bool speed_limit_overridden;
   bool standby_mode;
   bool standstill;
-  bool status_changed;
+  bool static_pedals_on_ui;
   bool tethering_enabled;
+  bool traffic_mode;
+  bool traffic_mode_active;
   bool turn_signal_left;
   bool turn_signal_right;
   bool unlimited_road_ui_length;
+  bool use_kaofui_icons;
   bool use_si;
   bool use_vienna_slc_sign;
   bool vtsc_controlling_curve;
+  bool wake_up_screen;
   bool wheel_speed;
 
   float acceleration;
+  float acceleration_jerk;
+  float acceleration_jerk_difference;
   float adjusted_cruise;
+  float friction;
+  float lane_detection_width;
   float lane_line_width;
   float lane_width_left;
   float lane_width_right;
+  float lat_accel;
+  float lead_detection_threshold;
   float path_edge_width;
   float path_width;
   float road_edge_width;
+  float speed_jerk;
+  float speed_jerk_difference;
   float speed_limit;
   float speed_limit_offset;
   float speed_limit_overridden_speed;
+  float steer;
   float unconfirmed_speed_limit;
 
+  int alert_size;
   int bearing_deg;
   int camera_view;
   int conditional_speed;
@@ -261,6 +302,7 @@ typedef struct UIScene {
   int custom_icons;
   int custom_signals;
   int desired_follow;
+  int driver_camera_timer;
   int map_style;
   int obstacle_distance;
   int obstacle_distance_stock;
@@ -305,8 +347,6 @@ public:
   // FrogPilot variables
   WifiManager *wifi = nullptr;
 
-  UIStatus previous_status;
-
 signals:
   void uiUpdate(const UIState &s);
   void offroadTransition(bool offroad);
@@ -320,6 +360,9 @@ private:
   QTimer *timer;
   bool started_prev = false;
   PrimeType prime_type = PrimeType::UNKNOWN;
+
+  // FrogPilot variables
+  Params paramsMemory{"/dev/shm/params"};
 };
 
 UIState *uiState();
@@ -366,7 +409,7 @@ void update_model(UIState *s,
                   const cereal::ModelDataV2::Reader &model,
                   const cereal::UiPlan::Reader &plan);
 void update_dmonitoring(UIState *s, const cereal::DriverStateV2::Reader &driverstate, float dm_fade_state, bool is_rhd);
-void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, const cereal::XYZTData::Reader &line);
+void update_leads(UIState *s, const cereal::ModelDataV2::Reader &model_data);
 void update_line_data(const UIState *s, const cereal::XYZTData::Reader &line,
                       float y_off, float z_off, QPolygonF *pvd, int max_idx, bool allow_invert);
 

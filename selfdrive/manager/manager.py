@@ -5,16 +5,15 @@ import signal
 import subprocess
 import sys
 import threading
+import time
 import traceback
-from pathlib import Path
-from typing import List, Tuple, Union
 
 from cereal import log
 import cereal.messaging as messaging
 import openpilot.selfdrive.sentry as sentry
-from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params, ParamKeyType
 from openpilot.common.text_window import TextWindow
+from openpilot.common.time import system_time_valid
 from openpilot.system.hardware import HARDWARE, PC
 from openpilot.selfdrive.manager.helpers import unblock_stdout, write_onroad_params, save_bootlog
 from openpilot.selfdrive.manager.process import ensure_running
@@ -25,67 +24,74 @@ from openpilot.system.version import is_dirty, get_commit, get_version, get_orig
                            get_normalized_origin, terms_version, training_version, \
                            is_tested_branch, is_release_branch, get_commit_date
 
-from openpilot.selfdrive.frogpilot.functions.frogpilot_functions import DEFAULT_MODEL
+from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_functions import FrogPilotFunctions
+from openpilot.selfdrive.frogpilot.controls.lib.model_manager import DEFAULT_MODEL, DEFAULT_MODEL_NAME, delete_deprecated_models
 
 
-def manager_init() -> None:
+def frogpilot_boot_functions(frogpilot_functions):
+  try:
+    while not system_time_valid():
+      print("Waiting for system time to become valid...")
+      time.sleep(1)
+
+    try:
+      delete_deprecated_models()
+    except subprocess.CalledProcessError as e:
+      print(f"Failed to delete deprecated models. Error: {e}")
+      return
+
+    try:
+      frogpilot_functions.backup_frogpilot()
+    except subprocess.CalledProcessError as e:
+      print(f"Failed to backup FrogPilot. Error: {e}")
+      return
+
+    try:
+      frogpilot_functions.backup_toggles()
+    except subprocess.CalledProcessError as e:
+      print(f"Failed to backup toggles. Error: {e}")
+      return
+
+  except Exception as e:
+    print(f"An unexpected error occurred: {e}")
+
+def manager_init(frogpilot_functions) -> None:
+  frogpilot_boot = threading.Thread(target=frogpilot_boot_functions, args=(frogpilot_functions,))
+  frogpilot_boot.start()
+
   save_bootlog()
 
-  # Clear the error log on boot to prevent old errors from hanging around
-  if os.path.isfile(os.path.join(sentry.CRASHES_DIR, 'error.txt')):
-    os.remove(os.path.join(sentry.CRASHES_DIR, 'error.txt'))
-
   params = Params()
-  params_storage = Params("/persist/comma/params")
+  params_storage = Params("/persist/params")
+  params_tracking = Params("/persist/tracking")
   params.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
   params.clear_all(ParamKeyType.CLEAR_ON_ONROAD_TRANSITION)
   params.clear_all(ParamKeyType.CLEAR_ON_OFFROAD_TRANSITION)
   if is_release_branch():
     params.clear_all(ParamKeyType.DEVELOPMENT_ONLY)
 
-  ############### Remove this after the April 26th update ###############
+  frogpilot_functions.convert_params(params, params_storage, params_tracking)
 
-  previous_speed_limit = params.get_float("PreviousSpeedLimit")
-  if previous_speed_limit >= 50:
-    params.put_float("PreviousSpeedLimit", previous_speed_limit / 100)
-
-  for priority_key in ["SLCPriority", "SLCPriority1", "SLCPriority2", "SLCPriority3"]:
-    priority_value = params.get(priority_key)
-    if isinstance(priority_value, int):
-      params.remove(priority_key)
-
-  attributes = ["AggressiveFollow", "StandardFollow", "RelaxedFollow", "AggressiveJerk", "StandardJerk", "RelaxedJerk"]
-  values = {attr: params.get_float(attr) for attr in attributes}
-  if any(value > 5 for value in values.values()):
-    for attr, value in values.items():
-      params.put_float(attr, value / 10)
-
-  if params.get_bool("SilentMode"):
-    attributes = ["DisengageVolume", "EngageVolume", "PromptVolume", "PromptDistractedVolume", "RefuseVolume", "WarningSoftVolume", "WarningImmediateVolume"]
-    for attr in attributes:
-      params.put_float(attr, 0)
-    params.put_bool("SilentMode", False)
-
-  #######################################################################
-
-  # Check if the currently selected model still exists
-  current_model = params.get("Model", encoding='utf-8')
-
-  if current_model != DEFAULT_MODEL:
-    models_folder = os.path.join(BASEDIR, 'selfdrive/modeld/models/models')
-    model_exists = current_model in [os.path.splitext(file)[0] for file in os.listdir(models_folder)]
-
-    if not model_exists:
-      params.remove("Model")
-
-  default_params: List[Tuple[str, Union[str, bytes]]] = [
+  default_params: list[tuple[str, str | bytes]] = [
+    ("CarParamsPersistent", ""),
     ("CompletedTrainingVersion", "0"),
     ("DisengageOnAccelerator", "0"),
+    ("ExperimentalLongitudinalEnabled", "0"),
+    ("GithubSshKeys", ""),
+    ("GithubUsername", ""),
+    ("GsmApn", ""),
     ("GsmMetered", "1"),
+    ("GsmRoaming", "1"),
     ("HasAcceptedTerms", "0"),
+    ("IsLdwEnabled", "0"),
+    ("IsMetric", "0"),
     ("LanguageSetting", "main_en"),
+    ("NavSettingLeftSide", "0"),
+    ("NavSettingTime24h", "0"),
     ("OpenpilotEnabledToggle", "1"),
-    ("UpdaterAvailableBranches", ""),
+    ("RecordFront", "0"),
+    ("SshEnabled", "0"),
+    ("UpdaterAvailableBranches", "FrogPilot,FrogPilot-Staging"),
     ("LongitudinalPersonality", str(log.LongitudinalPersonality.standard)),
 
     # Default FrogPilot parameters
@@ -93,15 +99,22 @@ def manager_init() -> None:
     ("AccelerationProfile", "2"),
     ("AdjacentPath", "0"),
     ("AdjacentPathMetrics", "0"),
-    ("AdjustablePersonalities", "1"),
     ("AggressiveAcceleration", "1"),
+    ("AggressiveAccelerationExperimental", "0"),
     ("AggressiveFollow", "1.25"),
-    ("AggressiveJerk", "0.5"),
+    ("AggressiveJerkAcceleration", "50"),
+    ("AggressiveJerkSpeed", "50"),
+    ("AggressivePersonalityProfile", "1"),
     ("AlertVolumeControl", "0"),
     ("AlwaysOnLateral", "1"),
-    ("AlwaysOnLateralMain", "0"),
+    ("AlwaysOnLateralMain", "1"),
+    ("AMapKey1", ""),
+    ("AMapKey2", ""),
+    ("AutomaticUpdates", "1"),
+    ("BlindSpotMetrics", "0"),
     ("BlindSpotPath", "1"),
-    ("CameraView", "1"),
+    ("BorderMetrics", "1"),
+    ("CameraView", "2"),
     ("CarMake", ""),
     ("CarModel", ""),
     ("CECurves", "1"),
@@ -110,18 +123,22 @@ def manager_init() -> None:
     ("CENavigationLead", "1"),
     ("CENavigationTurns", "1"),
     ("CESignal", "1"),
-    ("CESlowerLead", "0"),
+    ("CESlowerLead", "1"),
     ("CESpeed", "0"),
     ("CESpeedLead", "0"),
     ("CEStopLights", "1"),
     ("CEStopLightsLead", "0"),
+    ("ClusterOffset", "1.015"),
     ("Compass", "0"),
     ("ConditionalExperimental", "1"),
     ("CrosstrekTorque", "1"),
     ("CurveSensitivity", "100"),
     ("CustomAlerts", "1"),
     ("CustomColors", "1"),
+    ("CustomCruise", "1"),
+    ("CustomCruiseLong", "5"),
     ("CustomIcons", "1"),
+    ("CustomPaths", "1"),
     ("CustomPersonalities", "1"),
     ("CustomSignals", "1"),
     ("CustomSounds", "1"),
@@ -129,33 +146,33 @@ def manager_init() -> None:
     ("CustomUI", "1"),
     ("CydiaTune", "0"),
     ("DecelerationProfile", "1"),
+    ("DeveloperUI", "0"),
+    ("DeviceManagement", "1"),
     ("DeviceShutdown", "9"),
     ("DisableMTSCSmoothing", "0"),
     ("DisableOnroadUploads", "0"),
+    ("DisableOpenpilotLongitudinal", "0"),
     ("DisableVTSCSmoothing", "0"),
     ("DisengageVolume", "100"),
     ("DragonPilotTune", "0"),
     ("DriverCamera", "0"),
-    ("DriveStats", "1"),
+    ("DrivingPersonalities", "1"),
     ("DynamicPathWidth", "0"),
+    ("DynamicPedalsOnUI", "1"),
     ("EngageVolume", "100"),
-    ("EVTable", "1"),
     ("ExperimentalModeActivation", "1"),
-    ("ExperimentalModeViaDistance", "0"),
-    ("ExperimentalModeViaLKAS", "0"),
-    ("ExperimentalModeViaScreen", "1"),
+    ("ExperimentalModeViaDistance", "1"),
+    ("ExperimentalModeViaLKAS", "1"),
+    ("ExperimentalModeViaTap", "0"),
     ("Fahrenheit", "0"),
-    ("FireTheBabysitter", "0"),
-    ("ForceAutoTune", "0"),
+    ("ForceAutoTune", "1"),
     ("ForceFingerprint", "0"),
     ("ForceMPHDashboard", "0"),
-    ("FPSCounter", "0"),
-    ("FrogPilotDrives", "0"),
-    ("FrogPilotKilometers", "0"),
-    ("FrogPilotMinutes", "0"),
+    ("FPSCounter", "1"),
     ("FrogsGoMooTune", "1"),
     ("FullMap", "0"),
-    ("GasRegenCmd", "0"),
+    ("GasRegenCmd", "1"),
+    ("GMapKey", ""),
     ("GoatScream", "1"),
     ("GreenLightAlert", "0"),
     ("HideAlerts", "0"),
@@ -167,47 +184,54 @@ def manager_init() -> None:
     ("HideSpeed", "0"),
     ("HideSpeedUI", "0"),
     ("HideUIElements", "0"),
-    ("HigherBitrate", "0"),
     ("HolidayThemes", "1"),
+    ("IncreaseThermalLimits", "0"),
+    ("LaneChangeCustomizations", "1"),
     ("LaneChangeTime", "0"),
-    ("LaneDetection", "1"),
-    ("LaneDetectionWidth", "60"),
+    ("LaneDetectionWidth", "90"),
     ("LaneLinesWidth", "4"),
+    ("LateralMetrics", "1"),
     ("LateralTune", "1"),
     ("LeadDepartingAlert", "0"),
-    ("LeadInfo", "0"),
-    ("LockDoors", "0"),
+    ("LeadDetectionThreshold", "35"),
+    ("LockDoors", "1"),
+    ("LongitudinalMetrics", "1"),
     ("LongitudinalTune", "1"),
     ("LongPitch", "1"),
     ("LoudBlindspotAlert", "0"),
-    ("LowerVolt", "1"),
+    ("LowVoltageShutdown", "11.8"),
+    ("MapAcceleration", "0"),
+    ("MapDeceleration", "0"),
     ("MapsSelected", ""),
-    ("MapStyle", "0"),
+    ("MapboxPublicKey", ""),
+    ("MapboxSecretKey", ""),
+    ("MapStyle", "10"),
+    ("MinimumLaneChangeSpeed", "20"),
     ("MTSCAggressiveness", "100"),
     ("MTSCCurvatureCheck", "0"),
-    ("MTSCLimit", "0"),
     ("Model", DEFAULT_MODEL),
+    ("ModelName", DEFAULT_MODEL_NAME),
+    ("ModelSelector", "0"),
     ("ModelUI", "1"),
     ("MTSCEnabled", "1"),
-    ("MuteOverheated", "0"),
-    ("NavChill", "0"),
     ("NNFF", "1"),
+    ("NNFFLite", "1"),
     ("NoLogging", "0"),
     ("NoUploads", "0"),
     ("NudgelessLaneChange", "1"),
-    ("NumericalTemp", "0"),
-    ("OfflineMode", "0"),
+    ("NumericalTemp", "1"),
+    ("OfflineMode", "1"),
     ("Offset1", "5"),
     ("Offset2", "5"),
     ("Offset3", "5"),
     ("Offset4", "10"),
     ("OneLaneChange", "1"),
+    ("OnroadDistanceButton", "0"),
     ("PathEdgeWidth", "20"),
     ("PathWidth", "61"),
+    ("PauseAOLOnBrake", "0"),
     ("PauseLateralOnSignal", "0"),
     ("PedalsOnUI", "1"),
-    ("PersonalitiesViaScreen", "1"),
-    ("PersonalitiesViaWheel", "1"),
     ("PreferredSchedule", "0"),
     ("PromptVolume", "100"),
     ("PromptDistractedVolume", "100"),
@@ -216,7 +240,9 @@ def manager_init() -> None:
     ("RandomEvents", "0"),
     ("RefuseVolume", "100"),
     ("RelaxedFollow", "1.75"),
-    ("RelaxedJerk", "1.0"),
+    ("RelaxedJerkAcceleration", "100"),
+    ("RelaxedJerkSpeed", "100"),
+    ("RelaxedPersonalityProfile", "1"),
     ("ReverseCruise", "0"),
     ("ReverseCruiseUI", "1"),
     ("RoadEdgesWidth", "2"),
@@ -231,40 +257,57 @@ def manager_init() -> None:
     ("SearchInput", "0"),
     ("SetSpeedLimit", "0"),
     ("SetSpeedOffset", "0"),
-    ("ShowCPU", "0"),
+    ("ShowCPU", "1"),
     ("ShowGPU", "0"),
     ("ShowIP", "0"),
-    ("ShowMemoryUsage", "0"),
-    ("ShowSLCOffset", "0"),
+    ("ShowMemoryUsage", "1"),
+    ("ShowSLCOffset", "1"),
     ("ShowSLCOffsetUI", "1"),
+    ("ShowSteering", "1"),
     ("ShowStorageLeft", "0"),
     ("ShowStorageUsed", "0"),
     ("Sidebar", "0"),
+    ("SidebarMetrics", "1"),
+    ("SignalMetrics", "0"),
     ("SLCConfirmation", "1"),
     ("SLCConfirmationLower", "1"),
     ("SLCConfirmationHigher", "1"),
     ("SLCFallback", "2"),
+    ("SLCLookaheadHigher", "5"),
+    ("SLCLookaheadLower", "5"),
     ("SLCOverride", "1"),
     ("SLCPriority1", "Dashboard"),
     ("SLCPriority2", "Offline Maps"),
     ("SLCPriority3", "Navigation"),
     ("SmoothBraking", "1"),
+    ("SmoothBrakingFarLead", "0"),
+    ("SmoothBrakingJerk", "0"),
     ("SNGHack", "1"),
     ("SpeedLimitChangedAlert", "1"),
     ("SpeedLimitController", "1"),
     ("StandardFollow", "1.45"),
-    ("StandardJerk", "1.0"),
+    ("StandardJerkAcceleration", "100"),
+    ("StandardJerkSpeed", "100"),
+    ("StandardPersonalityProfile", "1"),
     ("StandbyMode", "0"),
     ("StartupAlert", "0"),
-    ("SteerRatio", "0"),
+    ("StaticPedalsOnUI", "0"),
+    ("SteerRatio", ""),
+    ("SteerRatioStock", ""),
     ("StockTune", "0"),
-    ("StoppingDistance", "0"),
+    ("StoppingDistance", "3"),
+    ("TacoTune", "0"),
+    ("ToyotaDoors", "0"),
+    ("TrafficFollow", "0.5"),
+    ("TrafficJerkAcceleration", "50"),
+    ("TrafficJerkSpeed", "50"),
+    ("TrafficPersonalityProfile", "1"),
+    ("TrafficMode", "0"),
     ("TurnAggressiveness", "100"),
     ("TurnDesires", "0"),
     ("UnlimitedLength", "1"),
-    ("UpdateSchedule", "0"),
-    ("UseLateralJerk", "0"),
-    ("UseSI", "0"),
+    ("UnlockDoors", "1"),
+    ("UseSI", "1"),
     ("UseVienna", "0"),
     ("VisionTurnControl", "1"),
     ("WarningSoftVolume", "100"),
@@ -280,13 +323,15 @@ def manager_init() -> None:
 
   # set unset params
   for k, v in default_params:
-    if params.get(k) is None:
+    if params.get(k) is None or params.get_bool("DoToggleReset"):
       if params_storage.get(k) is None:
         params.put(k, v)
       else:
         params.put(k, params_storage.get(k))
     else:
       params_storage.put(k, params.get(k))
+
+  params.put_bool("DoToggleReset", False)
 
   # Create folders needed for msgq
   try:
@@ -349,11 +394,6 @@ def manager_cleanup() -> None:
   cloudlog.info("everything is dead")
 
 
-def update_frogpilot_params(params, params_memory):
-  keys = ["DisableOnroadUploads", "FireTheBabysitter", "NoLogging", "NoUploads", "RoadNameUI", "SpeedLimitController"]
-  for key in keys:
-    params_memory.put_bool(key, params.get_bool(key))
-
 def manager_thread() -> None:
   cloudlog.bind(daemon="manager")
   cloudlog.info("manager start")
@@ -361,11 +401,8 @@ def manager_thread() -> None:
 
   params = Params()
   params_memory = Params("/dev/shm/params")
-  params_storage = Params("/persist/comma/params")
 
-  update_frogpilot_params(params, params_memory)
-
-  ignore: List[str] = []
+  ignore: list[str] = []
   if params.get("DongleId", encoding='utf8') in (None, UNREGISTERED_DONGLE_ID):
     ignore += ["manage_athenad", "uploader"]
   if os.getenv("NOBOARD") is not None:
@@ -376,7 +413,7 @@ def manager_thread() -> None:
   pm = messaging.PubMaster(['managerState'])
 
   write_onroad_params(False, params)
-  ensure_running(managed_processes.values(), False, params=params, params_memory=params_memory, CP=sm['carParams'], not_run=ignore)
+  ensure_running(managed_processes.values(), False, params=params, CP=sm['carParams'], not_run=ignore)
 
   started_prev = False
 
@@ -387,12 +424,14 @@ def manager_thread() -> None:
 
     if started and not started_prev:
       params.clear_all(ParamKeyType.CLEAR_ON_ONROAD_TRANSITION)
+
+      error_log = os.path.join(sentry.CRASHES_DIR, 'error.txt')
+      if os.path.isfile(error_log):
+        os.remove(error_log)
+
     elif not started and started_prev:
       params.clear_all(ParamKeyType.CLEAR_ON_OFFROAD_TRANSITION)
-
-      # Clear the error log on offroad transition to prevent old errors from hanging around
-      if os.path.isfile(os.path.join(sentry.CRASHES_DIR, 'error.txt')):
-        os.remove(os.path.join(sentry.CRASHES_DIR, 'error.txt'))
+      params_memory.clear_all(ParamKeyType.CLEAR_ON_OFFROAD_TRANSITION)
 
     # update onroad params, which drives boardd's safety setter thread
     if started != started_prev:
@@ -400,9 +439,9 @@ def manager_thread() -> None:
 
     started_prev = started
 
-    ensure_running(managed_processes.values(), started, params=params, params_memory=params_memory, CP=sm['carParams'], not_run=ignore)
+    ensure_running(managed_processes.values(), started, params=params, CP=sm['carParams'], not_run=ignore)
 
-    running = ' '.join("%s%s\u001b[0m" % ("\u001b[32m" if p.proc.is_alive() else "\u001b[31m", p.name)
+    running = ' '.join("{}{}\u001b[0m".format("\u001b[32m" if p.proc.is_alive() else "\u001b[31m", p.name)
                        for p in managed_processes.values() if p.proc)
     print(running)
     cloudlog.debug(running)
@@ -423,55 +462,11 @@ def manager_thread() -> None:
     if shutdown:
       break
 
-    if params_memory.get_bool("FrogPilotTogglesUpdated"):
-      update_frogpilot_params(params, params_memory)
 
-def backup_openpilot():
-  # Configure the auto backup generator
-  backup_dir_path = '/data/backups'
-  Path(backup_dir_path).mkdir(parents=True, exist_ok=True)
+def main(frogpilot_functions) -> None:
+  frogpilot_functions.setup_frogpilot()
 
-  # Sort backups by creation time and only keep the 5 newest auto generated ones
-  auto_backups = sorted([f for f in os.listdir(backup_dir_path) if f.endswith("_auto")],
-                        key=lambda x: os.path.getmtime(os.path.join(backup_dir_path, x)))
-  for old_backup in auto_backups:
-    subprocess.run(['sudo', 'rm', '-rf', os.path.join(backup_dir_path, old_backup)], check=True)
-    print(f"Deleted oldest backup to maintain limit: {old_backup}")
-
-  # Generate the backup folder name from the current git commit and branch name
-  branch = get_short_branch()
-  commit = get_commit_date()[12:-16]
-  backup_folder_name = f"{branch}_{commit}_auto"
-
-  # Check if the backup folder already exists
-  backup_path = os.path.join(backup_dir_path, backup_folder_name)
-
-  if os.path.exists(backup_path):
-    print(f"Backup folder {backup_folder_name} already exists. Skipping backup.")
-    return
-
-  # Create the backup directory and copy openpilot to it
-  Path(backup_path).mkdir(parents=True, exist_ok=True)
-  subprocess.run(['sudo', 'cp', '-a', '/data/openpilot/.', backup_path + '/'], check=True)
-  print(f"Successfully backed up openpilot to {backup_folder_name}.")
-
-def main() -> None:
-  # Create the long term param storage folder
-  try:
-    # Attempt to remount /persist as read-write
-    subprocess.run(['sudo', 'mount', '-o', 'remount,rw', '/persist'], check=True)
-    print("Successfully remounted /persist as read-write.")
-  except subprocess.CalledProcessError as e:
-    print(f"Failed to remount /persist. Error: {e}")
-
-  # Backup the current version of openpilot
-  try:
-    backup_thread = threading.Thread(target=backup_openpilot)
-    backup_thread.start()
-  except subprocess.CalledProcessError as e:
-    print(f"Failed to backup openpilot. Error: {e}")
-
-  manager_init()
+  manager_init(frogpilot_functions)
   if os.getenv("PREPAREONLY") is not None:
     return
 
@@ -489,7 +484,7 @@ def main() -> None:
   params = Params()
   if params.get_bool("DoUninstall"):
     cloudlog.warning("uninstalling")
-    HARDWARE.uninstall()
+    frogpilot_functions.uninstall_frogpilot()
   elif params.get_bool("DoReboot"):
     cloudlog.warning("reboot")
     HARDWARE.reboot()
@@ -502,7 +497,7 @@ if __name__ == "__main__":
   unblock_stdout()
 
   try:
-    main()
+    main(FrogPilotFunctions())
   except KeyboardInterrupt:
     print("got CTRL-C, exiting")
   except Exception:

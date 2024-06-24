@@ -1,11 +1,11 @@
 import copy
-from cereal import car
+from cereal import car, custom
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import mean
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.interfaces import CarStateBase
-from openpilot.selfdrive.car.gm.values import DBC, AccState, CanBus, STEER_THRESHOLD, GMFlags, CC_ONLY_CAR, CAMERA_ACC_CAR, SDGM_CAR
+from openpilot.selfdrive.car.gm.values import DBC, AccState, CanBus, STEER_THRESHOLD, GMFlags, CAMERA_ACC_CAR, CC_ONLY_CAR, SDGM_CAR
 
 TransmissionType = car.CarParams.TransmissionType
 NetworkLocation = car.CarParams.NetworkLocation
@@ -27,23 +27,25 @@ class CarState(CarStateBase):
     self.cam_lka_steering_cmd_counter = 0
     self.buttons_counter = 0
 
+    self.prev_distance_button = 0
+    self.distance_button = 0
+
     # FrogPilot variables
     self.single_pedal_mode = False
 
-    # FrogPilot variables
-    self.display_menu = False
-
-    self.display_timer = 0
-
   def update(self, pt_cp, cam_cp, loopback_cp, frogpilot_variables):
     ret = car.CarState.new_message()
+    fp_ret = custom.FrogPilotCarState.new_message()
 
     self.prev_cruise_buttons = self.cruise_buttons
+    self.prev_distance_button = self.distance_button
     if self.CP.carFingerprint not in SDGM_CAR:
       self.cruise_buttons = pt_cp.vl["ASCMSteeringButton"]["ACCButtons"]
+      self.distance_button = pt_cp.vl["ASCMSteeringButton"]["DistanceButton"]
       self.buttons_counter = pt_cp.vl["ASCMSteeringButton"]["RollingCounter"]
     else:
       self.cruise_buttons = cam_cp.vl["ASCMSteeringButton"]["ACCButtons"]
+      self.distance_button = cam_cp.vl["ASCMSteeringButton"]["DistanceButton"]
       self.buttons_counter = cam_cp.vl["ASCMSteeringButton"]["RollingCounter"]
     self.pscm_status = copy.copy(pt_cp.vl["PSCMStatus"])
     # This is to avoid a fault where you engage while still moving backwards after shifting to D.
@@ -90,11 +92,11 @@ class CarState(CarStateBase):
     # Regen braking is braking
     if self.CP.transmissionType == TransmissionType.direct:
       ret.regenBraking = pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"] != 0
-      self.single_pedal_mode = ret.gearShifter == GearShifter.low or pt_cp.vl["EVDriveMode"]["SinglePedalModeActive"] == 1
+      self.single_pedal_mode = ret.gearShifter == GearShifter.low or pt_cp.vl["EVDriveMode"]["SinglePedalModeActive"] == 1 or (ret.regenBraking and GearShifter.manumatic)
 
     if self.CP.enableGasInterceptor:
       ret.gas = (pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) / 2.
-      threshold = 15 if self.CP.carFingerprint in CAMERA_ACC_CAR else 4
+      threshold = 10 if self.CP.carFingerprint in CAMERA_ACC_CAR else 4 # Panda 515 threshold = 10.88. Set lower to avoid panda blocking messages and GasInterceptor faulting.
       ret.gasPressed = ret.gas > threshold
     else:
       ret.gas = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254.
@@ -144,6 +146,7 @@ class CarState(CarStateBase):
 
     ret.cruiseState.enabled = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] != AccState.OFF
     ret.cruiseState.standstill = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.STANDSTILL
+    self.pcm_acc_status = pt_cp.vl["AcceleratorPedal2"]["CruiseState"]
     if self.CP.networkLocation == NetworkLocation.fwdCamera and not self.CP.flags & GMFlags.NO_CAMERA.value:
       if self.CP.carFingerprint not in CC_ONLY_CAR:
         ret.cruiseState.speed = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCSpeedSetpoint"] * CV.KPH_TO_MS
@@ -167,60 +170,18 @@ class CarState(CarStateBase):
         ret.leftBlindspot = cam_cp.vl["BCMBlindSpotMonitor"]["LeftBSM"] == 1
         ret.rightBlindspot = cam_cp.vl["BCMBlindSpotMonitor"]["RightBSM"] == 1
 
-    # Driving personalities function - Credit goes to Mangomoose!
-    if frogpilot_variables.personalities_via_wheel and ret.cruiseState.available:
-      # Sync with the onroad UI button
-      if self.fpf.personality_changed_via_ui:
-        self.personality_profile = self.fpf.current_personality
-        self.previous_personality_profile = self.personality_profile
-        self.fpf.reset_personality_changed_param()
+    # FrogPilot carstate functions
+    fp_ret.hasCamera = not (self.CP.flags & GMFlags.NO_CAMERA.value) and self.CP.carFingerprint not in CC_ONLY_CAR
 
-      # Check if the car has a camera
-      has_camera = self.CP.networkLocation == NetworkLocation.fwdCamera
-      has_camera &= not self.CP.flags & GMFlags.NO_CAMERA.value
-      has_camera &= not self.CP.carFingerprint in (CC_ONLY_CAR)
+    fp_ret.sportGear = pt_cp.vl["SportMode"]["SportMode"] == 1
 
-      if has_camera:
-        # Need to subtract by 1 to comply with the personality profiles of "0", "1", and "2"
-        self.personality_profile = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCGapLevel"] - 1
-      else:
-        if self.CP.carFingerprint in SDGM_CAR:
-          distance_button = cam_cp.vl["ASCMSteeringButton"]["DistanceButton"]
-        else:
-          distance_button = pt_cp.vl["ASCMSteeringButton"]["DistanceButton"]
+    self.lkas_previously_enabled = self.lkas_enabled
+    if self.CP.carFingerprint in SDGM_CAR:
+      self.lkas_enabled = cam_cp.vl["ASCMSteeringButton"]["LKAButton"]
+    else:
+      self.lkas_enabled = pt_cp.vl["ASCMSteeringButton"]["LKAButton"]
 
-        if distance_button and not self.distance_previously_pressed:
-          if self.display_menu:
-            self.personality_profile = (self.previous_personality_profile + 2) % 3
-          self.display_timer = 350
-        self.distance_previously_pressed = distance_button
-
-        # Check if the display is open
-        if self.display_timer > 0:
-          self.display_timer -= 1
-          self.display_menu = True
-        else:
-          self.display_menu = False
-
-      if self.personality_profile != self.previous_personality_profile and self.personality_profile >= 0:
-        self.fpf.distance_button_function(self.personality_profile)
-        self.previous_personality_profile = self.personality_profile
-
-    # Toggle Experimental Mode from steering wheel function
-    if frogpilot_variables.experimental_mode_via_lkas and ret.cruiseState.available:
-      if self.CP.carFingerprint in SDGM_CAR:
-        lkas_pressed = cam_cp.vl["ASCMSteeringButton"]["LKAButton"]
-      else:
-        lkas_pressed = pt_cp.vl["ASCMSteeringButton"]["LKAButton"]
-
-      if lkas_pressed and not self.lkas_previously_pressed:
-        if frogpilot_variables.conditional_experimental_mode:
-          self.fpf.update_cestatus_lkas()
-        else:
-          self.fpf.update_experimental_mode()
-      self.lkas_previously_pressed = lkas_pressed
-
-    return ret
+    return ret, fp_ret
 
   @staticmethod
   def get_cam_can_parser(CP):
@@ -259,6 +220,7 @@ class CarState(CarStateBase):
       ("EBCMFrictionBrakeStatus", 20),
       ("PSCMSteeringAngle", 100),
       ("ECMAcceleratorPos", 80),
+      ("SportMode", 0),
     ]
 
     if CP.carFingerprint in SDGM_CAR:

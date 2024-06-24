@@ -27,7 +27,7 @@ import requests
 import subprocess
 import time
 # otisserv conversion
-from common.params import Params
+from common.params import Params, ParamKeyType
 from flask import render_template, request, session
 from functools import wraps
 from pathlib import Path
@@ -49,7 +49,7 @@ ee = 0.00669342162296594323
 
 params = Params()
 params_memory = Params("/dev/shm/params")
-params_storage = Params("/persist/comma/params")
+params_storage = Params("/persist/params")
 
 PRESERVE_ATTR_NAME = 'user.preserve'
 PRESERVE_ATTR_VALUE = b'1'
@@ -440,41 +440,16 @@ def transform_lng(lng, lat):
   return ret
 
 def get_all_toggle_values():
-  all_keys = [
-    "AdjustablePersonalities", "PersonalitiesViaWheel", "PersonalitiesViaScreen", "AlwaysOnLateral", "AlwaysOnLateralMain", "HideAOLStatusBar",
-    "ConditionalExperimental", "CESpeed", "CESpeedLead", "CECurves", "CECurvesLead", "CENavigation", "CENavigationIntersections",
-    "CENavigationLead", "CENavigationTurns", "CESlowerLead", "CEStopLights", "CEStopLightsLead", "CESignal", "HideCEMStatusBar",
-    "CustomPersonalities", "AggressiveFollow", "AggressiveJerk", "StandardFollow", "StandardJerk", "RelaxedFollow", "RelaxedJerk", "DeviceShutdown",
-    "ExperimentalModeActivation", "ExperimentalModeViaDistance", "ExperimentalModeViaLKAS", "ExperimentalModeViaScreen", "FireTheBabysitter",
-    "NoLogging", "NoUploads", "MuteOverheated", "OfflineMode", "LateralTune", "ForceAutoTune", "NNFF", "SteerRatio", "UseLateralJerk", "LongitudinalTune",
-    "AccelerationProfile", "DecelerationProfile", "AggressiveAcceleration", "StoppingDistance", "SmoothBraking", "Model", "MTSCEnabled",
-    "DisableMTSCSmoothing", "MTSCAggressiveness", "MTSCCurvatureCheck", "MTSCLimit", "NudgelessLaneChange", "LaneChangeTime", "LaneDetection",
-    "LaneDetectionWidth", "OneLaneChange", "QOLControls", "DisableOnroadUploads", "HigherBitrate", "NavChill", "PauseLateralOnSignal",
-    "ReverseCruise", "ReverseCruiseUI", "SetSpeedLimit", "SetSpeedOffset",  "SpeedLimitController", "Offset1", "Offset2", "Offset3", "Offset4",
-    "SLCConfirmation", "SLCConfirmationLower", "SLCConfirmationHigher", "SLCFallback", "SLCPriority1", "SLCPriority2", "SLCPriority3", "SLCOverride",
-    "TurnDesires", "VisionTurnControl", "DisableVTSCSmoothing", "CurveSensitivity", "TurnAggressiveness",
-
-    "EVTable", "GasRegenCmd", "LongPitch", "LowerVolt", "CrosstrekTorque", "CydiaTune", "DragonPilotTune", "FrogsGoMooTune", "LockDoors", "SNGHack",
-
-    "CustomTheme", "CustomColors", "CustomIcons", "CustomSignals", "CustomSounds", "GoatScream", "AlertVolumeControl", "DisengageVolume",
-    "EngageVolume", "PromptVolume", "PromptDistractedVolume", "RefuseVolume", "WarningSoftVolume", "WarningImmediateVolume", "CameraView",
-    "Compass", "CustomAlerts", "GreenLightAlert", "LeadDepartingAlert", "LoudBlindspotAlert", "SpeedLimitChangedAlert", "CustomUI", "AccelerationPath",
-    "AdjacentPath", "AdjacentPathMetrics", "BlindSpotPath", "FPSCounter", "LeadInfo", "UseSI", "PedalsOnUI", "RoadNameUI", "UseVienna", "DriverCamera",
-    "ModelUI", "DynamicPathWidth", "HideLeadMarker", "LaneLinesWidth", "PathEdgeWidth", "PathWidth", "RoadEdgesWidth", "UnlimitedLength", "QOLVisuals",
-    "DriveStats", "FullMap", "HideSpeed", "HideSpeedUI", "ShowSLCOffset", "SpeedLimitChangedAlert", "WheelSpeed", "RandomEvents", "ScreenManagement",
-    "HideUIElements", "HideAlerts", "HideMapIcon", "HideMaxSpeed", "ScreenBrightness", "ScreenBrightnessOnroad", "ScreenTimeout", "ScreenTimeoutOnroad",
-    "ScreenRecorder", "StandbyMode", "WheelIcon", "RotatingWheel", "NumericalTemp", "Fahrenheit", "ShowCPU", "ShowGPU", "ShowIP", "ShowMemoryUsage",
-    "ShowStorageLeft", "ShowStorageUsed", "Sidebar",
-  ]
-
   toggle_values = {}
-  for key in all_keys:
-    try:
-      value = params.get(key)
-    except Exception:
-      value = b"0"
-    toggle_values[key] = value.decode('utf-8') if value is not None else "0"
-
+  for key in params.all_keys():
+    key = key.decode('utf-8') if isinstance(key, bytes) else key
+    if params.get_key_type(key) & ParamKeyType.FROGPILOT_STORAGE:
+      try:
+        value = params.get(key)
+        value = value.decode('utf-8') if isinstance(value, bytes) else value
+      except Exception:
+        value = "0"
+      toggle_values[key] = value if value is not None else "0"
   return toggle_values
 
 def store_toggle_values(updated_values):

@@ -4,7 +4,7 @@ import signal
 import struct
 import time
 import subprocess
-from typing import Optional, Callable, List, ValuesView
+from collections.abc import Callable, ValuesView
 from abc import ABC, abstractmethod
 from multiprocessing import Process
 
@@ -47,7 +47,7 @@ def launcher(proc: str, name: str) -> None:
     raise
 
 
-def nativelauncher(pargs: List[str], cwd: str, name: str) -> None:
+def nativelauncher(pargs: list[str], cwd: str, name: str) -> None:
   os.environ['MANAGER_DAEMON'] = name
 
   # exec the process
@@ -67,12 +67,12 @@ class ManagerProcess(ABC):
   daemon = False
   sigkill = False
   should_run: Callable[[bool, Params, car.CarParams], bool]
-  proc: Optional[Process] = None
+  proc: Process | None = None
   enabled = True
   name = ""
 
   last_watchdog_time = 0
-  watchdog_max_dt: Optional[int] = None
+  watchdog_max_dt: int | None = None
   watchdog_seen = False
   shutting_down = False
 
@@ -103,13 +103,13 @@ class ManagerProcess(ABC):
     dt = time.monotonic() - self.last_watchdog_time / 1e9
 
     if dt > self.watchdog_max_dt:
-      if (self.watchdog_seen or self.always_watchdog and self.proc.exitcode is not None) and ENABLE_WATCHDOG:
+      if self.watchdog_seen and ENABLE_WATCHDOG:
         cloudlog.error(f"Watchdog timeout for {self.name} (exitcode {self.proc.exitcode}) restarting ({started=})")
         self.restart()
     else:
       self.watchdog_seen = True
 
-  def stop(self, retry: bool = True, block: bool = True, sig: Optional[signal.Signals] = None) -> Optional[int]:
+  def stop(self, retry: bool = True, block: bool = True, sig: signal.Signals = None) -> int | None:
     if self.proc is None:
       return None
 
@@ -168,7 +168,7 @@ class ManagerProcess(ABC):
 
 
 class NativeProcess(ManagerProcess):
-  def __init__(self, name, cwd, cmdline, should_run, enabled=True, sigkill=False, watchdog_max_dt=None, always_watchdog=False):
+  def __init__(self, name, cwd, cmdline, should_run, enabled=True, sigkill=False, watchdog_max_dt=None):
     self.name = name
     self.cwd = cwd
     self.cmdline = cmdline
@@ -177,7 +177,6 @@ class NativeProcess(ManagerProcess):
     self.sigkill = sigkill
     self.watchdog_max_dt = watchdog_max_dt
     self.launcher = nativelauncher
-    self.always_watchdog = always_watchdog
 
   def prepare(self) -> None:
     pass
@@ -239,7 +238,7 @@ class DaemonProcess(ManagerProcess):
     self.params = None
 
   @staticmethod
-  def should_run(started, params, params_memory, CP):
+  def should_run(started, params, CP):
     return True
 
   def prepare(self) -> None:
@@ -274,14 +273,14 @@ class DaemonProcess(ManagerProcess):
     pass
 
 
-def ensure_running(procs: ValuesView[ManagerProcess], started: bool, params=None, params_memory=None, CP: car.CarParams=None,
-                   not_run: Optional[List[str]]=None) -> List[ManagerProcess]:
+def ensure_running(procs: ValuesView[ManagerProcess], started: bool, params=None, CP: car.CarParams=None,
+                   not_run: list[str] | None=None) -> list[ManagerProcess]:
   if not_run is None:
     not_run = []
 
   running = []
   for p in procs:
-    if p.enabled and p.name not in not_run and p.should_run(started, params, params_memory, CP):
+    if p.enabled and p.name not in not_run and p.should_run(started, params, CP):
       running.append(p)
     else:
       p.stop(block=False)

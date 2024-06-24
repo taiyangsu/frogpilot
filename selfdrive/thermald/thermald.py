@@ -6,7 +6,6 @@ import threading
 import time
 from collections import OrderedDict, namedtuple
 from pathlib import Path
-from typing import Dict, Optional, Tuple
 
 import psutil
 
@@ -25,6 +24,8 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.thermald.power_monitoring import PowerMonitoring
 from openpilot.selfdrive.thermald.fan_controller import TiciFanController
 from openpilot.system.version import terms_version, training_version
+
+from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import FrogPilotVariables
 
 ThermalStatus = log.DeviceState.ThermalStatus
 NetworkType = log.DeviceState.NetworkType
@@ -50,9 +51,9 @@ THERMAL_BANDS = OrderedDict({
 # Override to highest thermal band when offroad and above this temp
 OFFROAD_DANGER_TEMP = 75
 
-prev_offroad_states: Dict[str, Tuple[bool, Optional[str]]] = {}
+prev_offroad_states: dict[str, tuple[bool, str | None]] = {}
 
-tz_by_type: Optional[Dict[str, int]] = None
+tz_by_type: dict[str, int] | None = None
 def populate_tz_by_type():
   global tz_by_type
   tz_by_type = {}
@@ -87,7 +88,7 @@ def read_thermal(thermal_config):
   return dat
 
 
-def set_offroad_alert_if_changed(offroad_alert: str, show_alert: bool, extra_text: Optional[str]=None):
+def set_offroad_alert_if_changed(offroad_alert: str, show_alert: bool, extra_text: str | None=None):
   if prev_offroad_states.get(offroad_alert, None) == (show_alert, extra_text):
     return
   prev_offroad_states[offroad_alert] = (show_alert, extra_text)
@@ -163,22 +164,22 @@ def hw_state_thread(end_event, hw_queue):
     time.sleep(DT_TRML)
 
 
-def thermald_thread(end_event, hw_queue) -> None:
+def thermald_thread(end_event, hw_queue, frogpilot_toggles) -> None:
   pm = messaging.PubMaster(['deviceState', 'frogpilotDeviceState'])
   sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "controlsState", "pandaStates"], poll="pandaStates")
 
   count = 0
 
-  onroad_conditions: Dict[str, bool] = {
+  onroad_conditions: dict[str, bool] = {
     "ignition": False,
   }
-  startup_conditions: Dict[str, bool] = {}
-  startup_conditions_prev: Dict[str, bool] = {}
+  startup_conditions: dict[str, bool] = {}
+  startup_conditions_prev: dict[str, bool] = {}
 
-  off_ts: Optional[float] = None
-  started_ts: Optional[float] = None
+  off_ts: float | None = None
+  started_ts: float | None = None
   started_seen = False
-  startup_blocked_ts: Optional[float] = None
+  startup_blocked_ts: float | None = None
   thermal_status = ThermalStatus.yellow
 
   last_hw_state = HardwareState(
@@ -217,6 +218,7 @@ def thermald_thread(end_event, hw_queue) -> None:
     peripheral_panda_present = peripheralState.pandaType != log.PandaState.PandaType.unknown
 
     msg = read_thermal(thermal_config)
+    msg.deviceState.deviceType = HARDWARE.get_device_type()
 
     if sm.updated['pandaStates'] and len(pandaStates) > 0:
 
@@ -297,12 +299,9 @@ def thermald_thread(end_event, hw_queue) -> None:
       elif current_band.max_temp is not None and all_comp_temp > current_band.max_temp:
         thermal_status = list(THERMAL_BANDS.keys())[band_idx + 1]
 
-    if params.get_bool("FireTheBabysitter") and params.get_bool("MuteOverheated"):
-      thermal_status = ThermalStatus.green
-
     # **** starting logic ****
 
-    startup_conditions["up_to_date"] = (params.get("OfflineMode") and params.get("FireTheBabysitter")) or params.get("Offroad_ConnectivityNeeded") is None or params.get_bool("DisableUpdates") or params.get_bool("SnoozeUpdate")
+    startup_conditions["up_to_date"] = params.get("Offroad_ConnectivityNeeded") is None or params.get_bool("DisableUpdates") or params.get_bool("SnoozeUpdate") or frogpilot_toggles.offline_mode
     startup_conditions["not_uninstalling"] = not params.get_bool("DoUninstall")
     startup_conditions["accepted_terms"] = params.get("HasAcceptedTerms") == terms_version
 
@@ -396,7 +395,7 @@ def thermald_thread(end_event, hw_queue) -> None:
     msg.deviceState.somPowerDrawW = som_power_draw
 
     # Check if we need to shut down
-    if power_monitor.should_shutdown(onroad_conditions["ignition"], in_car, off_ts, started_seen):
+    if power_monitor.should_shutdown(onroad_conditions["ignition"], in_car, off_ts, started_seen, frogpilot_toggles):
       cloudlog.warning(f"shutting device down, offroad since {off_ts}")
       params.put_bool("DoShutdown", True)
 
@@ -454,6 +453,9 @@ def thermald_thread(end_event, hw_queue) -> None:
     count += 1
     should_start_prev = should_start
 
+    # Update FrogPilot parameters
+    if FrogPilotVariables.toggles_updated:
+      FrogPilotVariables.update_frogpilot_params(started_ts)
 
 def main():
   hw_queue = queue.Queue(maxsize=1)
@@ -461,7 +463,7 @@ def main():
 
   threads = [
     threading.Thread(target=hw_state_thread, args=(end_event, hw_queue)),
-    threading.Thread(target=thermald_thread, args=(end_event, hw_queue)),
+    threading.Thread(target=thermald_thread, args=(end_event, hw_queue, FrogPilotVariables.toggles)),
   ]
 
   for t in threads:
