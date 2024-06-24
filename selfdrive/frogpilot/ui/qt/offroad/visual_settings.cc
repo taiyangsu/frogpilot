@@ -25,12 +25,13 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
     {"PedalsOnUI", tr("Pedals Being Pressed"), tr("Display the brake and gas pedals on the onroad UI below the steering wheel icon."), ""},
     {"RoadNameUI", tr("Road Name"), tr("Display the current road's name at the bottom of the screen. Sourced from OpenStreetMap."), ""},
     {"WheelIcon", tr("Steering Wheel Icon"), tr("Replace the default steering wheel icon with a custom icon."), ""},
-    {"StartupAlert", "Startup Message", "Replace the default startup alert with a custom message, adding a unique touch to your interface.", "../frogpilot/assets/toggle_icons/icon_custom.png"},
+
     {"CustomTheme", tr("Custom Themes"), tr("Enable the ability to use custom themes."), "../frogpilot/assets/wheel_images/frog.png"},
     {"CustomColors", tr("Color Theme"), tr("Switch out the standard openpilot color scheme with themed colors.\n\nWant to submit your own color scheme? Post it in the 'feature-request' channel in the FrogPilot Discord!"), ""},
     {"CustomIcons", tr("Icon Pack"), tr("Switch out the standard openpilot icons with a set of themed icons.\n\nWant to submit your own icon pack? Post it in the 'feature-request' channel in the FrogPilot Discord!"), ""},
     {"CustomSounds", tr("Sound Pack"), tr("Switch out the standard openpilot sounds with a set of themed sounds.\n\nWant to submit your own sound pack? Post it in the 'feature-request' channel in the FrogPilot Discord!"), ""},
     {"CustomSignals", tr("Turn Signals"), tr("Add themed animation for your turn signals.\n\nWant to submit your own turn signal animation? Post it in the 'feature-request' channel in the FrogPilot Discord!"), ""},
+    {"StartupAlert", tr("Startup Message"), tr("Replace the default startup alert with a custom message, adding a unique touch to your interface."), ""},
     {"HolidayThemes", tr("Holiday Themes"), tr("The openpilot theme changes according to the current/upcoming holiday. Minor holidays last a day, while major holidays (Easter, Christmas, Halloween, etc.) last a week."), ""},
     {"RandomEvents", tr("Random Events"), tr("Enjoy a bit of unpredictability with random events that can occur during certain driving conditions. This is purely cosmetic and has no impact on driving controls!"), ""},
 
