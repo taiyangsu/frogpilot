@@ -175,7 +175,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
     } else if (param == "StartupAlert") {
       std::map<int, QString> messageLabels = {{0, "Stock"}, {1, "Frogger"}, {2, "Hippity"}};
       toggle = new FrogPilotParamValueControl(param, title, desc, icon, 0, 2, messageLabels, this, true);
-
+      
     } else if (param == "DeveloperUI") {
       FrogPilotParamManageControl *developerUIToggle = new FrogPilotParamManageControl(param, title, desc, icon, this);
       QObject::connect(developerUIToggle, &FrogPilotParamManageControl::manageButtonClicked, this, [this]() {
