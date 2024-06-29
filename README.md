@@ -28,6 +28,37 @@ Features
 
 FrogPilot offers a wide range of customizable features that are easily toggled on or off to suit your preferences. Whether you want a completely stock openpilot experience, or want to add some fun and personal touches, FrogPilot has you covered! Some of the features include:
 
+- Automatic updates for a completely "set and forget" experience
+- iOS shortcuts to quickly set navigation destinations
+- Select between past, present, and future openpilot driving models
+
+🎨 **Custom Themes:**
+
+  - 🐸 Frog theme (with a bonus 🐐 sound effect)
+  - <img src="https://images.emojiterra.com/google/noto-emoji/unicode-15/color/512px/1f1f7-1f1fa.png" width="15" height="12"> Russia / Joseph Stalin theme
+  - 🔌 Tesla theme
+  - Holiday themes! Minor holidays last a day, while major holidays (Easter, Halloween, Thanksgiving, Christmas) last a week
+  - Random events triggered by specific actions while driving with openpilot
+
+  - 📢 Want to add a theme? Request one in the "feature-request" channel in the FrogPilot Discord!
+
+🚙 **Vehicle Specific Additions:**
+
+  - Automatic/manual fingerprint selection to force a selected fingerprint
+  - Custom longitudinal tunings for GM EVs and trucks for smoother gas and brake control
+  - Custom longitudinal tunings for Toyota/Lexus for smoother gas and brake control
+  - Disable openpilot longitudinal control to use your car's stock cruise control
+  - GM Volt support
+  - Honda Clarity support
+  - Increased torque for the Subaru Crosstrek
+  - Lock doors automatically when in the drive gear for Toyota/Lexus and unlock when in park
+  - openpilot longitudinal control for GM vehicles without ACC
+  - Pedal interceptor support for GM vehicles
+  - "Stop and Go" hack for Toyota's without stop and go functionality
+  - ZSS support for the Toyota Prius and Sienna
+
+- Much more in the mock device layout below 🐸
+
 ------
 
 <details>
@@ -314,7 +345,7 @@ FrogPilot offers a wide range of customizable features that are easily toggled o
       <summary>Lateral Tuning</summary>
       <p>Modify openpilot's steering behavior.</p>
       <ul>
-        <li><strong>NNFF/NNFF-Lite:</strong> Use Twilsonco's Neural Network Feedforward for enhanced precision in lateral control.</li>
+        <li><strong>[Twilsonco's NNFF/NNFF-Lite](https://github.com/twilsonco/openpilot):</strong> Use Twilsonco's Neural Network Feedforward for enhanced precision in lateral control.</li>
         <li><strong>Steer Ratio:</strong> Use a custom steer ratio as opposed to comma's auto tune value.</li>
         <li><strong>Taco Tune:</strong> Use comma's 'Taco Tune' designed for handling left and right turns.</li>
         <li><strong>Use Turn Desires:</strong> Use turn desires for greater precision in turns below the minimum lane change speed.</li>
@@ -686,10 +717,10 @@ FrogPilot offers a wide range of customizable features that are easily toggled o
       <summary>Custom Themes</summary>
       <p>Enable the ability to use custom themes.</p>
       <ul>
-        <li><strong>Color Theme:</strong> Switch out the standard openpilot color scheme with theme colors.<p> Want to submit your own color scheme? Post it in the 'feature-request' channel in the FrogPilot Discord!</li>
-        <li><strong>Icon Pack:</strong> Switch out the standard openpilot icons with a set of themed icons.<p> Want to submit your own turn icon pack? Post it in the 'feature-request' channel in the FrogPilot Discord!</li>
-        <li><strong>Sound Pack:</strong> Switch out the standard openpilot sounds with a set of themed sounds.<p> Want to submit your own sound pack? Post it in the 'feature-request' channel in the FrogPilot Discord!</li>
-        <li><strong>Turn Signals:</strong> Add themed animation for your turn signals.<p> Want to submit your own turn signal animation? Post it in the 'feature-request' channel in the FrogPilot Discord!</li>
+        <li><strong>Color Theme:</strong> Switch out the standard openpilot color scheme with theme colors.<p> 📢 Want to submit your own color scheme? Post it in the 'feature-request' channel in the FrogPilot Discord!</li>
+        <li><strong>Icon Pack:</strong> Switch out the standard openpilot icons with a set of themed icons.<p> 📢 Want to submit your own turn icon pack? Post it in the 'feature-request' channel in the FrogPilot Discord!</li>
+        <li><strong>Sound Pack:</strong> Switch out the standard openpilot sounds with a set of themed sounds.<p> 📢 Want to submit your own sound pack? Post it in the 'feature-request' channel in the FrogPilot Discord!</li>
+        <li><strong>Turn Signals:</strong> Add themed animation for your turn signals.<p> 📢 Want to submit your own turn signal animation? Post it in the 'feature-request' channel in the FrogPilot Discord!</li>
         <li><strong>Holiday Themes:</strong> The openpilot theme changes according to the current/upcoming holiday. Minor holidays last a day, while major holidays (Easter, Christmas, Halloween, etc.) last a week.</li>
         <li><strong>Random Events:</strong> Enjoy a bit of unpredictability with random events that can occur during certain driving conditions. This is purely cosmetic and has no impact on driving controls!</li>
       </ul>
@@ -714,7 +745,7 @@ FrogPilot offers a wide range of customizable features that are easily toggled o
         <li><strong>Dynamic Path Width:</strong> Have the path width dynamically adjust based on the current engagement state of openpilot.</li>
         <li><strong>Hide Lead Marker:</strong> Hide the lead marker from the onroad UI.</li>
         <li><strong>Lane Lines:</strong> Customize the lane line width.<p> Default matches the MUTCD average of 4 inches.</li>
-        <li><strong>Path Edges:</strong> Adjust the width of the path edges show on your UI to represent different driving modes and statuses.<p>Default is 20% of the total path.<p>Blue = Navigation<br>Light Blue = 'Always On Lateral'<br>Green = Default<br>Orange = 'Experimental Mode'<br>Red = 'Traffic Mode'<br>Yellow = 'Conditional Experimental Mode' Overridden</li>
+        <li><strong>Path Edges:</strong> Adjust the width of the path edges show on your UI to represent different driving modes and statuses.<p>Default is 20% of the total path.<p>🔵Blue = Navigation<br>🟦Light Blue = 'Always On Lateral'<br>🟢Green = Default<br>🟠Orange = 'Experimental Mode'<br>🔴Red = 'Traffic Mode'<br>🟡Yellow = 'Conditional Experimental Mode' Overridden</li>
         <li><strong>Path Width:</strong> Customize the width of the driving path down on your UI.<p>Default matches the width of a 2019 Lexus ES 350</li>
         <li><strong>Road Edges:</strong> Customize the road edges width.<p>Default is 1/2 of the MUTCD average lane line width of 4 inches.</li>
         <li><strong>'Unlimited' Road UI Length:</strong> Extend the display of the path, lane lines, and road edges out as far as the model can see.</li>
