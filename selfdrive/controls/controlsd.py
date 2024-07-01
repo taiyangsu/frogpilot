@@ -1057,7 +1057,7 @@ class Controls:
       self.experimental_mode = self.sm['frogpilotPlan'].conditionalExperimentalActive
 
     if any(be.pressed and be.type == FrogPilotButtonType.lkas for be in CS.buttonEvents):
-      if self.frogpilot_toggles.experimental_mode_via_lkas:
+      if self.frogpilot_toggles.experimental_mode_via_lkas and self.enabled:
         if self.frogpilot_toggles.conditional_experimental_mode:
           conditional_status = self.params_memory.get_int("CEStatus")
           override_value = 0 if conditional_status in {1, 2, 3, 4, 5, 6} else 3 if conditional_status >= 7 else 4
