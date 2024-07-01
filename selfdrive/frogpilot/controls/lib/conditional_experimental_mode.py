@@ -85,11 +85,9 @@ class ConditionalExperimentalMode:
       self.slow_lead_detected = False
 
   def stop_sign_and_light(self, lead_distance, model_length, tracking_lead, v_cruise, v_ego, v_lead, frogpilot_toggles):
-    lead_close = lead_distance < CITY_SPEED_LIMIT
-    lead_far = lead_distance > CITY_SPEED_LIMIT and v_ego < CRUISING_SPEED
     lead_stopped = v_lead < 1
     lead_stopping = lead_distance < model_length
-    following_lead = tracking_lead and (lead_close or lead_stopped or lead_stopping) and not lead_far
+    following_lead = tracking_lead and (lead_stopped or lead_stopping)
 
     model_projection = ModelConstants.T_IDXS[TRAJECTORY_SIZE - (5 if frogpilot_toggles.less_sensitive_lights else 3)]
     model_stopped = model_length < TRAJECTORY_SIZE or v_cruise < CRUISING_SPEED

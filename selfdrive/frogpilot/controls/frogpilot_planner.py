@@ -15,8 +15,8 @@ from openpilot.selfdrive.controls.lib.longitudinal_planner import A_CRUISE_MIN, 
 from openpilot.selfdrive.modeld.constants import ModelConstants
 
 from openpilot.selfdrive.frogpilot.controls.lib.conditional_experimental_mode import ConditionalExperimentalMode
-from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_functions import calculate_lane_width, calculate_road_curvature
-from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import CITY_SPEED_LIMIT, CRUISING_SPEED, TRAJECTORY_SIZE
+from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_functions import MovingAverageCalculator, calculate_lane_width, calculate_road_curvature
+from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import CITY_SPEED_LIMIT, CRUISING_SPEED, PROBABILITY, TRAJECTORY_SIZE
 from openpilot.selfdrive.frogpilot.controls.lib.map_turn_speed_controller import MapTurnSpeedController
 from openpilot.selfdrive.frogpilot.controls.lib.speed_limit_controller import SpeedLimitController
 
@@ -65,6 +65,8 @@ class FrogPilotPlanner:
     self.v_cruise = 0
     self.vtsc_target = 0
 
+    self.tracking_lead_mac = MovingAverageCalculator()
+
   def update(self, carState, controlsState, frogpilotCarControl, frogpilotCarState, frogpilotNavigation, modelData, radarState, frogpilot_toggles):
     if frogpilot_toggles.radarless_model:
       model_leads = list(modelData.leadsV3)
@@ -102,24 +104,15 @@ class FrogPilotPlanner:
       self.lead_departing = False
 
     self.model_length = modelData.position.x[TRAJECTORY_SIZE - 1]
+    self.override_force_stop &= not (carState.standstill and frogpilot_toggles.force_stops)
     self.road_curvature = abs(float(calculate_road_curvature(modelData, v_ego)))
 
     if frogpilot_toggles.random_events:
       self.taking_curve_quickly = v_ego > (1 / self.road_curvature)**0.5 * 2 > CRUISING_SPEED * 2 and abs(carState.steeringAngleDeg) > 30
 
-    if v_ego > CRUISING_SPEED:
-      self.override_force_stop = False
-      self.tracking_lead = self.lead_one.status
-      self.tracked_model_length = 0
-    elif not carState.standstill and self.tracking_lead and self.lead_one.dRel < CITY_SPEED_LIMIT:
-      self.tracking_lead_distance = self.lead_one.dRel
-    elif carState.standstill and frogpilot_toggles.force_stops:
-      self.override_force_stop = True
-    else:
-      self.tracking_lead &= self.lead_one.status
-
     self.set_acceleration(controlsState, frogpilotCarState, v_cruise, v_ego, frogpilot_toggles)
     self.set_follow_values(controlsState, frogpilotCarState, v_ego, v_lead, frogpilot_toggles)
+    self.set_lead_status(lead_distance, v_ego)
     self.update_follow_values(lead_distance, stopping_distance, v_ego, v_lead, frogpilot_toggles)
     self.update_v_cruise(carState, controlsState, frogpilotCarState, frogpilotNavigation, modelData, v_cruise, v_ego, frogpilot_toggles)
 
@@ -194,6 +187,13 @@ class FrogPilotPlanner:
       self.safe_obstacle_distance = 0
       self.safe_obstacle_distance_stock = 0
       self.stopped_equivalence_factor = 0
+
+  def set_lead_status(self, lead_distance, v_ego):
+    following_lead = self.lead_one.status
+    following_lead &= lead_distance < v_ego * (self.t_follow + 1)
+
+    self.tracking_lead_mac.add_data(following_lead)
+    self.tracking_lead = self.tracking_lead_mac.get_moving_average() >= PROBABILITY
 
   def update_follow_values(self, lead_distance, stopping_distance, v_ego, v_lead, frogpilot_toggles):
     # Offset by FrogAi for FrogPilot for a more natural approach to a faster lead
@@ -292,6 +292,9 @@ class FrogPilotPlanner:
         self.v_cruise = self.tracked_model_length / ModelConstants.T_IDXS[TRAJECTORY_SIZE - 1]
 
     else:
+      self.override_force_stop = False
+      self.tracked_model_length = 0
+
       targets = [self.mtsc_target, max(self.overridden_speed, self.slc_target) - v_ego_diff, self.vtsc_target]
       self.v_cruise = min([target if target > CRUISING_SPEED else v_cruise for target in targets])
 
