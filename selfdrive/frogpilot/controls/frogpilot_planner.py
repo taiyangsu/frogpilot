@@ -91,8 +91,8 @@ class FrogPilotPlanner:
 
     check_lane_width = frogpilot_toggles.adjacent_lanes or frogpilot_toggles.blind_spot_path or frogpilot_toggles.lane_detection
     if check_lane_width and v_ego >= frogpilot_toggles.minimum_lane_change_speed:
-      self.lane_width_left = float(calculate_lane_width(modelData.laneLines[0], modelData.laneLines[1], modelData.roadEdges[0]))
-      self.lane_width_right = float(calculate_lane_width(modelData.laneLines[3], modelData.laneLines[2], modelData.roadEdges[1]))
+      self.lane_width_left = calculate_lane_width(modelData.laneLines[0], modelData.laneLines[1], modelData.roadEdges[0])
+      self.lane_width_right = calculate_lane_width(modelData.laneLines[3], modelData.laneLines[2], modelData.roadEdges[1])
     else:
       self.lane_width_left = 0
       self.lane_width_right = 0
@@ -105,7 +105,7 @@ class FrogPilotPlanner:
 
     self.model_length = modelData.position.x[TRAJECTORY_SIZE - 1]
     self.override_force_stop &= not (carState.standstill and frogpilot_toggles.force_stops)
-    self.road_curvature = abs(float(calculate_road_curvature(modelData, v_ego)))
+    self.road_curvature = calculate_road_curvature(modelData, v_ego)
 
     if frogpilot_toggles.random_events:
       self.taking_curve_quickly = v_ego > (1 / self.road_curvature)**0.5 * 2 > CRUISING_SPEED * 2 and abs(carState.steeringAngleDeg) > 30
@@ -121,7 +121,7 @@ class FrogPilotPlanner:
     sport_gear = frogpilotCarState.sportGear
 
     if self.lead_one.status and frogpilot_toggles.aggressive_acceleration:
-      self.max_accel = float(np.clip(self.lead_one.aLeadK, get_max_accel_sport(v_ego), 2.0 if v_ego >= 20 else 4.0))
+      self.max_accel = np.clip(self.lead_one.aLeadK, get_max_accel_sport(v_ego), 2.0 if v_ego >= 20 else 4.0)
     elif frogpilot_toggles.map_acceleration and (eco_gear or sport_gear):
       if eco_gear:
         self.max_accel = get_max_accel_eco(v_ego)
@@ -138,7 +138,7 @@ class FrogPilotPlanner:
         self.max_accel = get_max_accel(v_ego)
 
     if not self.tracking_lead:
-      self.max_accel = float(min(self.max_accel, self.max_accel * (self.v_cruise / CITY_SPEED_LIMIT)))
+      self.max_accel = min(self.max_accel, self.max_accel * (self.v_cruise / CITY_SPEED_LIMIT))
 
     if controlsState.experimentalMode:
       self.min_accel = ACCEL_MIN
@@ -177,9 +177,9 @@ class FrogPilotPlanner:
       )
 
     if self.tracking_lead:
-      self.safe_obstacle_distance = int(get_safe_obstacle_distance(v_ego, self.t_follow))
+      self.safe_obstacle_distance = get_safe_obstacle_distance(v_ego, self.t_follow)
       self.safe_obstacle_distance_stock = self.safe_obstacle_distance
-      self.stopped_equivalence_factor = int(get_stopped_equivalence_factor(v_lead))
+      self.stopped_equivalence_factor = get_stopped_equivalence_factor(v_lead)
     else:
       self.acceleration_jerk = self.base_acceleration_jerk
       self.danger_jerk = self.base_danger_jerk
@@ -282,7 +282,7 @@ class FrogPilotPlanner:
         self.v_cruise = -1
 
     elif frogpilot_toggles.force_stops and v_ego < CRUISING_SPEED and controlsState.experimentalMode and not self.override_force_stop:
-      if carState.gasPressed or self.tracking_lead or abs(carState.steeringAngleDeg) > 15:
+      if carState.gasPressed or self.tracking_lead or abs(carState.steeringAngleDeg) > 30:
         self.override_force_stop = True
       else:
         if self.tracked_model_length == 0:
@@ -303,17 +303,17 @@ class FrogPilotPlanner:
     frogpilot_plan_send.valid = sm.all_checks(service_list=['carState', 'controlsState'])
     frogpilotPlan = frogpilot_plan_send.frogpilotPlan
 
-    frogpilotPlan.accelerationJerk = A_CHANGE_COST * float(self.acceleration_jerk)
-    frogpilotPlan.accelerationJerkStock = A_CHANGE_COST * float(self.base_acceleration_jerk)
-    frogpilotPlan.dangerJerk = DANGER_ZONE_COST * float(self.danger_jerk)
-    frogpilotPlan.speedJerk = J_EGO_COST * float(self.speed_jerk)
-    frogpilotPlan.speedJerkStock = J_EGO_COST * float(self.base_speed_jerk)
-    frogpilotPlan.tFollow = float(self.t_follow)
+    frogpilotPlan.accelerationJerk = A_CHANGE_COST * self.acceleration_jerk
+    frogpilotPlan.accelerationJerkStock = A_CHANGE_COST * self.base_acceleration_jerk
+    frogpilotPlan.dangerJerk = DANGER_ZONE_COST * self.danger_jerk
+    frogpilotPlan.speedJerk = J_EGO_COST * self.speed_jerk
+    frogpilotPlan.speedJerkStock = J_EGO_COST * self.base_speed_jerk
+    frogpilotPlan.tFollow = self.t_follow
 
-    frogpilotPlan.adjustedCruise = float(min(self.mtsc_target, self.vtsc_target) * (CV.MS_TO_KPH if frogpilot_toggles.is_metric else CV.MS_TO_MPH))
-    frogpilotPlan.vtscControllingCurve = bool(self.mtsc_target > self.vtsc_target)
+    frogpilotPlan.adjustedCruise = min(self.mtsc_target, self.vtsc_target) * (CV.MS_TO_KPH if frogpilot_toggles.is_metric else CV.MS_TO_MPH)
+    frogpilotPlan.vtscControllingCurve = self.mtsc_target > self.vtsc_target
 
-    frogpilotPlan.conditionalExperimentalActive = bool(self.cem.experimental_mode)
+    frogpilotPlan.conditionalExperimentalActive = self.cem.experimental_mode
 
     frogpilotPlan.desiredFollowDistance = self.safe_obstacle_distance - self.stopped_equivalence_factor
     frogpilotPlan.safeObstacleDistance = self.safe_obstacle_distance
@@ -332,14 +332,14 @@ class FrogPilotPlanner:
 
     frogpilotPlan.roadCurvature = self.road_curvature
 
-    frogpilotPlan.slcOverridden = bool(self.override_slc)
-    frogpilotPlan.slcOverriddenSpeed = float(self.overridden_speed)
+    frogpilotPlan.slcOverridden = self.override_slc
+    frogpilotPlan.slcOverriddenSpeed = self.overridden_speed
     frogpilotPlan.slcSpeedLimit = self.slc_target
     frogpilotPlan.slcSpeedLimitOffset = SpeedLimitController.offset
     frogpilotPlan.unconfirmedSlcSpeedLimit = SpeedLimitController.desired_speed_limit
 
-    frogpilotPlan.takingCurveQuickly = bool(self.taking_curve_quickly)
+    frogpilotPlan.takingCurveQuickly = self.taking_curve_quickly
 
-    frogpilotPlan.vCruise = float(self.v_cruise)
+    frogpilotPlan.vCruise = self.v_cruise
 
     pm.send('frogpilotPlan', frogpilot_plan_send)
