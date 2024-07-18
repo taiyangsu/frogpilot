@@ -163,15 +163,15 @@ class CarController(CarControllerBase):
       can_sends.append(toyotacan.create_lta_steer_command(self.packer, self.CP.steerControlType, self.last_angle,
                                                           lta_active, self.frame // 2, torque_wind_down))
 
-        if self.CP.flags & ToyotaFlags.SECOC.value:
-          lta_steer_2 = toyotacan.create_lta_steer_command_2(self.packer, self.frame // 2)
-          lta_steer_2 = secoc.add_mac(self.CP.secOCKey,
-                                      int(CS.secoc_synchronization['TRIP_CNT']),
-                                      int(CS.secoc_synchronization['RESET_CNT']),
-                                      self.secoc_lta_message_counter,
-                                      lta_steer_2)
-          self.secoc_lta_message_counter += 1
-          can_sends.append(lta_steer_2)
+      if self.CP.flags & ToyotaFlags.SECOC.value:
+        lta_steer_2 = toyotacan.create_lta_steer_command_2(self.packer, self.frame // 2)
+        lta_steer_2 = secoc.add_mac(self.CP.secOCKey,
+                                    int(CS.secoc_synchronization['TRIP_CNT']),
+                                    int(CS.secoc_synchronization['RESET_CNT']),
+                                    self.secoc_lta_message_counter,
+                                    lta_steer_2)
+      self.secoc_lta_message_counter += 1
+      can_sends.append(lta_steer_2)
 
     # *** gas and brake ***
     if self.CP.enableGasInterceptor and CC.longActive and self.CP.carFingerprint not in STOP_AND_GO_CAR:
