@@ -32,6 +32,7 @@ Tools
     <textarea id="toggleValuesBox" placeholder='Paste new values or retrieve current...'></textarea>
     <button type="button" id="retrieveButton">Retrieve Toggle Values</button>
     <button type="button" id="submitButton">Submit New Values</button>
+    <button type="button" id="saveButton">Save Toggles to File</button>
   </div>
 </div>
 
@@ -39,6 +40,7 @@ Tools
   const toggleValuesBox = document.getElementById('toggleValuesBox');
   const retrieveButton = document.getElementById('retrieveButton');
   const submitButton = document.getElementById('submitButton');
+  const saveButton = document.getElementById('saveButton');
 
   retrieveButton.addEventListener('click', function() {
     fetch('/get_toggle_values')
@@ -73,6 +75,23 @@ Tools
       }
     })
     .catch(error => console.error('Error storing toggle values:', error));
+  });
+
+  saveButton.addEventListener('click', function() {
+    const data = toggleValuesBox.value;
+    if (!data) {
+      alert('No data to save. Please retrieve the toggle values first.');
+      return;
+    }
+    const blob = new Blob([data], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'toggleValues.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   });
 </script>
 {% endblock %}
