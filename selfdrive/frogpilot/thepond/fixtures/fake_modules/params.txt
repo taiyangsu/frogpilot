@@ -41,7 +41,6 @@ CustomSignals: 0
 CustomSounds: 0
 CustomTheme: 1
 CustomUI: 1
-CydiaTune: 1
 DeviceShutdown: 2
 DisableMTSCSmoothing: 0
 DisableOnroadUploads: 1
@@ -66,7 +65,6 @@ FireTheBabysitter: 1
 ForceAutoTune: 0
 ForceFingerprint: 1
 FPSCounter: 0
-FrogsGoMooTune: 0
 FullMap: 0
 GasRegenCmd: 0
 GitBranch: FrogPilot
