@@ -208,7 +208,11 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(SettingsWindow *parent) : FrogPil
       std::vector<QString> navigationToggleNames{tr("Intersections"), tr("Turns"), tr("With Lead")};
       controlToggle = new FrogPilotParamToggleControl(param, title, desc, icon, navigationToggles, navigationToggleNames);
     } else if (param == "CEModelStopTime") {
-      controlToggle = new FrogPilotParamValueControl(param, title, desc, icon, 0, 10, std::map<int, QString>(), this, false, tr(" seconds"));
+      std::map<int, QString> modelStopTimeLabels;
+      for (int i = 0; i <= 10; i++) {
+        modelStopTimeLabels[i] = (i == 0) ? tr("Off") : QString::number(i) + " seconds";
+      }
+      controlToggle = new FrogPilotParamValueControl(param, title, desc, icon, 0, 10, modelStopTimeLabels, this, false);
 
     } else if (param == "DeviceManagement") {
       FrogPilotParamManageControl *deviceManagementToggle = new FrogPilotParamManageControl(param, title, desc, icon, this);
