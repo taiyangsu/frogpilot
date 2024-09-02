@@ -638,12 +638,6 @@
         "max": 100,
         "unit": "%"
       },
-      "TrafficMode": {
-        "title": "Traffic Mode",
-        "description": "Enable the ability to activate 'Traffic Mode' by holding down the 'distance' button for 2.5 seconds. When 'Traffic Mode' is active the onroad UI will turn red and openpilot will drive catered towards stop and go traffic.",
-        "section": "controls",
-        "type": "toggle"
-      }
     }
   },
   "MTSCEnabled": {

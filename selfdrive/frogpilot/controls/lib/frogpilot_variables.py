@@ -184,7 +184,6 @@ class FrogPilotVariables:
     toggle.increased_stopping_distance = self.params.get_int("StoppingDistance") * distance_conversion if longitudinal_tune else 0
     toggle.lead_detection_threshold = self.params.get_int("LeadDetectionThreshold") / 100. if longitudinal_tune else 0.5
     toggle.sport_plus = longitudinal_tune and toggle.acceleration_profile == 3
-    toggle.traffic_mode = longitudinal_tune and self.params.get_bool("TrafficMode")
 
     toggle.map_turn_speed_controller = toggle.openpilot_longitudinal and self.params.get_bool("MTSCEnabled")
     toggle.mtsc_curvature_check = toggle.map_turn_speed_controller and self.params.get_bool("MTSCCurvatureCheck")
