@@ -855,8 +855,9 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     {tr("Network"), new Networking(this)},
     {tr("Toggles"), toggles},
     {tr("Software"), new SoftwarePanel(this)},
-    {tr("Controls"), frogpilotControls},
+    {tr("Driving"), frogpilotControls},
     {tr("Navigation"), new FrogPilotNavigationPanel(this)},
+    {tr("Utilities"), device},
     {tr("Vehicles"), new FrogPilotVehiclesPanel(this)},
     {tr("Visuals"), frogpilotVisuals},
   };
