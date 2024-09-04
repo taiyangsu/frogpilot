@@ -53,12 +53,6 @@ class Car:
     else:
       self.CI, self.CP = CI, CI.CP
 
-    # set alternative experiences from parameters
-    self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
-    self.CP.alternativeExperience = 0
-    if not self.disengage_on_accelerator:
-      self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
-
     openpilot_enabled_toggle = self.params.get_bool("OpenpilotEnabledToggle")
 
     controller_available = self.CI.CC is not None and openpilot_enabled_toggle and not self.CP.dashcamOnly
@@ -81,17 +75,21 @@ class Car:
 
     # FrogPilot variables
     self.frogpilot_toggles = FrogPilotVariables.toggles
+    FrogPilotVariables.update_frogpilot_params()
+
+    self.update_toggles = False
+
+    # set alternative experiences from parameters
+    self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
+    self.CP.alternativeExperience = 0
+    if not self.disengage_on_accelerator:
+      self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
 
     if self.params.get_bool("AlwaysOnLateral"):
       self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.ALWAYS_ON_LATERAL
-      self.params.put_bool("AlwaysOnLateralSet", True)
 
-    FrogPilotVariables.update_frogpilot_params()
-
-    if self.frogpilot_toggles.sport_plus:
+    if self.frogpilot_toggles.acceleration_profile == 3:
       self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.RAISE_LONGITUDINAL_LIMITS_TO_ISO_MAX
-
-    self.update_toggles = False
 
     # Write CarParams for controls and radard
     cp_bytes = self.CP.to_bytes()
