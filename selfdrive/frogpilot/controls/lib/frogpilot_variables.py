@@ -20,9 +20,6 @@ MODEL_LENGTH = ModelConstants.IDX_N                     # Minimum length of the 
 PLANNER_TIME = ModelConstants.T_IDXS[MODEL_LENGTH - 1]  # Length of time the model projects out for
 THRESHOLD = 0.6                                         # 60% chance of condition being true
 
-def get_max_allowed_accel(v_ego):
-  return interp(v_ego, [0., 5., 20.], [4.0, 4.0, 2.0])  # ISO 15622:2018
-
 class FrogPilotVariables:
   def __init__(self):
     self.frogpilot_toggles = SimpleNamespace()
@@ -178,12 +175,12 @@ class FrogPilotVariables:
 
     longitudinal_tune = toggle.openpilot_longitudinal and self.params.get_bool("LongitudinalTune")
     toggle.acceleration_profile = self.params.get_int("AccelerationProfile") if longitudinal_tune else 0
+    toggle.sport_plus = toggle.acceleration_profile == 3
     toggle.deceleration_profile = self.params.get_int("DecelerationProfile") if longitudinal_tune else 0
     toggle.human_acceleration = longitudinal_tune and self.params.get_bool("HumanAcceleration")
     toggle.human_following = longitudinal_tune and self.params.get_bool("HumanFollowing")
     toggle.increased_stopping_distance = self.params.get_int("StoppingDistance") * distance_conversion if longitudinal_tune else 0
     toggle.lead_detection_threshold = self.params.get_int("LeadDetectionThreshold") / 100. if longitudinal_tune else 0.5
-    toggle.sport_plus = longitudinal_tune and toggle.acceleration_profile == 3
 
     toggle.map_turn_speed_controller = toggle.openpilot_longitudinal and self.params.get_bool("MTSCEnabled")
     toggle.mtsc_curvature_check = toggle.map_turn_speed_controller and self.params.get_bool("MTSCCurvatureCheck")
