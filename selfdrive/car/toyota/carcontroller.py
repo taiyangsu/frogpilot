@@ -11,7 +11,7 @@ from openpilot.selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_
                                         UNSUPPORTED_DSU_CAR, STOP_AND_GO_CAR
 from opendbc.can.packer import CANPacker
 
-from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import CRUISING_SPEED, get_max_allowed_accel
+from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import get_max_allowed_accel
 
 SteerControlType = car.CarParams.SteerControlType
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -59,7 +59,6 @@ class CarController(CarControllerBase):
     self.toyota_tune = params.get_bool("ToyotaTune")
 
     self.doors_locked = False
-    self.previously_stopped = False
 
     self.pcm_accel_comp = 0
 
@@ -121,7 +120,7 @@ class CarController(CarControllerBase):
                                                           lta_active, self.frame // 2, torque_wind_down))
 
     # *** gas and brake ***
-    if CC.longActive and self.toyota_tune:
+    if self.toyota_tune:
       # we will throw out PCM's compensations, but that may be a good thing. for example:
       # we lose things like pitch compensation, gas to maintain speed, brake to compensate for creeping, etc.
       # but also remove undesirable "snap to standstill" behavior when not requesting enough accel at low speeds,
@@ -131,21 +130,22 @@ class CarController(CarControllerBase):
       # FIXME? neutral force will only be positive under ~5 mph, which messes up stopping control considerably
       # not sure why this isn't captured in the PCM accel net, maybe that just ignores creep force + high speed deceleration
       # it also doesn't seem to capture slightly more braking on downhills (VSC1S07->ASLP (pitch, deg.) might have some clues)
-      # offset = min(CS.pcm_neutral_force / self.CP.mass, 0.0)
-      # pitch_offset = math.sin(math.radians(CS.vsc_slope_angle)) * 9.81  # downhill is negative
+      offset = min(CS.pcm_neutral_force / self.CP.mass, 0.0)
+      pitch_offset = math.sin(math.radians(CS.vsc_slope_angle)) * 9.81  # downhill is negative
       # TODO: these limits are too slow to prevent a jerk when engaging, ramp down on engage?
-      self.previously_stopped |= CS.out.cruiseState.standstill
-      self.previously_stopped &= CS.out.vEgo < CRUISING_SPEED
-
-      if CS.out.vEgo < CRUISING_SPEED and not self.previously_stopped:
+      self.pcm_accel_comp = clip(actuators.accel - CS.pcm_accel_net, self.pcm_accel_comp - 0.05, self.pcm_accel_comp + 0.05)
+      if CS.out.cruiseState.standstill or actuators.longControlState == LongCtrlState.stopping:
         self.pcm_accel_comp = 0.0
-      else:
-        self.pcm_accel_comp = clip(actuators.accel - CS.pcm_accel_net, self.pcm_accel_comp - 0.05, self.pcm_accel_comp + 0.05)
-      # self.pcm_accel_comp += offset
+      pcm_accel_cmd = actuators.accel + self.pcm_accel_comp  # + offset
       # pcm_accel_cmd = actuators.accel - pitch_offset
+
+      if not CC.longActive:
+        self.pcm_accel_comp = 0.0
+        pcm_accel_cmd = 0.0
+
+      pcm_accel_cmd = clip(pcm_accel_cmd, self.params.ACCEL_MIN, self.params.ACCEL_MAX)
     else:
-      self.pcm_accel_comp = 0.0
-      pcm_accel_cmd = 0.0
+      pcm_accel_cmd = clip(actuators.accel, self.params.ACCEL_MIN, self.params.ACCEL_MAX)
 
     if self.CP.enableGasInterceptor and CC.longActive and self.CP.carFingerprint not in STOP_AND_GO_CAR:
       MAX_INTERCEPTOR_GAS = 0.5
