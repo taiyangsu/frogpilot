@@ -222,7 +222,6 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"AlwaysOnLateral", PERSISTENT | FROGPILOT_STORAGE | FROGPILOT_CONTROLS},
     {"AlwaysOnLateralLKAS", PERSISTENT | FROGPILOT_STORAGE | FROGPILOT_CONTROLS},
     {"AlwaysOnLateralMain", PERSISTENT | FROGPILOT_STORAGE | FROGPILOT_CONTROLS},
-    {"AlwaysOnLateralSet", CLEAR_ON_OFFROAD_TRANSITION},
     {"AMapKey1", PERSISTENT},
     {"AMapKey2", PERSISTENT},
     {"ApiCache_DriveStats", PERSISTENT},
