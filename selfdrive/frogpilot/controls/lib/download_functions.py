@@ -68,6 +68,7 @@ def get_remote_file_size(url):
       return 0
     else:
       handle_request_error(e, None, None, None, None)
+      return 0
   except Exception as e:
     handle_request_error(e, None, None, None, None)
     return 0

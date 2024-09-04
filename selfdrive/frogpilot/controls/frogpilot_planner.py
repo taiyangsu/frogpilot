@@ -30,7 +30,7 @@ class FrogPilotPlanner:
     self.frogpilot_vcruise = FrogPilotVCruise(self)
     self.lead_one = Lead()
 
-    self.tracking_lead_mac = WeightedMovingAverageCalculator(window_size=5)
+    self.tracking_lead_mac = WeightedMovingAverageCalculator(window_size=10)
 
     self.lateral_check = False
     self.lead_departing = False

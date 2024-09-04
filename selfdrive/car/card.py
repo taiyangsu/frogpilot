@@ -88,7 +88,7 @@ class Car:
     if self.params.get_bool("AlwaysOnLateral"):
       self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.ALWAYS_ON_LATERAL
 
-    if self.frogpilot_toggles.acceleration_profile == 3:
+    if self.params.get_int("AccelerationProfile") == 3:
       self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.RAISE_LONGITUDINAL_LIMITS_TO_ISO_MAX
 
     # Write CarParams for controls and radard

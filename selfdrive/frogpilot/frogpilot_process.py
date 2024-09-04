@@ -92,7 +92,7 @@ def time_checks(automatic_updates, deviceState, model_manager, now, started, the
     theme_manager.update_themes(boot_run=False)
 
 def toggle_updates(frogpilot_toggles, started, time_validated, params, params_storage):
-  FrogPilotVariables.update_frogpilot_params(started, True)
+  FrogPilotVariables.update_frogpilot_params(started)
 
   if not frogpilot_toggles.model_manager:
     params.put_nonblocking("Model", DEFAULT_MODEL)
