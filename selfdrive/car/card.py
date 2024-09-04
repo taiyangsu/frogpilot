@@ -59,13 +59,6 @@ class Car:
     if not self.disengage_on_accelerator:
       self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
 
-    # FrogPilot alternative experiences
-    if self.params.get_bool("AlwaysOnLateral"):
-      self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.ALWAYS_ON_LATERAL
-      self.params.put_bool("AlwaysOnLateralSet", True)
-
-    self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.RAISE_LONGITUDINAL_LIMITS_TO_ISO_MAX
-
     openpilot_enabled_toggle = self.params.get_bool("OpenpilotEnabledToggle")
 
     controller_available = self.CI.CC is not None and openpilot_enabled_toggle and not self.CP.dashcamOnly
@@ -81,12 +74,6 @@ class Car:
     if prev_cp is not None:
       self.params.put("CarParamsPrevRoute", prev_cp)
 
-    # Write CarParams for controls and radard
-    cp_bytes = self.CP.to_bytes()
-    self.params.put("CarParams", cp_bytes)
-    self.params.put_nonblocking("CarParamsCache", cp_bytes)
-    self.params.put_nonblocking("CarParamsPersistent", cp_bytes)
-
     self.events = Events()
 
     # card is driven by can recv, expected at 100Hz
@@ -94,9 +81,23 @@ class Car:
 
     # FrogPilot variables
     self.frogpilot_toggles = FrogPilotVariables.toggles
+
+    if self.params.get_bool("AlwaysOnLateral"):
+      self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.ALWAYS_ON_LATERAL
+      self.params.put_bool("AlwaysOnLateralSet", True)
+
     FrogPilotVariables.update_frogpilot_params()
 
+    if self.frogpilot_toggles.sport_plus:
+      self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.RAISE_LONGITUDINAL_LIMITS_TO_ISO_MAX
+
     self.update_toggles = False
+
+    # Write CarParams for controls and radard
+    cp_bytes = self.CP.to_bytes()
+    self.params.put("CarParams", cp_bytes)
+    self.params.put_nonblocking("CarParamsCache", cp_bytes)
+    self.params.put_nonblocking("CarParamsPersistent", cp_bytes)
 
   def state_update(self) -> car.CarState:
     """carState update loop, driven by can"""
