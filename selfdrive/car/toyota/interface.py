@@ -134,8 +134,8 @@ class CarInterface(CarInterfaceBase):
 
     tune = ret.longitudinalTuning
     if params.get_bool("ToyotaTune"):
-      tune.kiBP = [5., 35.]
-      tune.kiV = [1.5, 0.5]
+      tune.kiBP = [0., 5., 35.]
+      tune.kiV = [2.0, 1.5, 0.5]
       ret.vEgoStopping = 0.25
       ret.vEgoStarting = 0.25
       ret.stoppingDecelRate = 0.3  # reach stopping target smoothly
