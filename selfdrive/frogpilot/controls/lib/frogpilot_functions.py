@@ -79,19 +79,22 @@ def backup_directory(backup, destination, success_message, fail_message, minimum
       if compressed_backup_size < minimum_backup_size or minimum_backup_size == 0:
         params.put_int_nonblocking("MinimumBackupSize", compressed_backup_size)
 
-  except FileExistsError:
-    print(f"Destination '{destination}' already exists. Backup aborted.")
-  except subprocess.CalledProcessError:
-    print(fail_message)
-    cleanup_backup(in_progress_destination, in_progress_compressed_backup)
-  except OSError as e:
-    if e.errno == errno.ENOSPC:
-      print("Not enough space to perform the backup.")
-    else:
-      print(f"Failed to backup due to unexpected error: {e}")
-    cleanup_backup(in_progress_destination, in_progress_compressed_backup)
+  except (FileExistsError, subprocess.CalledProcessError, OSError) as e:
+    handle_backup_error(e, destination, in_progress_destination, in_progress_compressed_backup, fail_message)
   finally:
     cleanup_backup(in_progress_destination, in_progress_compressed_backup)
+
+def handle_backup_error(error, destination, in_progress_destination, in_progress_compressed_backup, fail_message):
+  if isinstance(error, FileExistsError):
+    print(f"Destination '{destination}' already exists. Backup aborted.")
+  elif isinstance(error, subprocess.CalledProcessError):
+    print(fail_message)
+  elif isinstance(error, OSError):
+    if error.errno == errno.ENOSPC:
+      print("Not enough space to perform the backup.")
+    else:
+      print(f"Failed to backup due to unexpected error: {error}")
+  cleanup_backup(in_progress_destination, in_progress_compressed_backup)
 
 def cleanup_backup(in_progress_destination, in_progress_compressed_backup):
   if os.path.exists(in_progress_destination):
@@ -198,14 +201,21 @@ def is_url_pingable(url, timeout=5):
   except (http.client.IncompleteRead, http.client.RemoteDisconnected, socket.gaierror, socket.timeout, urllib.error.HTTPError, urllib.error.URLError):
     return False
 
-def run_cmd(cmd, success_message, fail_message):
-  try:
-    subprocess.check_call(cmd)
-    print(success_message)
-  except subprocess.CalledProcessError as e:
-    print(f"{fail_message}: {e}")
-  except Exception as e:
-    print(f"Unexpected error occurred: {e}")
+def run_cmd(cmd, success_message, fail_message, retries=3, delay=2):
+  attempt = 0
+  while attempt < retries:
+    try:
+      subprocess.check_call(cmd)
+      print(success_message)
+      return
+    except (subprocess.CalledProcessError, Exception) as e:
+      print(f"{fail_message}: {e}")
+      attempt += 1
+      if attempt < retries:
+        print(f"Retrying in {delay} seconds... (Attempt {attempt + 1} of {retries})")
+        time.sleep(delay)
+      else:
+        print(f"Failed after {retries} attempts.")
 
 def setup_frogpilot(build_metadata):
   remount_persist = ["sudo", "mount", "-o", "remount,rw", "/persist"]
