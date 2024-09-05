@@ -1,7 +1,6 @@
 import json
 import os
 import re
-import requests
 import shutil
 import time
 import urllib.request
