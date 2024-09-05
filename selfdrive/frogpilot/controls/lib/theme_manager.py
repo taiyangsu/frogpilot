@@ -366,7 +366,7 @@ class ThemeManager:
         self.previous_assets = {}
         self.update_active_theme()
 
-  def update_themes(self, bool_run=False):
+  def update_themes(self, boot_run=False):
     if not os.path.exists(THEME_SAVE_PATH):
       return
 

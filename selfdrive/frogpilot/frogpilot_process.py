@@ -194,8 +194,9 @@ def frogpilot_thread():
         time_validated = system_time_valid()
         if not time_validated:
           continue
-        run_thread_with_lock("update_models", model_manager.update_models, (boot_run=True))
-        run_thread_with_lock("update_themes", theme_manager.update_themes, (boot_run=True))
+        if deviceState.networkType == WIFI:
+          run_thread_with_lock("update_models", model_manager.update_models, (True,))
+          run_thread_with_lock("update_themes", theme_manager.update_themes, (True,))
 
       theme_manager.update_holiday()
 

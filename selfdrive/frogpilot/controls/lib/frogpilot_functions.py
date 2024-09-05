@@ -79,19 +79,22 @@ def backup_directory(backup, destination, success_message, fail_message, minimum
       if compressed_backup_size < minimum_backup_size or minimum_backup_size == 0:
         params.put_int_nonblocking("MinimumBackupSize", compressed_backup_size)
 
-  except FileExistsError:
-    print(f"Destination '{destination}' already exists. Backup aborted.")
-  except subprocess.CalledProcessError:
-    print(fail_message)
-    cleanup_backup(in_progress_destination, in_progress_compressed_backup)
-  except OSError as e:
-    if e.errno == errno.ENOSPC:
-      print("Not enough space to perform the backup.")
-    else:
-      print(f"Failed to backup due to unexpected error: {e}")
-    cleanup_backup(in_progress_destination, in_progress_compressed_backup)
+  except (FileExistsError, subprocess.CalledProcessError, OSError) as e:
+    handle_backup_error(e, destination, in_progress_destination, in_progress_compressed_backup, fail_message)
   finally:
     cleanup_backup(in_progress_destination, in_progress_compressed_backup)
+
+def handle_backup_error(error, destination, in_progress_destination, in_progress_compressed_backup, fail_message):
+  if isinstance(error, FileExistsError):
+    print(f"Destination '{destination}' already exists. Backup aborted.")
+  elif isinstance(error, subprocess.CalledProcessError):
+    print(fail_message)
+  elif isinstance(error, OSError):
+    if error.errno == errno.ENOSPC:
+      print("Not enough space to perform the backup.")
+    else:
+      print(f"Failed to backup due to unexpected error: {error}")
+  cleanup_backup(in_progress_destination, in_progress_compressed_backup)
 
 def cleanup_backup(in_progress_destination, in_progress_compressed_backup):
   if os.path.exists(in_progress_destination):
