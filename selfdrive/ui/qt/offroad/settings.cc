@@ -20,7 +20,7 @@
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
 
 #include "selfdrive/frogpilot/navigation/ui/navigation_settings.h"
-#include "selfdrive/frogpilot/ui/qt/offroad/control_settings.h"
+#include "selfdrive/frogpilot/ui/qt/offroad/driving_settings.h"
 #include "selfdrive/frogpilot/ui/qt/offroad/vehicle_settings.h"
 #include "selfdrive/frogpilot/ui/qt/offroad/visual_settings.h"
 
@@ -841,10 +841,10 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QObject::connect(this, &SettingsWindow::expandToggleDescription, toggles, &TogglesPanel::expandToggleDescription);
   QObject::connect(toggles, &TogglesPanel::updateMetric, this, &SettingsWindow::updateMetric);
 
-  FrogPilotControlsPanel *frogpilotControls = new FrogPilotControlsPanel(this);
-  QObject::connect(frogpilotControls, &FrogPilotControlsPanel::openParentToggle, this, [this]() {parentToggleOpen=true;});
-  QObject::connect(frogpilotControls, &FrogPilotControlsPanel::openSubParentToggle, this, [this]() {subParentToggleOpen=true;});
-  QObject::connect(frogpilotControls, &FrogPilotControlsPanel::openSubSubParentToggle, this, [this]() {subSubParentToggleOpen=true;});
+  FrogPilotDrivingPanel *frogpilotDriving = new FrogPilotDrivingPanel(this);
+  QObject::connect(frogpilotDriving, &FrogPilotDrivingPanel::openParentToggle, this, [this]() {parentToggleOpen=true;});
+  QObject::connect(frogpilotDriving, &FrogPilotDrivingPanel::openSubParentToggle, this, [this]() {subParentToggleOpen=true;});
+  QObject::connect(frogpilotDriving, &FrogPilotDrivingPanel::openSubSubParentToggle, this, [this]() {subSubParentToggleOpen=true;});
 
   FrogPilotVisualsPanel *frogpilotVisuals = new FrogPilotVisualsPanel(this);
   QObject::connect(frogpilotVisuals, &FrogPilotVisualsPanel::openParentToggle, this, [this]() {parentToggleOpen=true;});
@@ -855,7 +855,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     {tr("Network"), new Networking(this)},
     {tr("Toggles"), toggles},
     {tr("Software"), new SoftwarePanel(this)},
-    {tr("Driving"), frogpilotControls},
+    {tr("Driving"), frogpilotDriving},
     {tr("Navigation"), new FrogPilotNavigationPanel(this)},
     {tr("Utilities"), device},
     {tr("Vehicles"), new FrogPilotVehiclesPanel(this)},
