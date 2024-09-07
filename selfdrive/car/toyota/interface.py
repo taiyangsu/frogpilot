@@ -7,6 +7,8 @@ from openpilot.selfdrive.car import create_button_events, get_safety_config
 from openpilot.selfdrive.car.disable_ecu import disable_ecu
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
+from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import get_max_allowed_accel
+
 ButtonType = car.CarState.ButtonEvent.Type
 FrogPilotButtonType = custom.FrogPilotCarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -16,7 +18,10 @@ SteerControlType = car.CarParams.SteerControlType
 class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed, frogpilot_toggles):
-    return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
+    if frogpilot_toggles.sport_plus:
+      return CarControllerParams.ACCEL_MIN, get_max_allowed_accel(current_speed)
+    else:
+      return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
 
   @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, disable_openpilot_long, experimental_long, docs, params):
@@ -133,18 +138,28 @@ class CarInterface(CarInterfaceBase):
     ret.minEnableSpeed = -1. if (candidate in STOP_AND_GO_CAR or ret.enableGasInterceptor) else MIN_ACC_SPEED
 
     tune = ret.longitudinalTuning
-    if params.get_bool("ToyotaTune"):
-      tune.kiBP = [0., 5., 35.]
-      tune.kiV = [1.0, 1.5, 0.5]
-      ret.vEgoStopping = 0.25
-      ret.vEgoStarting = 0.25
-      ret.stoppingDecelRate = 0.1  # reach stopping target smoothly
-    elif candidate in TSS2_CAR:
+    if params.get_bool("CydiaTune"):
+      ret.stopAccel = -2.5           # on stock Toyota this is -2.5
+      ret.stoppingDecelRate = 0.3    # reach stopping target smoothly
+      if candidate in TSS2_CAR or ret.enableGasInterceptor:
+        tune.kiV = [0.5]
+        ret.vEgoStopping = 0.25
+        ret.vEgoStarting = 0.25
+      else:
+        tune.kiV = [1.2]             # appears to produce minimal oscillation on TSS-P
+    elif params.get_bool("FrogsGoMooTune"):
+      ret.stopAccel = -2.5           # on stock Toyota this is -2.5
+      ret.stoppingDecelRate = 0.1    # reach stopping target smoothly
+      ret.vEgoStarting = 0.15
+      ret.vEgoStopping = 0.15
+      tune.kiV = [1.0]
+    elif candidate in TSS2_CAR or ret.enableGasInterceptor:
       tune.kpV = [0.0]
       tune.kiV = [0.5]
-      ret.vEgoStopping = 0.25
-      ret.vEgoStarting = 0.25
-      ret.stoppingDecelRate = 0.3  # reach stopping target smoothly
+      if candidate in TSS2_CAR:
+        ret.vEgoStopping = 0.25
+        ret.vEgoStarting = 0.25
+        ret.stoppingDecelRate = 0.3  # reach stopping target smoothly
     else:
       tune.kiBP = [0., 5., 35.]
       tune.kiV = [3.6, 2.4, 1.5]
@@ -160,7 +175,7 @@ class CarInterface(CarInterfaceBase):
 
   # returns a car.CarState
   def _update(self, c, frogpilot_toggles):
-    ret, fp_ret = self.CS.update(self.cp, self.cp_cam, c, frogpilot_toggles)
+    ret, fp_ret = self.CS.update(self.cp, self.cp_cam, frogpilot_toggles)
 
     if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) or (self.CP.flags & ToyotaFlags.SMART_DSU and not self.CP.flags & ToyotaFlags.RADAR_CAN_FILTER):
       ret.buttonEvents = [

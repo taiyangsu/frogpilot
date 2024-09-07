@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import requests
 import shutil
 import time
 import urllib.request
@@ -172,11 +173,17 @@ class ModelManager:
         print(f"Source default model not found at {source_path}. Exiting...")
 
   def update_models(self, boot_run=True):
+    self.repo_url = get_repository_url()
     if boot_run:
       self.copy_default_model()
-
-    self.repo_url = get_repository_url()
-    if self.repo_url is None:
+      boot_checks = 0
+      while self.repo_url is None and boot_checks < 60:
+        boot_checks += 1
+        if boot_checks > 60:
+          break
+        time.sleep(1)
+      self.validate_models()
+    elif self.repo_url is None:
       print("GitHub and GitLab are offline...")
       return
 

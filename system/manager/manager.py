@@ -9,12 +9,9 @@ import traceback
 from cereal import log
 import cereal.messaging as messaging
 import openpilot.system.sentry as sentry
-from openpilot.common.conversions import Conversions as CV
 from openpilot.common.params import Params, ParamKeyType
 from openpilot.common.text_window import TextWindow
-from openpilot.selfdrive.controls.lib.desire_helper import LANE_CHANGE_SPEED_MIN
 from openpilot.system.hardware import HARDWARE, PC
-from openpilot.system.hardware.power_monitoring import VBATT_PAUSE_CHARGING
 from openpilot.system.manager.helpers import unblock_stdout, write_onroad_params, save_bootlog
 from openpilot.system.manager.process import ensure_running
 from openpilot.system.manager.process_config import managed_processes
@@ -134,6 +131,7 @@ def manager_init() -> None:
     ("CustomSignals", "frog"),
     ("CustomSounds", "frog"),
     ("CustomUI", "1"),
+    ("CydiaTune", "0"),
     ("DecelerationProfile", "1"),
     ("DeveloperUI", "0"),
     ("DeviceManagement", "1"),
@@ -165,6 +163,7 @@ def manager_init() -> None:
     ("ForceStandstill", "0"),
     ("ForceStops", "0"),
     ("FPSCounter", "1"),
+    ("FrogsGoMooTune", "1"),
     ("FullMap", "0"),
     ("GasRegenCmd", "1"),
     ("GMapKey", ""),
@@ -202,7 +201,7 @@ def manager_init() -> None:
     ("LosAngelesLiveTorqueParameters", ""),
     ("LosAngelesScore", "0"),
     ("LoudBlindspotAlert", "0"),
-    ("LowVoltageShutdown", str(VBATT_PAUSE_CHARGING)),
+    ("LowVoltageShutdown", "11.8"),
     ("MapAcceleration", "0"),
     ("MapDeceleration", "0"),
     ("MapGears", "0"),
@@ -210,7 +209,7 @@ def manager_init() -> None:
     ("MapboxSecretKey", ""),
     ("MapsSelected", ""),
     ("MapStyle", "10"),
-    ("MinimumLaneChangeSpeed", str(LANE_CHANGE_SPEED_MIN / CV.MPH_TO_MS)),
+    ("MinimumLaneChangeSpeed", "20"),
     ("Model", DEFAULT_MODEL),
     ("ModelManagement", "0"),
     ("ModelName", DEFAULT_MODEL_NAME),
@@ -331,15 +330,16 @@ def manager_init() -> None:
     ("StaticPedalsOnUI", "0"),
     ("SteerRatio", ""),
     ("SteerRatioStock", ""),
+    ("StockTune", "0"),
     ("StoppedTimer", "0"),
     ("StoppingDistance", "3"),
     ("TacoTune", "0"),
     ("ToyotaDoors", "0"),
-    ("ToyotaTune", "1"),
     ("TrafficFollow", "0.5"),
     ("TrafficJerkAcceleration", "50"),
     ("TrafficJerkDanger", "100"),
     ("TrafficJerkSpeed", "50"),
+    ("TrafficMode", "0"),
     ("TrafficPersonalityProfile", "1"),
     ("TuningInfo", "1"),
     ("TurnAggressiveness", "100"),
