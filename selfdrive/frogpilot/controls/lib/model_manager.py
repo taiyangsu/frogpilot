@@ -171,7 +171,7 @@ class ModelManager:
       else:
         print(f"Source default model not found at {source_path}. Exiting...")
 
-  def update_models(self, boot_run=True):
+  def update_models(self, boot_run=False):
     if boot_run:
       self.copy_default_model()
 
@@ -183,6 +183,9 @@ class ModelManager:
     model_info = self.fetch_models(f"{self.repo_url}Versions/model_names_{VERSION}.json")
     if model_info:
       self.update_model_params(model_info)
+
+    if boot_run:
+      self.validate_models()
 
   def download_all_models(self):
     self.repo_url = get_repository_url()

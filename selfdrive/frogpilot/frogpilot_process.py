@@ -86,7 +86,7 @@ def time_checks(automatic_updates, deviceState, model_manager, now, started, the
   update_maps(now, params, params_memory)
 
   with locks["update_models"]:
-    model_manager.update_models(boot_run=False)
+    model_manager.update_models()
 
   with locks["update_themes"]:
     theme_manager.update_themes()
@@ -194,8 +194,8 @@ def frogpilot_thread():
         time_validated = system_time_valid()
         if not time_validated:
           continue
-        run_thread_with_lock("update_models", model_manager.update_models)
-        run_thread_with_lock("update_themes", theme_manager.update_themes)
+        run_thread_with_lock("update_models", model_manager.update_models, (boot_run=True))
+        run_thread_with_lock("update_themes", theme_manager.update_themes, (boot_run=True))
 
       theme_manager.update_holiday()
 
