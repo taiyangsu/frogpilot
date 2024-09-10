@@ -88,9 +88,9 @@ class FrogPilotVariables:
     toggle.goat_scream = bonus_content and self.params.get_bool("GoatScream")
     holiday_themes = bonus_content and self.params.get_bool("HolidayThemes")
     toggle.current_holiday_theme = self.params.get("CurrentHolidayTheme", encoding='utf-8') if holiday_themes else None
-    personalize_openpilot = bonus_content and self.params.get_bool("PersonalizeOpenpilot")
-    toggle.sound_pack = self.params.get("CustomSignals", encoding='utf-8') if personalize_openpilot else "stock"
-    toggle.wheel_image = self.params.get("WheelIcon", encoding='utf-8') if personalize_openpilot else "stock"
+    toggle.personalize_openpilot = bonus_content and self.params.get_bool("PersonalizeOpenpilot")
+    toggle.sound_pack = self.params.get("CustomSignals", encoding='utf-8') if toggle.personalize_openpilot else "stock"
+    toggle.wheel_image = self.params.get("WheelIcon", encoding='utf-8') if toggle.personalize_openpilot else "stock"
     toggle.random_events = bonus_content and self.params.get_bool("RandomEvents")
 
     toggle.cluster_offset = self.params.get_float("ClusterOffset") if car_make == "toyota" else 1

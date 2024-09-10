@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import math
+import random
 import time
 import threading
 from typing import SupportsFloat
@@ -165,7 +166,7 @@ class Controls:
 
     self.can_log_mono_time = 0
 
-    self.startup_event = get_startup_event(car_recognized, not self.CP.passive, len(self.CP.carFw) > 0, self.block_user)
+    self.startup_event = get_startup_event(car_recognized, not self.CP.passive, len(self.CP.carFw) > 0, self.block_user, FrogPilotVariables.toggles)
 
     if not sounds_available:
       self.events.add(EventName.soundsUnavailable, static=True)
@@ -188,6 +189,7 @@ class Controls:
     self.params_memory = Params("/dev/shm/params")
 
     self.always_on_lateral_active = False
+    self.always_on_lateral_active_previously = False
     self.fcw_event_triggered = False
     self.no_entry_alert_triggered = False
     self.onroad_distance_pressed = False
@@ -721,6 +723,12 @@ class Controls:
     self.always_on_lateral_active &= self.sm['frogpilotPlan'].lateralCheck
     self.always_on_lateral_active &= not (self.frogpilot_toggles.always_on_lateral_lkas and self.sm['frogpilotCarState'].alwaysOnLateralDisabled)
     self.always_on_lateral_active &= not (CS.brakePressed and CS.vEgo < self.frogpilot_toggles.always_on_lateral_pause_speed) or CS.standstill
+
+    if self.always_on_lateral_active and not self.always_on_lateral_active_previously and self.frogpilot_toggles.random_events:
+      if random.random() < 0.01:
+        self.events.add(EventName.youveGotMail)
+
+    self.always_on_lateral_active_previously = self.always_on_lateral_active
 
     if self.frogpilot_toggles.conditional_experimental_mode:
       self.experimental_mode = self.sm['frogpilotPlan'].experimentalMode
