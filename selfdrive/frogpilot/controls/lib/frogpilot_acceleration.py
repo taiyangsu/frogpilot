@@ -3,7 +3,7 @@ from openpilot.common.numpy_fast import clip, interp
 from openpilot.selfdrive.car.interfaces import ACCEL_MIN, ACCEL_MAX
 from openpilot.selfdrive.controls.lib.longitudinal_planner import A_CRUISE_MIN, get_max_accel
 
-from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import CITY_SPEED_LIMIT, CRUISING_SPEED
+from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import CRUISING_SPEED
 
 A_CRUISE_MIN_ECO = A_CRUISE_MIN / 4
 A_CRUISE_MIN_SPORT = A_CRUISE_MIN / 2
@@ -72,7 +72,7 @@ class FrogPilotAcceleration:
         self.max_accel = get_max_accel(v_ego)
 
     if frogpilot_toggles.human_acceleration:
-      if self.frogpilot_planner.tracking_lead and self.frogpilot_planner.lead_one.dRel < CITY_SPEED_LIMIT * 2 and not frogpilotCarState.trafficModeActive:
+      if self.frogpilot_planner.frogpilot_following.following_lead and not frogpilotCarState.trafficModeActive:
         self.max_accel = clip(self.frogpilot_planner.lead_one.aLeadK, get_max_accel_sport_plus(v_ego), get_max_allowed_accel(v_ego))
       self.max_accel = get_max_accel_ramp_off(self.max_accel, self.frogpilot_planner.v_cruise, v_ego)
 

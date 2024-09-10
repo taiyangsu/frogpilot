@@ -10,6 +10,7 @@ class FrogPilotFollowing:
   def __init__(self, FrogPilotPlanner):
     self.frogpilot_planner = FrogPilotPlanner
 
+    self.following_lead = False
     self.slower_lead = False
 
     self.acceleration_jerk = 0
@@ -41,6 +42,8 @@ class FrogPilotFollowing:
         frogpilot_toggles.relaxed_follow,
         frogpilot_toggles.custom_personalities, controlsState.personality
       )
+
+    self.following_lead = self.frogpilot_planner.tracking_lead and lead_distance < (self.t_follow + 1) * v_ego
 
     if self.frogpilot_planner.tracking_lead:
       self.safe_obstacle_distance = int(get_safe_obstacle_distance(v_ego, self.t_follow))

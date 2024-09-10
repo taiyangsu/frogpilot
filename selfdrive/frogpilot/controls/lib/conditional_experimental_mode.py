@@ -1,7 +1,7 @@
 from openpilot.common.params import Params
 
 from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_functions import MovingAverageCalculator
-from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import CITY_SPEED_LIMIT, THRESHOLD
+from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import CITY_SPEED_LIMIT, CRUISING_SPEED, THRESHOLD
 
 class ConditionalExperimentalMode:
   def __init__(self, FrogPilotPlanner):
@@ -24,17 +24,17 @@ class ConditionalExperimentalMode:
 
     if self.status_value not in {1, 2, 3, 4, 5, 6} and not carState.standstill:
       self.update_conditions(self.frogpilot_planner.tracking_lead, v_ego, v_lead, frogpilot_toggles)
-      self.experimental_mode = self.check_conditions(carState, frogpilotNavigation, modelData, self.frogpilot_planner.tracking_lead, v_ego, v_lead, frogpilot_toggles)
+      self.experimental_mode = self.check_conditions(carState, frogpilotNavigation, modelData, self.frogpilot_planner.frogpilot_following.following_lead, v_ego, v_lead, frogpilot_toggles)
       self.params_memory.put_int("CEStatus", self.status_value if self.experimental_mode else 0)
     else:
       self.experimental_mode = self.status_value in {2, 4, 6} or carState.standstill and self.experimental_mode
       self.stop_light_detected = False
 
-  def check_conditions(self, carState, frogpilotNavigation, modelData, tracking_lead, v_ego, v_lead, frogpilot_toggles):
-    below_speed = frogpilot_toggles.conditional_limit > v_ego >= 1 and not tracking_lead
-    below_speed_with_lead = frogpilot_toggles.conditional_limit_lead > v_ego >= 1 and tracking_lead
+  def check_conditions(self, carState, frogpilotNavigation, modelData, following_lead, v_ego, v_lead, frogpilot_toggles):
+    below_speed = frogpilot_toggles.conditional_limit > v_ego >= 1 and not following_lead
+    below_speed_with_lead = frogpilot_toggles.conditional_limit_lead > v_ego >= 1 and following_lead
     if below_speed or below_speed_with_lead:
-      self.status_value = 7 if tracking_lead else 8
+      self.status_value = 7 if following_lead else 8
       return True
 
     if frogpilot_toggles.conditional_signal and v_ego < CITY_SPEED_LIMIT and (carState.leftBlinker or carState.rightBlinker):
@@ -42,11 +42,11 @@ class ConditionalExperimentalMode:
       return True
 
     approaching_maneuver = modelData.navEnabled and (frogpilotNavigation.approachingIntersection or frogpilotNavigation.approachingTurn)
-    if frogpilot_toggles.conditional_navigation and approaching_maneuver and (frogpilot_toggles.conditional_navigation_lead or not tracking_lead):
+    if frogpilot_toggles.conditional_navigation and approaching_maneuver and (frogpilot_toggles.conditional_navigation_lead or not following_lead):
       self.status_value = 10 if frogpilotNavigation.approachingIntersection else 11
       return True
 
-    if frogpilot_toggles.conditional_curves and self.curve_detected and (frogpilot_toggles.conditional_curves_lead or not tracking_lead):
+    if frogpilot_toggles.conditional_curves and self.curve_detected and (frogpilot_toggles.conditional_curves_lead or not following_lead):
       self.status_value = 12
       return True
 
@@ -70,7 +70,7 @@ class ConditionalExperimentalMode:
     self.stop_sign_and_light(tracking_lead, v_ego, frogpilot_toggles)
 
   def curve_detection(self, tracking_lead, v_ego, frogpilot_toggles):
-    if frogpilot_toggles.conditional_curves_lead or not tracking_lead:
+    if v_ego > CRUISING_SPEED:
       curve_detected = (1 / self.frogpilot_planner.road_curvature)**0.5 < v_ego
       curve_active = (0.9 / self.frogpilot_planner.road_curvature)**0.5 < v_ego and self.curve_detected
 
