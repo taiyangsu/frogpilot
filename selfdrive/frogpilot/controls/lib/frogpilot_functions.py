@@ -201,18 +201,25 @@ def is_url_pingable(url, timeout=5):
   except (http.client.IncompleteRead, http.client.RemoteDisconnected, socket.gaierror, socket.timeout, urllib.error.HTTPError, urllib.error.URLError):
     return False
 
-def run_cmd(cmd, success_message, fail_message):
-  try:
-    subprocess.check_call(cmd)
-    print(success_message)
-  except subprocess.CalledProcessError as e:
-    print(f"{fail_message}: {e}")
-  except Exception as e:
-    print(f"Unexpected error occurred: {e}")
+def run_cmd(cmd, success_message, fail_message, retries=5, delay=1):
+  attempt = 0
+  while attempt < retries:
+    try:
+      subprocess.check_call(cmd)
+      print(success_message)
+      return True
+    except subprocess.CalledProcessError as e:
+      print(f"{fail_message} (attempt {attempt + 1} of {retries}): {e}")
+    except Exception as e:
+      print(f"Unexpected error occurred (attempt {attempt + 1} of {retries}): {e}")
+    attempt += 1
+    time.sleep(delay)
+  return False
 
 def setup_frogpilot(build_metadata):
   remount_persist = ["sudo", "mount", "-o", "remount,rw", "/persist"]
-  run_cmd(remount_persist, "Successfully remounted /persist as read-write.", "Failed to remount /persist.")
+  if not run_cmd(remount_persist, "Successfully remounted /persist as read-write.", "Failed to remount /persist."):
+    HARDWARE.reboot()
 
   os.makedirs("/persist/params", exist_ok=True)
   os.makedirs(MODELS_PATH, exist_ok=True)
@@ -257,7 +264,8 @@ def setup_frogpilot(build_metadata):
       print(f"Successfully copied {source_item} to {destination_item}.")
 
   remount_root = ["sudo", "mount", "-o", "remount,rw", "/"]
-  run_cmd(remount_root, "File system remounted as read-write.", "Failed to remount file system.")
+  if not run_cmd(remount_root, "File system remounted as read-write.", "Failed to remount file system."):
+    HARDWARE.reboot()
 
   frogpilot_boot_logo = os.path.join(BASEDIR, "selfdrive", "frogpilot", "assets", "other_images", "frogpilot_boot_logo.png")
   frogpilot_boot_logo_jpg = os.path.join(BASEDIR, "selfdrive", "frogpilot", "assets", "other_images", "frogpilot_boot_logo.jpg")
@@ -283,7 +291,8 @@ def uninstall_frogpilot():
   boot_logo_restore_location = os.path.join(BASEDIR, "selfdrive", "frogpilot", "assets", "other_images", "original_bg.jpg")
 
   copy_cmd = ["sudo", "cp", boot_logo_restore_location, boot_logo_location]
-  run_cmd(copy_cmd, "Successfully restored the original boot logo.", "Failed to restore the original boot logo.")
+  if not run_cmd(copy_cmd, "Successfully restored the original boot logo.", "Failed to restore the original boot logo."):
+    HARDWARE.reboot()
 
   HARDWARE.uninstall()
 
