@@ -82,6 +82,10 @@ def link_valid(url):
     response = requests.head(url, allow_redirects=True, timeout=5)
     response.raise_for_status()
     return True
+  except requests.HTTPError as e:
+    if e.response.status_code != 404:
+      handle_request_error(e, None, None, None, None)
+    return False
   except Exception as e:
     handle_request_error(e, None, None, None, None)
     return False
