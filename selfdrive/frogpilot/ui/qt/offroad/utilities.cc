@@ -31,27 +31,9 @@ UtilitiesPanel::UtilitiesPanel(SettingsWindow *parent) : ListWidget(parent) {
         flashPandaBtn->setEnabled(false);
         flashPandaBtn->setValue(tr("Flashing..."));
 
-        QProcess recoverProcess;
-        recoverProcess.setWorkingDirectory("/data/openpilot/panda/board");
-        recoverProcess.start("/bin/sh", QStringList{"-c", "./recover.py"});
-        if (!recoverProcess.waitForFinished()) {
-          flashPandaBtn->setValue(tr("Failed..."));
-          util::sleep_for(2000);
-          flashPandaBtn->setValue("");
-          flashPandaBtn->setEnabled(true);
-          return;
-        }
-
-        QProcess flashProcess;
-        flashProcess.setWorkingDirectory("/data/openpilot/panda/board");
-        flashProcess.start("/bin/sh", QStringList{"-c", "./flash.py"});
-        if (!flashProcess.waitForFinished()) {
-          flashPandaBtn->setValue(tr("Failed..."));
-          util::sleep_for(2000);
-          flashPandaBtn->setValue("");
-          flashPandaBtn->setEnabled(true);
-          return;
-        }
+        system("python3 /data/openpilot/panda/board/flash.py");
+        system("python3 /data/openpilot/panda/board/recover.py");
+        system("python3 /data/openpilot/panda/tests/reflash_internal_panda.py");
 
         flashPandaBtn->setValue(tr("Flashed!"));
         util::sleep_for(2000);
