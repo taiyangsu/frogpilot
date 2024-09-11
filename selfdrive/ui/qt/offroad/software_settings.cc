@@ -93,6 +93,15 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   auto uninstallBtn = new ButtonControl(tr("Uninstall %1").arg(getBrand()), tr("UNINSTALL"));
   connect(uninstallBtn, &ButtonControl::clicked, [&]() {
     if (ConfirmationDialog::confirm(tr("Are you sure you want to uninstall?"), tr("Uninstall"), this)) {
+      if (FrogPilotConfirmationDialog::yesorno(tr("Do you want to permanently delete any additional FrogPilot assets? This is 100% unrecoverable and includes backups, downloaded models, themes, and long-term storage toggle settings for easy reinstalls."), this)) {
+        std::system("rm -rf /data/backups");
+        std::system("rm -rf /data/crashes");
+        std::system("rm -rf /data/media/0/videos");
+        std::system("rm -rf /data/themes");
+        std::system("rm -rf /data/toggle_backups");
+        std::system("rm -rf /persist/params");
+        std::system("rm -rf /persist/tracking");
+      }
       params.putBool("DoUninstall", true);
     }
   });
