@@ -45,7 +45,7 @@ class ModelManager:
 
   def download_model(self, model_to_download):
     model_path = os.path.join(MODELS_PATH, f"{model_to_download}.thneed")
-    if os.path.exists(model_path):
+    if os.path.isfile(model_path):
       handle_error(model_path, "Model already exists...", "Model already exists...", self.download_param, self.download_progress_param, self.params_memory)
       return
 
@@ -106,7 +106,7 @@ class ModelManager:
       model_path = os.path.join(MODELS_PATH, f"{model}.thneed")
       model_url = f"{repo_url}Models/{model}.thneed"
 
-      if os.path.exists(model_path):
+      if os.path.isfile(model_path):
         if automatically_update_models:
           verify_result = verify_download(model_path, model_url)
           if verify_result is None:
@@ -155,7 +155,7 @@ class ModelManager:
       return
 
     current_model_path = os.path.join(MODELS_PATH, f"{current_model}.thneed")
-    if not os.path.exists(current_model_path):
+    if not os.path.isfile(current_model_path):
       print(f"Model {current_model} is not downloaded. Downloading...")
       self.download_model(current_model)
 
@@ -170,10 +170,10 @@ class ModelManager:
   def copy_default_model(self):
     default_model_path = os.path.join(MODELS_PATH, f"{DEFAULT_MODEL}.thneed")
 
-    if not os.path.exists(default_model_path):
+    if not os.path.isfile(default_model_path):
       source_path = os.path.join(BASEDIR, "selfdrive", "modeld", "models", "supercombo.thneed")
 
-      if os.path.exists(source_path):
+      if os.path.isfile(source_path):
         shutil.copyfile(source_path, default_model_path)
         print(f"Copied default model from {source_path} to {default_model_path}")
       else:
@@ -218,7 +218,7 @@ class ModelManager:
       if self.params_memory.get_bool(self.cancel_download_param):
         return
 
-      if not os.path.exists(os.path.join(MODELS_PATH, f"{model}.thneed")):
+      if not os.path.isfile(os.path.join(MODELS_PATH, f"{model}.thneed")):
         model_index = available_models.index(model)
         model_name = available_model_names[model_index]
 
@@ -230,7 +230,7 @@ class ModelManager:
         while self.params_memory.get(self.download_param, encoding='utf-8'):
           time.sleep(1)
 
-    while not all(os.path.exists(os.path.join(MODELS_PATH, f"{model}.thneed")) for model in available_models):
+    while not all(os.path.isfile(os.path.join(MODELS_PATH, f"{model}.thneed")) for model in available_models):
       time.sleep(1)
 
     self.params_memory.put(self.download_progress_param, "All models downloaded!")
