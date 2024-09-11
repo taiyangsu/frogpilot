@@ -209,12 +209,16 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
               cancellingDownload = false;
               colorDownloading = false;
               themeDownloading = false;
+
+              device()->resetInteractiveTimeout(30);
             });
           } else {
             QStringList downloadableColors = QString::fromStdString(params.get("DownloadableColors")).split(",");
             QString colorSchemeToDownload = MultiOptionDialog::getSelection(tr("Select a color scheme to download"), downloadableColors, "", this);
 
             if (!colorSchemeToDownload.isEmpty()) {
+              device()->resetInteractiveTimeout(300);
+
               QString convertedColorScheme = formatColorNameForStorage(colorSchemeToDownload);
               paramsMemory.put("ColorToDownload", convertedColorScheme.toStdString());
               downloadStatusLabel->setText("Downloading...");
@@ -338,12 +342,16 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
               cancellingDownload = false;
               iconDownloading = false;
               themeDownloading = false;
+
+              device()->resetInteractiveTimeout(30);
             });
           } else {
             QStringList downloadableIcons = QString::fromStdString(params.get("DownloadableIcons")).split(",");
             QString iconPackToDownload = MultiOptionDialog::getSelection(tr("Select an icon pack to download"), downloadableIcons, "", this);
 
             if (!iconPackToDownload.isEmpty()) {
+              device()->resetInteractiveTimeout(300);
+
               QString convertedIconPack = formatIconNameForStorage(iconPackToDownload);
               paramsMemory.put("IconToDownload", convertedIconPack.toStdString());
               downloadStatusLabel->setText("Downloading...");
@@ -467,12 +475,16 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
               cancellingDownload = false;
               signalDownloading = false;
               themeDownloading = false;
+
+              device()->resetInteractiveTimeout(30);
             });
           } else {
             QStringList downloadableSignals = QString::fromStdString(params.get("DownloadableSignals")).split(",");
             QString signalPackToDownload = MultiOptionDialog::getSelection(tr("Select a signal pack to download"), downloadableSignals, "", this);
 
             if (!signalPackToDownload.isEmpty()) {
+              device()->resetInteractiveTimeout(300);
+
               QString convertedSignalPack = formatSignalNameForStorage(signalPackToDownload);
               paramsMemory.put("SignalToDownload", convertedSignalPack.toStdString());
               downloadStatusLabel->setText("Downloading...");
@@ -596,12 +608,16 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
               cancellingDownload = false;
               soundDownloading = false;
               themeDownloading = false;
+
+              device()->resetInteractiveTimeout(30);
             });
           } else {
             QStringList downloadableSounds = QString::fromStdString(params.get("DownloadableSounds")).split(",");
             QString soundSchemeToDownload = MultiOptionDialog::getSelection(tr("Select a sound pack to download"), downloadableSounds, "", this);
 
             if (!soundSchemeToDownload.isEmpty()) {
+              device()->resetInteractiveTimeout(300);
+
               QString convertedSoundScheme = formatSoundNameForStorage(soundSchemeToDownload);
               paramsMemory.put("SoundToDownload", convertedSoundScheme.toStdString());
               downloadStatusLabel->setText("Downloading...");
@@ -725,12 +741,16 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
               cancellingDownload = false;
               wheelDownloading = false;
               themeDownloading = false;
+
+              device()->resetInteractiveTimeout(30);
             });
           } else {
             QStringList downloadableWheels = QString::fromStdString(params.get("DownloadableWheels")).split(",");
             QString wheelToDownload = MultiOptionDialog::getSelection(tr("Select a steering wheel to download"), downloadableWheels, "", this);
 
             if (!wheelToDownload.isEmpty()) {
+              device()->resetInteractiveTimeout(300);
+
               QString convertedImage = formatWheelNameForStorage(wheelToDownload);
               paramsMemory.put("WheelToDownload", convertedImage.toStdString());
               downloadStatusLabel->setText("Downloading...");
@@ -1078,6 +1098,8 @@ void FrogPilotVisualsPanel::updateState(const UIState &s) {
           if (!themeDownloading) {
             downloadStatusLabel->setText("Idle");
           }
+
+          device()->resetInteractiveTimeout(30);
         });
         paramsMemory.remove("ThemeDownloadProgress");
         colorDownloading = false;

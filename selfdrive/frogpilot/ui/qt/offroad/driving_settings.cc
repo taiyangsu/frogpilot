@@ -416,12 +416,16 @@ FrogPilotDrivingPanel::FrogPilotDrivingPanel(SettingsWindow *parent) : FrogPilot
               cancellingDownload = false;
               iconsDownloading = false;
               themeDownloading = false;
+
+              device()->resetInteractiveTimeout(30);
             });
           } else {
             QStringList downloadableIcons = QString::fromStdString(params.get("DownloadableDistanceIcons")).split(",");
             QString iconPackToDownload = MultiOptionDialog::getSelection(tr("Select an icon pack to download"), downloadableIcons, "", this);
 
             if (!iconPackToDownload.isEmpty()) {
+              device()->resetInteractiveTimeout(300);
+
               QString convertedIconPack = formatIconNameForStorage(iconPackToDownload);
               paramsMemory.put("DistanceIconToDownload", convertedIconPack.toStdString());
               downloadStatusLabel->setText("Downloading...");
@@ -708,6 +712,8 @@ FrogPilotDrivingPanel::FrogPilotDrivingPanel(SettingsWindow *parent) : FrogPilot
           paramsMemory.remove("ModelToDownload");
           paramsMemory.putBool("CancelModelDownload", true);
           cancellingDownload = true;
+
+          device()->resetInteractiveTimeout(30);
         } else {
           QMap<QString, QString> labelToModelMap;
           QStringList existingModels = modelDir.entryList({"*.thneed"}, QDir::Files);
@@ -723,6 +729,8 @@ FrogPilotDrivingPanel::FrogPilotDrivingPanel(SettingsWindow *parent) : FrogPilot
 
           QString modelToDownload = MultiOptionDialog::getSelection(tr("Select a driving model to download"), downloadableModels, "", this);
           if (!modelToDownload.isEmpty()) {
+            device()->resetInteractiveTimeout(300);
+
             modelDownloading = true;
             paramsMemory.put("ModelToDownload", labelToModelMap.value(modelToDownload).toStdString());
             paramsMemory.put("ModelDownloadProgress", "0%");
@@ -778,6 +786,8 @@ FrogPilotDrivingPanel::FrogPilotDrivingPanel(SettingsWindow *parent) : FrogPilot
 
                     params.putBoolNonBlocking("ModelsDownloaded", modelsDownloaded);
                   }
+
+                  device()->resetInteractiveTimeout(30);
                 });
               }
             });
@@ -793,7 +803,11 @@ FrogPilotDrivingPanel::FrogPilotDrivingPanel(SettingsWindow *parent) : FrogPilot
           paramsMemory.remove("DownloadAllModels");
           paramsMemory.putBool("CancelModelDownload", true);
           cancellingDownload = true;
+
+          device()->resetInteractiveTimeout(30);
         } else {
+          device()->resetInteractiveTimeout(300);
+
           startDownloadAllModels();
         }
       });
@@ -1288,6 +1302,8 @@ void FrogPilotDrivingPanel::updateState(const UIState &s) {
           if (!themeDownloading) {
             downloadStatusLabel->setText("Idle");
           }
+
+          device()->resetInteractiveTimeout(30);
         });
         paramsMemory.remove("ThemeDownloadProgress");
         iconsDownloading = false;
@@ -1504,6 +1520,8 @@ void FrogPilotDrivingPanel::startDownloadAllModels() {
         paramsMemory.remove("DownloadAllModels");
 
         downloadAllModelsBtn->setValue("");
+
+        device()->resetInteractiveTimeout(30);
       });
     }
   });

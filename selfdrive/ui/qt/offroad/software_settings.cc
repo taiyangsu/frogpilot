@@ -38,6 +38,8 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   // download update btn
   downloadBtn = new ButtonControl(tr("Download"), tr("CHECK"));
   connect(downloadBtn, &ButtonControl::clicked, [=]() {
+    device()->resetInteractiveTimeout(300);
+
     downloadBtn->setEnabled(false);
     if (downloadBtn->text() == tr("CHECK")) {
       checkForUpdates();
@@ -45,6 +47,8 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
       std::system("pkill -SIGHUP -f system.updated.updated");
     }
     paramsMemory.putBool("ManualUpdateInitiated", true);
+
+    device()->resetInteractiveTimeout(30);
   });
   addItem(downloadBtn);
 

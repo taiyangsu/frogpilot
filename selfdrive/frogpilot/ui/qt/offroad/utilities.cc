@@ -28,6 +28,8 @@ UtilitiesPanel::UtilitiesPanel(SettingsWindow *parent) : ListWidget(parent) {
   connect(flashPandaBtn, &ButtonControl::clicked, [=]() {
     if (ConfirmationDialog::confirm(tr("Are you sure you want to flash the Panda?"), tr("Flash"), this)) {
       std::thread([=]() {
+        device()->resetInteractiveTimeout(300);
+
         flashPandaBtn->setEnabled(false);
         flashPandaBtn->setValue(tr("Flashing..."));
 
@@ -146,6 +148,8 @@ UtilitiesPanel::UtilitiesPanel(SettingsWindow *parent) : ListWidget(parent) {
       if (!nameSelection.isEmpty()) {
         bool compressed = FrogPilotConfirmationDialog::yesorno(tr("Do you want to compress this backup? The end file size will be 2.25x smaller, but can take 10+ minutes."), this);
         std::thread([=]() {
+          device()->resetInteractiveTimeout(300);
+
           frogpilotBackupBtn->setEnabled(false);
           frogpilotBackupBtn->setValue(tr("Backing..."));
 
@@ -173,6 +177,8 @@ UtilitiesPanel::UtilitiesPanel(SettingsWindow *parent) : ListWidget(parent) {
           util::sleep_for(2000);
           frogpilotBackupBtn->setValue("");
           frogpilotBackupBtn->setEnabled(true);
+
+          device()->resetInteractiveTimeout(30);
         }).detach();
       }
 
@@ -211,6 +217,8 @@ UtilitiesPanel::UtilitiesPanel(SettingsWindow *parent) : ListWidget(parent) {
       if (!selection.isEmpty()) {
         if (ConfirmationDialog::confirm(tr("Are you sure you want to restore this version of FrogPilot?"), tr("Restore"), this)) {
           std::thread([=]() {
+            device()->resetInteractiveTimeout(300);
+
             frogpilotBackupBtn->setEnabled(false);
             frogpilotBackupBtn->setValue(tr("Restoring..."));
 
@@ -251,12 +259,16 @@ UtilitiesPanel::UtilitiesPanel(SettingsWindow *parent) : ListWidget(parent) {
                 util::sleep_for(2000);
                 frogpilotBackupBtn->setValue("");
                 frogpilotBackupBtn->setEnabled(true);
+
+                device()->resetInteractiveTimeout(30);
               }
             } else {
               frogpilotBackupBtn->setValue(tr("Failed..."));
               util::sleep_for(2000);
               frogpilotBackupBtn->setValue("");
               frogpilotBackupBtn->setEnabled(true);
+
+              device()->resetInteractiveTimeout(30);
             }
           }).detach();
         }
