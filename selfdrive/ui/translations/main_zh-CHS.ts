@@ -15,6 +15,10 @@
         <source>Reboot and Update</source>
         <translation>重启并更新</translation>
     </message>
+    <message>
+        <source>Disable Internet Check</source>
+        <translation>禁用网络检查</translation>
+    </message>
 </context>
 <context>
     <name>AdvancedNetworking</name>
@@ -24,11 +28,11 @@
     </message>
     <message>
         <source>Enable Tethering</source>
-        <translation>启用WiFi热点</translation>
+        <translation>启用 WiFi 热点</translation>
     </message>
     <message>
         <source>Tethering Password</source>
-        <translation>WiFi热点密码</translation>
+        <translation>WiFi 热点密码</translation>
     </message>
     <message>
         <source>EDIT</source>
@@ -36,11 +40,11 @@
     </message>
     <message>
         <source>Enter new tethering password</source>
-        <translation>输入新的WiFi热点密码</translation>
+        <translation>输入新的 WiFi 热点密码</translation>
     </message>
     <message>
         <source>IP Address</source>
-        <translation>IP地址</translation>
+        <translation>IP 地址</translation>
     </message>
     <message>
         <source>Enable Roaming</source>
@@ -48,15 +52,15 @@
     </message>
     <message>
         <source>APN Setting</source>
-        <translation>APN设置</translation>
+        <translation>APN 设置</translation>
     </message>
     <message>
         <source>Enter APN</source>
-        <translation>输入APN</translation>
+        <translation>输入 APN</translation>
     </message>
     <message>
         <source>leave blank for automatic configuration</source>
-        <translation>留空以自动配置</translation>
+        <translation>缺省配置</translation>
     </message>
     <message>
         <source>Cellular Metered</source>
@@ -68,7 +72,7 @@
     </message>
     <message>
         <source>Hidden Network</source>
-        <translation>隐藏的网络</translation>
+        <translation>隐藏网络</translation>
     </message>
     <message>
         <source>CONNECT</source>
@@ -85,6 +89,26 @@
     <message>
         <source>for &quot;%1&quot;</source>
         <translation>网络名称：&quot;%1&quot;</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation>关闭</translation>
+    </message>
+    <message>
+        <source>Always</source>
+        <translation>总是</translation>
+    </message>
+    <message>
+        <source>Only Onroad</source>
+        <translation>仅行驶状态</translation>
+    </message>
+    <message>
+        <source>Until Reboot</source>
+        <translation>直到重启</translation>
+    </message>
+    <message>
+        <source>Allow tethering with your data SIM and keep it active either while driving or continuously.</source>
+        <translation>允许在驾驶状态一直使用 SIM 卡数据。</translation>
     </message>
 </context>
 <context>
@@ -103,18 +127,166 @@
     </message>
     <message>
         <source>SPEED</source>
-        <translation>SPEED</translation>
+        <translation>时速</translation>
     </message>
     <message>
         <source>LIMIT</source>
-        <translation>LIMIT</translation>
+        <translation>限速</translation>
+    </message>
+    <message>
+        <source>Vehicle in blind spot</source>
+        <translation>车辆盲点辅助</translation>
+    </message>
+    <message>
+        <source>m/s²</source>
+        <translation>m/s²</translation>
+    </message>
+    <message>
+        <source>m/s</source>
+        <translation>m/s</translation>
+    </message>
+    <message>
+        <source>kph</source>
+        <translation>kph</translation>
+    </message>
+    <message>
+        <source> ft/s²</source>
+        <translation> ft/s²</translation>
+    </message>
+    <message>
+        <source>Accel: %1%2</source>
+        <translation>加速度: %1%2</translation>
+    </message>
+    <message>
+        <source> - Max: %1%2</source>
+        <translation> - M最高: %1%2</translation>
+    </message>
+    <message>
+        <source> | Obstacle: </source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>  |  Obstacle Factor: </source>
+        <translation></translation>
+    </message>
+    <message>
+        <source> - Stop: </source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>  -  Stop Factor: </source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Follow: </source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Follow Distance: </source>
+        <translation>跟车距离: </translation>
+    </message>
+    <message>
+        <source>Confirm speed limit</source>
+        <translation>确认限速</translation>
+    </message>
+    <message>
+        <source>Ignore speed limit</source>
+        <translation>忽略限速</translation>
+    </message>
+    <message>
+        <source>Conditional Experimental Mode ready</source>
+        <translation>条件实验模式就绪</translation>
+    </message>
+    <message>
+        <source>Conditional Experimental overridden</source>
+        <translation>条件实验模式失效</translation>
+    </message>
+    <message>
+        <source>Experimental Mode manually activated</source>
+        <translation>实验模式手动开启</translation>
+    </message>
+    <message>
+        <source>Experimental Mode activated for %1</source>
+        <translation>试验模式被 %1 激活</translation>
+    </message>
+    <message>
+        <source>low speed</source>
+        <translation>低速</translation>
+    </message>
+    <message>
+        <source>speed being less than %1 %2</source>
+        <translation>速度低于 %1 %2</translation>
+    </message>
+    <message>
+        <source>Experimental Mode activated for turn</source>
+        <translation>实验模式被转向激活</translation>
+    </message>
+    <message>
+        <source> / lane change</source>
+        <translation> / 变道</translation>
+    </message>
+    <message>
+        <source>Experimental Mode activated for intersection</source>
+        <translation>实验模式被十字路口激活</translation>
+    </message>
+    <message>
+        <source>Experimental Mode activated for upcoming turn</source>
+        <translation>实验模式被即将的转向激活</translation>
+    </message>
+    <message>
+        <source>Experimental Mode activated for curve</source>
+        <translation>实验模式被转弯激活</translation>
+    </message>
+    <message>
+        <source>Experimental Mode activated for stopped lead</source>
+        <translation>实验模式被前车停止激活</translation>
+    </message>
+    <message>
+        <source>Experimental Mode activated for slower lead</source>
+        <translation>实验模式被低速前车激活</translation>
+    </message>
+    <message>
+        <source>Experimental Mode activated %1</source>
+        <translation>实验模式被 %1 激活</translation>
+    </message>
+    <message>
+        <source>to stop</source>
+        <translation>以停止</translation>
+    </message>
+    <message>
+        <source>Experimental Mode forced on %1</source>
+        <translation>实验模式被 %1 强制激活</translation>
+    </message>
+    <message>
+        <source>Experimental Mode activated due to no speed limit</source>
+        <translation>实验模式由于无限速而激活</translation>
+    </message>
+    <message>
+        <source>Always On Lateral active</source>
+        <translation>总是激活横向控制</translation>
+    </message>
+    <message>
+        <source>. Press the &quot;Cruise Control&quot; button to disable</source>
+        <translation>. 按 &quot;巡航控制 &quot; 按钮以关闭</translation>
+    </message>
+    <message>
+        <source>. Long press the &quot;distance&quot; button to revert</source>
+        <translation>. 长按 &quot;距离设置&quot; 按钮以恢复</translation>
+    </message>
+    <message>
+        <source>. Click the &quot;LKAS&quot; button to revert</source>
+        <translation>. 点击 &quot;LKAS(车道保持辅助系统)&quot; 按钮以恢复</translation>
+    </message>
+    <message>
+        <source>. Double tap the screen to revert</source>
+        <translation>双击屏幕以恢复</translation>
     </message>
 </context>
 <context>
     <name>ConfirmationDialog</name>
     <message>
         <source>Ok</source>
-        <translation>好的</translation>
+        <translation>确认</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -125,7 +297,7 @@
     <name>DeclinePage</name>
     <message>
         <source>You must accept the Terms and Conditions in order to use openpilot.</source>
-        <translation>您必须接受条款和条件以使用openpilot。</translation>
+        <translation>您必须接受条款和条件以使用 openpilot。</translation>
     </message>
     <message>
         <source>Back</source>
@@ -167,7 +339,7 @@
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
-        <translation>设备ID（Dongle ID）</translation>
+        <translation>设备 ID（Dongle ID）</translation>
     </message>
     <message>
         <source>N/A</source>
@@ -247,7 +419,7 @@
     </message>
     <message>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot要求设备安装的偏航角在左4°和右4°之间，俯仰角在上5°和下9°之间。一般来说，openpilot会持续更新校准，很少需要重置。</translation>
+        <translation>openpilot 要求设备安装的偏航角在左4°和右4°之间，俯仰角在上5°和下9°之间。一般来说，openpilot 会持续更新校准，很少需要重置。</translation>
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
@@ -275,7 +447,7 @@
     </message>
     <message>
         <source>Disengage to Reboot</source>
-        <translation>取消openpilot以重新启动</translation>
+        <translation>解除 openpilot 以重新启动</translation>
     </message>
     <message>
         <source>Are you sure you want to power off?</source>
@@ -283,7 +455,7 @@
     </message>
     <message>
         <source>Disengage to Power Off</source>
-        <translation>取消openpilot以关机</translation>
+        <translation>解除 openpilot 以关机</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -295,7 +467,7 @@
     </message>
     <message>
         <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
-        <translation>将您的设备与comma connect （connect.comma.ai）配对并领取您的comma prime优惠。</translation>
+        <translation>将您的设备与 comma connect （connect.comma.ai）配对并领取您的 comma prime 优惠。</translation>
     </message>
     <message>
         <source>Pair Device</source>
@@ -305,12 +477,248 @@
         <source>PAIR</source>
         <translation>配对</translation>
     </message>
+    <message>
+        <source>Delete Driving Data</source>
+        <translation>删除驾驶数据</translation>
+    </message>
+    <message>
+        <source>DELETE</source>
+        <translation>删除</translation>
+    </message>
+    <message>
+        <source>This button provides a swift and secure way to permanently delete all stored driving footage and data from your device. Ideal for maintaining privacy or freeing up space.</source>
+        <translation>本按钮提供一个快速且安全的方法永久删除设备上的所有驾驶影像和数据。以保证隐私或释放存储空间。</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to permanently delete all of your driving footage and data?</source>
+        <translation>您是否确定要永久删除您的所有驾驶影像和数据?</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>删除</translation>
+    </message>
+    <message>
+        <source>Deleting footage...</source>
+        <translation>删除影像中...</translation>
+    </message>
+    <message>
+        <source>Deleted!</source>
+        <translation>删除成功！</translation>
+    </message>
+    <message>
+        <source>Screen Recordings</source>
+        <translation>屏幕视频记录</translation>
+    </message>
+    <message>
+        <source>RENAME</source>
+        <translation>重命名</translation>
+    </message>
+    <message>
+        <source>Delete or rename your screen recordings.</source>
+        <translation>删除或重命名您的屏幕视频记录。</translation>
+    </message>
+    <message>
+        <source>Select a recording to delete</source>
+        <translation>选择一个需要删除的记录</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to delete this recording?</source>
+        <translation>您确定要删除这个记录吗？</translation>
+    </message>
+    <message>
+        <source>Deleting...</source>
+        <translation>删除中...</translation>
+    </message>
+    <message>
+        <source>Failed...</source>
+        <translation>失败...</translation>
+    </message>
+    <message>
+        <source>Select a recording to rename</source>
+        <translation>选择一个记录以重命名</translation>
+    </message>
+    <message>
+        <source>Enter a new name</source>
+        <translation>输入新名称</translation>
+    </message>
+    <message>
+        <source>Rename Recording</source>
+        <translation>重命名记录</translation>
+    </message>
+    <message>
+        <source>Renaming...</source>
+        <translation>重命名中...</translation>
+    </message>
+    <message>
+        <source>Renamed!</source>
+        <translation>重命名成功！</translation>
+    </message>
+    <message>
+        <source>FrogPilot Backups</source>
+        <translation>FrogPilot 备份</translation>
+    </message>
+    <message>
+        <source>BACKUP</source>
+        <translation>备份</translation>
+    </message>
+    <message>
+        <source>RESTORE</source>
+        <translation>恢复</translation>
+    </message>
+    <message>
+        <source>Backup, delete, or restore your FrogPilot backups.</source>
+        <translation>备份、删除或恢复您得 FrogPilot 备份。</translation>
+    </message>
+    <message>
+        <source>Name your backup</source>
+        <translation>命名您的备份</translation>
+    </message>
+    <message>
+        <source>Do you want to compress this backup? The end file size will be 2.25x smaller, but can take 10+ minutes.</source>
+        <translation>您是否需要压缩此备份？文件将被压缩 2.25 倍，该操作需要超过 10 分钟。</translation>
+    </message>
+    <message>
+        <source>Backing up...</source>
+        <translation>备份中...</translation>
+    </message>
+    <message>
+        <source>Compressing backup...</source>
+        <translation>压缩备份中...</translation>
+    </message>
+    <message>
+        <source>Success!</source>
+        <translation>成功！</translation>
+    </message>
+    <message>
+        <source>Select a backup to delete</source>
+        <translation>选择一个需要删除的备份</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to delete this backup?</source>
+        <translation>您确定需要删除该备份吗？</translation>
+    </message>
+    <message>
+        <source>Select a restore point</source>
+        <translation>选择一个版本以恢复</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to restore this version of FrogPilot?</source>
+        <translation>您确定需要恢复该版本的 Frogpilot 吗？</translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation>恢复</translation>
+    </message>
+    <message>
+        <source>Restoring...</source>
+        <translation>恢复中...</translation>
+    </message>
+    <message>
+        <source>Extracting...</source>
+        <translation>解压中...</translation>
+    </message>
+    <message>
+        <source>Restored!</source>
+        <translation>恢复成功！</translation>
+    </message>
+    <message>
+        <source>Rebooting...</source>
+        <translation>重启中...</translation>
+    </message>
+    <message>
+        <source>Toggle Backups</source>
+        <translation>设定备份</translation>
+    </message>
+    <message>
+        <source>Backup, delete, or restore your toggle backups.</source>
+        <translation>备份、删除或恢复您的设定。</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to restore this toggle backup?</source>
+        <translation>您确定是否要从备份恢复设定？</translation>
+    </message>
+    <message>
+        <source>Flash Panda</source>
+        <translation>刷写 Panda</translation>
+    </message>
+    <message>
+        <source>FLASH</source>
+        <translation>刷写</translation>
+    </message>
+    <message>
+        <source>Use this button to troubleshoot and update the Panda device&apos;s firmware.</source>
+        <translation>使用该按钮调试或更新 Panda 的固件。</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to flash the Panda?</source>
+        <translation>您确定是否需要刷写 Panda？</translation>
+    </message>
+    <message>
+        <source>Flash</source>
+        <translation>刷写</translation>
+    </message>
+    <message>
+        <source>Flashing...</source>
+        <translation>刷写中...</translation>
+    </message>
+    <message>
+        <source>Recovery Failed...</source>
+        <translation>恢复失败失败...</translation>
+    </message>
+    <message>
+        <source>Flash Failed...</source>
+        <translation>刷写失败...</translation>
+    </message>
+    <message>
+        <source>Flashed!</source>
+        <translation>刷写成功！</translation>
+    </message>
+    <message>
+        <source>Reset Toggles To Default</source>
+        <translation>重置设定</translation>
+    </message>
+    <message>
+        <source>Reset your toggle settings back to their default settings.</source>
+        <translation>将设定恢复为默认值。</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to completely reset all of your toggle settings?</source>
+        <translation>您确定是否重置您的整个设定？</translation>
+    </message>
+    <message>
+        <source>Resetting toggles...</source>
+        <translation>重置设定中...</translation>
+    </message>
+    <message>
+        <source>Reset!</source>
+        <translation>重置成功！</translation>
+    </message>
+    <message>
+        <source>Force Started State</source>
+        <translation>强制起始状态</translation>
+    </message>
+    <message>
+        <source>OFFROAD</source>
+        <translation>非行驶状态</translation>
+    </message>
+    <message>
+        <source>ONROAD</source>
+        <translation>行驶状态</translation>
+    </message>
+    <message>
+        <source>OFF</source>
+        <translation>关闭</translation>
+    </message>
+    <message>
+        <source>Force openpilot either offroad or onroad.</source>
+        <translation>强制 openpilot 为行驶状态或非行驶状态。</translation>
+    </message>
 </context>
 <context>
     <name>DriverViewWindow</name>
     <message>
         <source>camera starting</source>
-        <translation>正在启动相机</translation>
+        <translation>相机启动中</translation>
     </message>
 </context>
 <context>
@@ -336,12 +744,16 @@
             <numerusform>至少需要 %n 个字符！</numerusform>
         </translation>
     </message>
+    <message>
+        <source>Characters: %1/%2</source>
+        <translation>字符：%1/%2</translation>
+    </message>
 </context>
 <context>
     <name>Installer</name>
     <message>
         <source>Installing...</source>
-        <translation>正在安装……</translation>
+        <translation>安装中……</translation>
     </message>
 </context>
 <context>
@@ -368,6 +780,10 @@
     <message>
         <source>Manage at connect.comma.ai</source>
         <translation>请在 connect.comma.ai 上管理</translation>
+    </message>
+    <message>
+        <source>Manage at %1</source>
+        <translation>在  %1 管理</translation>
     </message>
 </context>
 <context>
@@ -445,7 +861,7 @@
     </message>
     <message>
         <source>NVMe drive not mounted.</source>
-        <translation>NVMe固态硬盘未被挂载。</translation>
+        <translation>NVMe 固态硬盘未被挂载。</translation>
     </message>
     <message>
         <source>Unsupported NVMe drive detected. Device may draw significantly more power and overheat due to the unsupported NVMe.</source>
@@ -491,7 +907,7 @@
     </message>
     <message>
         <source>Waiting for controls to start</source>
-        <translation>等待控制服务啟動</translation>
+        <translation>等待控制服务启动</translation>
     </message>
     <message>
         <source>TAKE CONTROL IMMEDIATELY</source>
@@ -510,7 +926,7 @@
     <name>PairingPopup</name>
     <message>
         <source>Pair your device to your comma account</source>
-        <translation>将您的设备与comma账号配对</translation>
+        <translation>将您的设备与 comma 账号配对</translation>
     </message>
     <message>
         <source>Go to https://connect.comma.ai on your phone</source>
@@ -522,7 +938,7 @@
     </message>
     <message>
         <source>Bookmark connect.comma.ai to your home screen to use it like an app</source>
-        <translation>将 connect.comma.ai 收藏到您的主屏幕，以便像应用程序一样使用它</translation>
+        <translation>将 connect.comma.ai 收藏到您的主界面，以便像应用程序一样使用它</translation>
     </message>
 </context>
 <context>
@@ -544,11 +960,11 @@
     </message>
     <message>
         <source>Become a comma prime member at connect.comma.ai</source>
-        <translation>打开connect.comma.ai以注册comma prime会员</translation>
+        <translation>打开 connect.comma.ai 以注册 comma prime 会员</translation>
     </message>
     <message>
         <source>PRIME FEATURES:</source>
-        <translation>comma prime特权：</translation>
+        <translation>comma prime 特权：</translation>
     </message>
     <message>
         <source>Remote access</source>
@@ -556,7 +972,7 @@
     </message>
     <message>
         <source>24/7 LTE connectivity</source>
-        <translation>全天候 LTE 連線</translation>
+        <translation>全天候 LTE 连接</translation>
     </message>
     <message>
         <source>Turn-by-turn navigation</source>
@@ -590,7 +1006,7 @@
     </message>
     <message>
         <source>openpilot</source>
-        <translation>openpilot</translation>
+        <translation type="vanished">openpilot</translation>
     </message>
     <message numerus="yes">
         <source>%n minute(s) ago</source>
@@ -630,12 +1046,16 @@
         <source>now</source>
         <translation>现在</translation>
     </message>
+    <message>
+        <source>FrogPilot</source>
+        <translation>FrogPilot</translation>
+    </message>
 </context>
 <context>
     <name>Reset</name>
     <message>
         <source>Reset failed. Reboot to try again.</source>
-        <translation>重置失败。 重新启动以重试。</translation>
+        <translation>重置失败。重新启动以重试。</translation>
     </message>
     <message>
         <source>Are you sure you want to reset your device?</source>
@@ -676,7 +1096,7 @@ This may take up to a minute.</source>
     <name>SettingsWindow</name>
     <message>
         <source>×</source>
-        <translation>×</translation>
+        <translation type="vanished">×</translation>
     </message>
     <message>
         <source>Device</source>
@@ -694,6 +1114,30 @@ This may take up to a minute.</source>
         <source>Software</source>
         <translation>软件</translation>
     </message>
+    <message>
+        <source>← Back</source>
+        <translation>返回</translation>
+    </message>
+    <message>
+        <source>Driving</source>
+        <translation>驾驶</translation>
+    </message>
+    <message>
+        <source>Navigation</source>
+        <translation>导航</translation>
+    </message>
+    <message>
+        <source>Vehicles</source>
+        <translation>车辆</translation>
+    </message>
+    <message>
+        <source>Visuals</source>
+        <translation>显示</translation>
+    </message>
+    <message>
+        <source>Controls</source>
+        <translation>控制</translation>
+    </message>
 </context>
 <context>
     <name>Setup</name>
@@ -703,7 +1147,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Power your device in a car with a harness or proceed at your own risk.</source>
-        <translation>请使用car harness线束为您的设备供电，或自行承担风险。</translation>
+        <translation>请使用车辆线束为您的设备供电否则请自行承担风险。</translation>
     </message>
     <message>
         <source>Power off</source>
@@ -723,7 +1167,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Connect to Wi-Fi</source>
-        <translation>连接到WiFi</translation>
+        <translation>连接到 WiFi</translation>
     </message>
     <message>
         <source>Back</source>
@@ -731,7 +1175,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Continue without Wi-Fi</source>
-        <translation>不连接WiFi并继续</translation>
+        <translation>不连接 WiFi 并继续</translation>
     </message>
     <message>
         <source>Waiting for internet</source>
@@ -747,7 +1191,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Downloading...</source>
-        <translation>正在下载……</translation>
+        <translation>下载中……</translation>
     </message>
     <message>
         <source>Download Failed</source>
@@ -755,7 +1199,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Ensure the entered URL is valid, and the device’s internet connection is good.</source>
-        <translation>请确保互联网连接良好且输入的URL有效。</translation>
+        <translation>请确保互联网连接良好且输入的网址有效。</translation>
     </message>
     <message>
         <source>Reboot device</source>
@@ -763,7 +1207,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Start over</source>
-        <translation>重来</translation>
+        <translation>重新开始</translation>
     </message>
     <message>
         <source>No custom software found at this URL.</source>
@@ -798,7 +1242,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
-        <translation>将您的设备与comma connect （connect.comma.ai）配对并领取您的comma prime优惠。</translation>
+        <translation>将您的设备与 comma connect （connect.comma.ai）配对并领取您的 comma prime 优惠。</translation>
     </message>
     <message>
         <source>Pair device</source>
@@ -809,7 +1253,7 @@ This may take up to a minute.</source>
     <name>Sidebar</name>
     <message>
         <source>CONNECT</source>
-        <translation>CONNECT</translation>
+        <translation>连接</translation>
     </message>
     <message>
         <source>OFFLINE</source>
@@ -887,12 +1331,36 @@ This may take up to a minute.</source>
         <source>5G</source>
         <translation>5G</translation>
     </message>
+    <message>
+        <source>GPU</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>CPU</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source> GB</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>MEMORY</source>
+        <translation>存储</translation>
+    </message>
+    <message>
+        <source>LEFT</source>
+        <translation>剩余</translation>
+    </message>
+    <message>
+        <source>USED</source>
+        <translation>使用</translation>
+    </message>
 </context>
 <context>
     <name>SoftwarePanel</name>
     <message>
         <source>Updates are only downloaded while the car is off.</source>
-        <translation>车辆熄火时才能下载升级文件。</translation>
+        <translation type="vanished">熄火时才能更新。</translation>
     </message>
     <message>
         <source>Current Version</source>
@@ -962,16 +1430,40 @@ This may take up to a minute.</source>
         <source>never</source>
         <translation>从未更新</translation>
     </message>
+    <message>
+        <source>Updates are only downloaded while the car is off or in park.</source>
+        <translation>更新只能在车辆熄火或驻车状态才能下载。</translation>
+    </message>
+    <message>
+        <source>Automatically Update FrogPilot</source>
+        <translation>自动更新 FrogPilot</translation>
+    </message>
+    <message>
+        <source>FrogPilot will automatically update itself and it&apos;s assets when you&apos;re offroad and connected to Wi-Fi.</source>
+        <translation>FrogPilot 将在非行驶状态下并连接 Wi-Fi 后自动更新。</translation>
+    </message>
+    <message>
+        <source>Error Log</source>
+        <translation>错误记录</translation>
+    </message>
+    <message>
+        <source>VIEW</source>
+        <translation>查看</translation>
+    </message>
+    <message>
+        <source>View the error log for openpilot crashes.</source>
+        <translation>查看 openpilot 崩溃的错误记录。</translation>
+    </message>
 </context>
 <context>
     <name>SshControl</name>
     <message>
         <source>SSH Keys</source>
-        <translation>SSH密钥</translation>
+        <translation>SSH 密钥</translation>
     </message>
     <message>
         <source>Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.</source>
-        <translation>警告：这将授予SSH访问权限给您GitHub设置中的所有公钥。切勿输入您自己以外的GitHub用户名。comma员工永远不会要求您添加他们的GitHub用户名。</translation>
+        <translation>警告：这将授予 SSH 访问权限给您 GitHub 设置中的所有公钥。切勿输入您自己以外的 GitHub 账户。comma 员工永远不会要求您添加他们的 GitHub 账户。</translation>
     </message>
     <message>
         <source>ADD</source>
@@ -979,7 +1471,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Enter your GitHub username</source>
-        <translation>输入您的GitHub用户名</translation>
+        <translation>输入您的 GitHub 账户</translation>
     </message>
     <message>
         <source>LOADING</source>
@@ -991,7 +1483,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Username &apos;%1&apos; has no keys on GitHub</source>
-        <translation>用户名“%1”在GitHub上没有密钥</translation>
+        <translation>账户“%1”在 GitHub 上没有密钥</translation>
     </message>
     <message>
         <source>Request timed out</source>
@@ -999,14 +1491,14 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Username &apos;%1&apos; doesn&apos;t exist on GitHub</source>
-        <translation>GitHub上不存在用户名“%1”</translation>
+        <translation>GitHub 上不存在账户“%1”</translation>
     </message>
 </context>
 <context>
     <name>SshToggle</name>
     <message>
         <source>Enable SSH</source>
-        <translation>启用SSH</translation>
+        <translation>启用 SSH</translation>
     </message>
 </context>
 <context>
@@ -1032,11 +1524,11 @@ This may take up to a minute.</source>
     <name>TogglesPanel</name>
     <message>
         <source>Enable openpilot</source>
-        <translation>启用openpilot</translation>
+        <translation>启用 openpilot</translation>
     </message>
     <message>
         <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
-        <translation>使用openpilot进行自适应巡航和车道保持辅助。使用此功能时您必须时刻保持注意力。该设置的更改在熄火时生效。</translation>
+        <translation>使用 openpilot 进行自适应巡航和车道保持辅助。使用此功能时您必须时刻保持注意力。该设置的更改在熄火时生效。</translation>
     </message>
     <message>
         <source>Enable Lane Departure Warnings</source>
@@ -1044,7 +1536,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h).</source>
-        <translation>车速超过31mph（50km/h）时，若检测到车辆越过车道线且未打转向灯，系统将发出警告以提醒您返回车道。</translation>
+        <translation>车速超过 31mph（50km/h）时，若检测到车辆越过车道线且未打转向灯，系统将发出警告以提醒您返回车道。</translation>
     </message>
     <message>
         <source>Use Metric System</source>
@@ -1052,7 +1544,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Display speed in km/h instead of mph.</source>
-        <translation>显示车速时，以km/h代替mph。</translation>
+        <translation>显示车速时，以 km/h 代替 mph。</translation>
     </message>
     <message>
         <source>Record and Upload Driver Camera</source>
@@ -1064,19 +1556,19 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Disengage on Accelerator Pedal</source>
-        <translation>踩油门时取消控制</translation>
+        <translation>踩油门时解除控制</translation>
     </message>
     <message>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
-        <translation>启用后，踩下油门踏板将取消openpilot。</translation>
+        <translation>启用后，踩下油门踏板将解除 openpilot 控制。</translation>
     </message>
     <message>
         <source>Show ETA in 24h Format</source>
-        <translation>以24小时格式显示预计到达时间</translation>
+        <translation>以 24 小时格式显示预计到达时间</translation>
     </message>
     <message>
         <source>Use 24h format instead of am/pm</source>
-        <translation>使用24小时制代替am/pm</translation>
+        <translation>使用 24 小时制代替上午/下午</translation>
     </message>
     <message>
         <source>Show Map on Left Side of UI</source>
@@ -1088,7 +1580,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Experimental Mode</source>
-        <translation>测试模式</translation>
+        <translation>实验模式</translation>
     </message>
     <message>
         <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
@@ -1096,7 +1588,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
-        <translation>允许驾驶模型控制加速和制动，openpilot将模仿人类驾驶车辆，包括在红灯和停车让行标识前停车。鉴于驾驶模型确定行驶车速，所设定的车速仅作为上限。此功能尚处于早期测试状态，有可能会出现操作错误。</translation>
+        <translation>允许驾驶模型控制加速和制动，openpilot 将模仿人类驾驶车辆，包括在红灯和停车让行标识前停车。鉴于驾驶模型确定行驶车速，所设定的车速仅作为上限。此功能尚处于早期测试状态，有可能会出现操作错误。</translation>
     </message>
     <message>
         <source>New Driving Visualization</source>
@@ -1104,15 +1596,15 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
-        <translation>由于此车辆使用自带的ACC纵向控制，当前无法使用试验模式。</translation>
+        <translation>由于此车辆使用自带的 ACC 纵向控制，当前无法使用试验模式。</translation>
     </message>
     <message>
         <source>openpilot longitudinal control may come in a future update.</source>
-        <translation>openpilot纵向控制可能会在未来的更新中提供。</translation>
+        <translation>openpilot 纵向控制可能会在未来的更新中提供。</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
-        <translation>openpilot纵向控制（Alpha 版）</translation>
+        <translation>openpilot 纵向控制（Alpha 版）</translation>
     </message>
     <message>
         <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
@@ -1140,7 +1632,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
-        <translation>在正式（release）版本以外的分支上，可以测试 openpilot 纵向控制的 Alpha 版本以及实验模式。</translation>
+        <translation type="vanished">在正式（release）版本以外的分支上，可以测试 openpilot 纵向控制的 Alpha 版本以及实验模式。</translation>
     </message>
     <message>
         <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
@@ -1160,11 +1652,11 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Always-On Driver Monitoring</source>
-        <translation>驾驶员监控常开</translation>
+        <translation type="vanished">驾驶员监控常开</translation>
     </message>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
-        <translation>即使在openpilot未激活时也启用驾驶员监控。</translation>
+        <translation type="vanished">即使在openpilot未激活时也启用驾驶员监控。</translation>
     </message>
 </context>
 <context>
@@ -1175,11 +1667,11 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB.</source>
-        <translation>操作系统需要更新。请将您的设备连接到WiFi以获取更快的更新体验。下载大小约为1GB。</translation>
+        <translation>操作系统需要更新。请将您的设备连接到 Wi-Fi 以获取更快的更新体验。下载大小约为1GB。</translation>
     </message>
     <message>
         <source>Connect to Wi-Fi</source>
-        <translation>连接到WiFi</translation>
+        <translation>连接到 Wi-Fi</translation>
     </message>
     <message>
         <source>Install</source>
@@ -1191,7 +1683,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Loading...</source>
-        <translation>正在加载……</translation>
+        <translation>加载中……</translation>
     </message>
     <message>
         <source>Reboot</source>
@@ -1210,7 +1702,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Connect to Wi-Fi to upload driving data and help improve openpilot</source>
-        <translation>请连接至 Wi-Fi 上传驾驶数据以协助改进openpilot</translation>
+        <translation>请连接至 Wi-Fi 上传驾驶数据以协助改进 openpilot</translation>
     </message>
     <message>
         <source>Open Settings</source>
@@ -1224,16 +1716,24 @@ This may take up to a minute.</source>
         <source>Training data will be pulled periodically while your device is on Wi-Fi</source>
         <translation>训练数据将定期通过 Wi-Fi 上载</translation>
     </message>
+    <message>
+        <source>Uploading disabled</source>
+        <translation>禁用上传</translation>
+    </message>
+    <message>
+        <source>Toggle off the &apos;Disable Uploading&apos; toggle to enable uploads.</source>
+        <translation>关闭 禁用上传 开关以启用数据上传。</translation>
+    </message>
 </context>
 <context>
     <name>WifiUI</name>
     <message>
         <source>Scanning for networks...</source>
-        <translation>正在扫描网络……</translation>
+        <translation>网络扫描中……</translation>
     </message>
     <message>
         <source>CONNECTING...</source>
-        <translation>正在连接……</translation>
+        <translation>连接中……</translation>
     </message>
     <message>
         <source>FORGET</source>
