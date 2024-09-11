@@ -47,7 +47,7 @@ UtilitiesPanel::UtilitiesPanel(SettingsWindow *parent) : ListWidget(parent) {
   });
   addItem(flashPandaBtn);
 
-  forceStartedBtn = new FrogPilotButtonsControl(tr("Force Started State"), {tr("OFFROAD"), tr("ONROAD"), tr("OFF")}, tr("Force openpilot either offroad or onroad."), true);
+  forceStartedBtn = new FrogPilotButtonsControl(tr("Force Started State"), tr("Force openpilot either offroad or onroad."), {tr("OFFROAD"), tr("ONROAD"), tr("OFF")}, true);
   connect(forceStartedBtn, &FrogPilotButtonsControl::buttonClicked, [=](int id) {
     if (id == 0) {
       paramsMemory.putBool("ForceOffroad", true);
@@ -84,7 +84,7 @@ UtilitiesPanel::UtilitiesPanel(SettingsWindow *parent) : ListWidget(parent) {
   });
   addItem(resetTogglesBtn);
 
-  FrogPilotButtonsControl *screenRecordingsBtn = new FrogPilotButtonsControl(tr("Screen Recordings"), {tr("DELETE"), tr("RENAME")}, tr("Manage your screen recordings."));
+  FrogPilotButtonsControl *screenRecordingsBtn = new FrogPilotButtonsControl(tr("Screen Recordings"), tr("Manage your screen recordings."), {tr("DELETE"), tr("RENAME")});
   connect(screenRecordingsBtn, &FrogPilotButtonsControl::buttonClicked, [=](int id) {
     QDir recordingsDir("/data/media/0/videos");
     QStringList recordingsNames = recordingsDir.entryList(QDir::Files | QDir::NoDotAndDotDot);
@@ -138,7 +138,7 @@ UtilitiesPanel::UtilitiesPanel(SettingsWindow *parent) : ListWidget(parent) {
   });
   addItem(screenRecordingsBtn);
 
-  FrogPilotButtonsControl *frogpilotBackupBtn = new FrogPilotButtonsControl(tr("FrogPilot Backups"), {tr("BACKUP"), tr("DELETE"), tr("RESTORE")}, tr("Manage your FrogPilot backups."));
+  FrogPilotButtonsControl *frogpilotBackupBtn = new FrogPilotButtonsControl(tr("FrogPilot Backups"), tr("Manage your FrogPilot backups."), {tr("BACKUP"), tr("DELETE"), tr("RESTORE")});
   connect(frogpilotBackupBtn, &FrogPilotButtonsControl::buttonClicked, [=](int id) {
     QDir backupDir("/data/backups");
     QStringList backupNames = backupDir.entryList(QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot, QDir::Name).filter(QRegularExpression("^(?!.*_in_progress$).*$"));
@@ -277,7 +277,7 @@ UtilitiesPanel::UtilitiesPanel(SettingsWindow *parent) : ListWidget(parent) {
   });
   addItem(frogpilotBackupBtn);
 
-  FrogPilotButtonsControl *toggleBackupBtn = new FrogPilotButtonsControl(tr("Toggle Backups"), {tr("BACKUP"), tr("DELETE"), tr("RESTORE")}, tr("Manage your toggle backups."));
+  FrogPilotButtonsControl *toggleBackupBtn = new FrogPilotButtonsControl(tr("Toggle Backups"), tr("Manage your toggle backups."), {tr("BACKUP"), tr("DELETE"), tr("RESTORE")});
   connect(toggleBackupBtn, &FrogPilotButtonsControl::buttonClicked, [=](int id) {
     QDir backupDir("/data/toggle_backups");
     QStringList backupNames = backupDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);

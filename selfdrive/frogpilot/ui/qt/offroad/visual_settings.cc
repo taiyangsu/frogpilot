@@ -119,7 +119,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
       });
       visualToggle = personalizeOpenpilotToggle;
     } else if (param == "CustomColors") {
-      manageCustomColorsBtn = new FrogPilotButtonsControl(title, {tr("DELETE"), tr("DOWNLOAD"), tr("SELECT")}, desc);
+      manageCustomColorsBtn = new FrogPilotButtonsControl(title, desc, {tr("DELETE"), tr("DOWNLOAD"), tr("SELECT")});
 
       std::function<QString(QString)> formatColorName = [](QString name) -> QString {
         QChar separator = name.contains('_') ? '_' : '-';
@@ -253,7 +253,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
       manageCustomColorsBtn->setValue(currentColor);
       visualToggle = reinterpret_cast<AbstractControl*>(manageCustomColorsBtn);
     } else if (param == "CustomIcons") {
-      manageCustomIconsBtn = new FrogPilotButtonsControl(title, {tr("DELETE"), tr("DOWNLOAD"), tr("SELECT")}, desc);
+      manageCustomIconsBtn = new FrogPilotButtonsControl(title, desc, {tr("DELETE"), tr("DOWNLOAD"), tr("SELECT")});
 
       std::function<QString(QString)> formatIconName = [](QString name) -> QString {
         QChar separator = name.contains('_') ? '_' : '-';
@@ -386,7 +386,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
       manageCustomIconsBtn->setValue(currentIcon);
       visualToggle = reinterpret_cast<AbstractControl*>(manageCustomIconsBtn);
     } else if (param == "CustomSignals") {
-      manageCustomSignalsBtn = new FrogPilotButtonsControl(title, {tr("DELETE"), tr("DOWNLOAD"), tr("SELECT")}, desc);
+      manageCustomSignalsBtn = new FrogPilotButtonsControl(title, desc, {tr("DELETE"), tr("DOWNLOAD"), tr("SELECT")});
 
       std::function<QString(QString)> formatSignalName = [](QString name) -> QString {
         QChar separator = name.contains('_') ? '_' : '-';
@@ -519,7 +519,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
       manageCustomSignalsBtn->setValue(currentSignal);
       visualToggle = reinterpret_cast<AbstractControl*>(manageCustomSignalsBtn);
     } else if (param == "CustomSounds") {
-      manageCustomSoundsBtn = new FrogPilotButtonsControl(title, {tr("DELETE"), tr("DOWNLOAD"), tr("SELECT")}, desc);
+      manageCustomSoundsBtn = new FrogPilotButtonsControl(title, desc, {tr("DELETE"), tr("DOWNLOAD"), tr("SELECT")});
 
       std::function<QString(QString)> formatSoundName = [](QString name) -> QString {
         QChar separator = name.contains('_') ? '_' : '-';
@@ -652,7 +652,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
       manageCustomSoundsBtn->setValue(currentSound);
       visualToggle = reinterpret_cast<AbstractControl*>(manageCustomSoundsBtn);
     } else if (param == "WheelIcon") {
-      manageWheelIconsBtn = new FrogPilotButtonsControl(title, {tr("DELETE"), tr("DOWNLOAD"), tr("SELECT")}, desc);
+      manageWheelIconsBtn = new FrogPilotButtonsControl(title, desc, {tr("DELETE"), tr("DOWNLOAD"), tr("SELECT")});
 
       std::function<QString(QString)> formatWheelName = [](QString name) -> QString {
         QChar separator = name.contains('_') ? '_' : '-';
@@ -788,7 +788,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
       downloadStatusLabel = new LabelControl(title, "Idle");
       visualToggle = reinterpret_cast<AbstractControl*>(downloadStatusLabel);
     } else if (param == "StartupAlert") {
-      FrogPilotButtonsControl *startupAlertButton = new FrogPilotButtonsControl(title, {tr("STOCK"), tr("FROGPILOT"), tr("CUSTOM"), tr("CLEAR")}, desc);
+      FrogPilotButtonsControl *startupAlertButton = new FrogPilotButtonsControl(title, desc, {tr("STOCK"), tr("FROGPILOT"), tr("CUSTOM"), tr("CLEAR")});
       QObject::connect(startupAlertButton, &FrogPilotButtonsControl::buttonClicked, [=](int id) {
         int maxLengthTop = 35;
         int maxLengthBottom = 45;
@@ -854,25 +854,25 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
     } else if (param == "CustomPaths") {
       std::vector<QString> pathToggles{"AccelerationPath", "AdjacentPath", "BlindSpotPath", "AdjacentPathMetrics"};
       std::vector<QString> pathToggleNames{tr("Acceleration"), tr("Adjacent"), tr("Blind Spot"), tr("Metrics")};
-      visualToggle = new FrogPilotParamToggleControl(param, title, desc, icon, pathToggles, pathToggleNames);
+      visualToggle = new FrogPilotButtonToggleControl(param, title, desc, pathToggles, pathToggleNames);
     } else if (param == "PedalsOnUI") {
       std::vector<QString> pedalsToggles{"DynamicPedalsOnUI", "StaticPedalsOnUI"};
       std::vector<QString> pedalsToggleNames{tr("Dynamic"), tr("Static")};
-      FrogPilotParamToggleControl *pedalsToggle = new FrogPilotParamToggleControl(param, title, desc, icon, pedalsToggles, pedalsToggleNames);
-      QObject::connect(pedalsToggle, &FrogPilotParamToggleControl::buttonTypeClicked, this, [this, pedalsToggle](int index) {
+      FrogPilotButtonToggleControl *pedalsToggle = new FrogPilotButtonToggleControl(param, title, desc, pedalsToggles, pedalsToggleNames);
+      QObject::connect(pedalsToggle, &FrogPilotButtonToggleControl::buttonClicked, this, [this, pedalsToggle](int index) {
         if (index == 0) {
           params.putBool("StaticPedalsOnUI", false);
         } else if (index == 1) {
           params.putBool("DynamicPedalsOnUI", false);
         }
 
-        pedalsToggle->updateButtonStates();
+        pedalsToggle->refresh();
       });
       visualToggle = pedalsToggle;
     } else if (param == "ShowStoppingPoint") {
       std::vector<QString> stoppingPointToggles{"ShowStoppingPointMetrics"};
       std::vector<QString> stoppingPointToggleNames{tr("Show Distance")};
-      visualToggle = new FrogPilotParamToggleControl(param, title, desc, icon, stoppingPointToggles, stoppingPointToggleNames);
+      visualToggle = new FrogPilotButtonToggleControl(param, title, desc, stoppingPointToggles, stoppingPointToggleNames);
 
     } else if (param == "DeveloperUI") {
       FrogPilotParamManageControl *developerUIToggle = new FrogPilotParamManageControl(param, title, desc, icon, this);
@@ -889,24 +889,24 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
     } else if (param == "BorderMetrics") {
       std::vector<QString> borderToggles{"BlindSpotMetrics", "ShowSteering", "SignalMetrics"};
       std::vector<QString> borderToggleNames{tr("Blind Spot"), tr("Steering Torque"), tr("Turn Signal")};
-      visualToggle = new FrogPilotParamToggleControl(param, title, desc, icon, borderToggles, borderToggleNames);
+      visualToggle = new FrogPilotButtonToggleControl(param, title, desc, borderToggles, borderToggleNames);
     } else if (param == "LateralMetrics") {
       std::vector<QString> lateralToggles{"TuningInfo"};
       std::vector<QString> lateralToggleNames{tr("Auto Tune")};
-      visualToggle = new FrogPilotParamToggleControl(param, title, desc, icon, lateralToggles, lateralToggleNames);
+      visualToggle = new FrogPilotButtonToggleControl(param, title, desc, lateralToggles, lateralToggleNames);
     } else if (param == "LongitudinalMetrics") {
       std::vector<QString> longitudinalToggles{"LeadInfo", "JerkInfo"};
       std::vector<QString> longitudinalToggleNames{tr("Lead Info"), tr("Longitudinal Jerk")};
-      visualToggle = new FrogPilotParamToggleControl(param, title, desc, icon, longitudinalToggles, longitudinalToggleNames);
+      visualToggle = new FrogPilotButtonToggleControl(param, title, desc, longitudinalToggles, longitudinalToggleNames);
     } else if (param == "NumericalTemp") {
       std::vector<QString> temperatureToggles{"Fahrenheit"};
       std::vector<QString> temperatureToggleNames{tr("Fahrenheit")};
-      visualToggle = new FrogPilotParamToggleControl(param, title, desc, icon, temperatureToggles, temperatureToggleNames);
+      visualToggle = new FrogPilotButtonToggleControl(param, title, desc, temperatureToggles, temperatureToggleNames);
     } else if (param == "SidebarMetrics") {
       std::vector<QString> sidebarMetricsToggles{"ShowCPU", "ShowGPU", "ShowIP", "ShowMemoryUsage", "ShowStorageLeft", "ShowStorageUsed"};
       std::vector<QString> sidebarMetricsToggleNames{tr("CPU"), tr("GPU"), tr("IP"), tr("RAM"), tr("SSD Left"), tr("SSD Used")};
-      FrogPilotParamToggleControl *sidebarMetricsToggle = new FrogPilotParamToggleControl(param, title, desc, icon, sidebarMetricsToggles, sidebarMetricsToggleNames, this, 125);
-      QObject::connect(sidebarMetricsToggle, &FrogPilotParamToggleControl::buttonTypeClicked, this, [this, sidebarMetricsToggle](int index) {
+      FrogPilotButtonToggleControl *sidebarMetricsToggle = new FrogPilotButtonToggleControl(param, title, desc, sidebarMetricsToggles, sidebarMetricsToggleNames, 125);
+      QObject::connect(sidebarMetricsToggle, &FrogPilotButtonToggleControl::buttonClicked, this, [this, sidebarMetricsToggle](int index) {
         if (index == 0) {
           params.putBool("ShowGPU", false);
         } else if (index == 1) {
@@ -922,7 +922,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
           params.putBool("ShowStorageLeft", false);
         }
 
-        sidebarMetricsToggle->updateButtonStates();
+        sidebarMetricsToggle->refresh();
       });
       visualToggle = sidebarMetricsToggle;
 
@@ -966,11 +966,11 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
     } else if (param == "BigMap") {
       std::vector<QString> mapToggles{"FullMap"};
       std::vector<QString> mapToggleNames{tr("Full Map")};
-      visualToggle = new FrogPilotParamToggleControl(param, title, desc, icon, mapToggles, mapToggleNames);
+      visualToggle = new FrogPilotButtonToggleControl(param, title, desc, mapToggles, mapToggleNames);
     } else if (param == "HideSpeed") {
       std::vector<QString> hideSpeedToggles{"HideSpeedUI"};
       std::vector<QString> hideSpeedToggleNames{tr("Control Via UI")};
-      visualToggle = new FrogPilotParamToggleControl(param, title, desc, icon, hideSpeedToggles, hideSpeedToggleNames);
+      visualToggle = new FrogPilotButtonToggleControl(param, title, desc, hideSpeedToggles, hideSpeedToggleNames);
     } else if (param == "MapStyle") {
       QMap<int, QString> styleMap = {
         {0, tr("Stock openpilot")},
@@ -1017,7 +1017,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
     } else if (param == "HideUIElements") {
       std::vector<QString> uiElementsToggles{"HideAlerts", "HideMapIcon", "HideMaxSpeed"};
       std::vector<QString> uiElementsToggleNames{tr("Alerts"), tr("Map Icon"), tr("Max Speed")};
-      visualToggle = new FrogPilotParamToggleControl(param, title, desc, icon, uiElementsToggles, uiElementsToggleNames);
+      visualToggle = new FrogPilotButtonToggleControl(param, title, desc, uiElementsToggles, uiElementsToggleNames);
     } else if (param == "ScreenBrightness" || param == "ScreenBrightnessOnroad") {
       std::map<int, QString> brightnessLabels;
       if (param == "ScreenBrightnessOnroad") {
@@ -1042,7 +1042,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
     toggles[param.toStdString()] = visualToggle;
 
     QObject::connect(static_cast<ToggleControl*>(visualToggle), &ToggleControl::toggleFlipped, &updateFrogPilotToggles);
-    QObject::connect(static_cast<FrogPilotParamToggleControl*>(visualToggle), &FrogPilotParamToggleControl::buttonTypeClicked, &updateFrogPilotToggles);
+    QObject::connect(static_cast<FrogPilotButtonToggleControl*>(visualToggle), &FrogPilotButtonToggleControl::buttonClicked, &updateFrogPilotToggles);
     QObject::connect(static_cast<FrogPilotParamValueControl*>(visualToggle), &FrogPilotParamValueControl::valueChanged, [this]() {
       bool screen_management = params.getBool("ScreenManagement");
       if (!started) {

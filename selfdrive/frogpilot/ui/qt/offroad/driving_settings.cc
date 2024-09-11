@@ -197,15 +197,15 @@ FrogPilotDrivingPanel::FrogPilotDrivingPanel(SettingsWindow *parent) : FrogPilot
     } else if (param == "CECurves") {
       std::vector<QString> curveToggles{"CECurvesLead"};
       std::vector<QString> curveToggleNames{tr("With Lead")};
-      drivingToggle = new FrogPilotParamToggleControl(param, title, desc, icon, curveToggles, curveToggleNames);
+      drivingToggle = new FrogPilotButtonToggleControl(param, title, desc, curveToggles, curveToggleNames);
     } else if (param == "CELead") {
       std::vector<QString> leadToggles{"CESlowerLead", "CEStoppedLead"};
       std::vector<QString> leadToggleNames{tr("Slower Lead"), tr("Stopped Lead")};
-      drivingToggle = new FrogPilotParamToggleControl(param, title, desc, icon, leadToggles, leadToggleNames);
+      drivingToggle = new FrogPilotButtonToggleControl(param, title, desc, leadToggles, leadToggleNames);
     } else if (param == "CENavigation") {
       std::vector<QString> navigationToggles{"CENavigationIntersections", "CENavigationTurns", "CENavigationLead"};
       std::vector<QString> navigationToggleNames{tr("Intersections"), tr("Turns"), tr("With Lead")};
-      drivingToggle = new FrogPilotParamToggleControl(param, title, desc, icon, navigationToggles, navigationToggleNames);
+      drivingToggle = new FrogPilotButtonToggleControl(param, title, desc, navigationToggles, navigationToggleNames);
     } else if (param == "CEModelStopTime") {
       std::map<int, QString> modelStopTimeLabels;
       for (int i = 0; i <= 10; i++) {
@@ -232,7 +232,7 @@ FrogPilotDrivingPanel::FrogPilotDrivingPanel(SettingsWindow *parent) : FrogPilot
     } else if (param == "NoUploads") {
       std::vector<QString> uploadsToggles{"DisableOnroadUploads"};
       std::vector<QString> uploadsToggleNames{tr("Only Onroad")};
-      drivingToggle = new FrogPilotParamToggleControl(param, title, desc, icon, uploadsToggles, uploadsToggleNames);
+      drivingToggle = new FrogPilotButtonToggleControl(param, title, desc, uploadsToggles, uploadsToggleNames);
     } else if (param == "LowVoltageShutdown") {
       drivingToggle = new FrogPilotParamValueControl(param, title, desc, icon, 11.8, 12.5, std::map<int, QString>(), this, false, tr(" volts"), 1, 0.01);
 
@@ -265,13 +265,13 @@ FrogPilotDrivingPanel::FrogPilotDrivingPanel(SettingsWindow *parent) : FrogPilot
       drivingToggle = customPersonalitiesToggle;
     } else if (param == "PersonalityInfo") {
       ButtonControl *personalitiesInfoBtn = new ButtonControl(title, tr("VIEW"), desc);
-      QObject::connect(personalitiesInfoBtn, &ButtonControl::clicked, [=]() {
+      QObject::connect(personalitiesInfoBtn, &ButtonControl::clicked, [this]() {
         const std::string txt = util::read_file("../frogpilot/ui/qt/offroad/personalities_info.txt");
         ConfirmationDialog::rich(QString::fromStdString(txt), this);
       });
       drivingToggle = reinterpret_cast<AbstractControl*>(personalitiesInfoBtn);
     } else if (param == "ResetTrafficPersonality" || param == "ResetAggressivePersonality" || param == "ResetStandardPersonality" || param == "ResetRelaxedPersonality") {
-      FrogPilotButtonsControl *profileBtn = new FrogPilotButtonsControl(title, {tr("Reset")}, desc);
+      FrogPilotButtonsControl *profileBtn = new FrogPilotButtonsControl(title, desc, {tr("Reset")});
       drivingToggle = profileBtn;
     } else if (param == "TrafficPersonalityProfile") {
       FrogPilotParamManageControl *trafficPersonalityToggle = new FrogPilotParamManageControl(param, title, desc, icon, this);
@@ -328,7 +328,7 @@ FrogPilotDrivingPanel::FrogPilotDrivingPanel(SettingsWindow *parent) : FrogPilot
       }
 
     } else if (param == "OnroadDistanceButtonButtons") {
-      manageDistanceIconsBtn = new FrogPilotButtonsControl(title, {tr("DELETE"), tr("DOWNLOAD"), tr("SELECT")}, desc);
+      manageDistanceIconsBtn = new FrogPilotButtonsControl(title, desc, {tr("DELETE"), tr("DOWNLOAD"), tr("SELECT")});
 
       std::function<QString(QString)> formatIconName = [](QString name) -> QString {
         QChar separator = name.contains('_') ? '_' : '-';
@@ -587,7 +587,7 @@ FrogPilotDrivingPanel::FrogPilotDrivingPanel(SettingsWindow *parent) : FrogPilot
       });
       drivingToggle = modelRandomizerToggle;
     } else if (param == "ManageBlacklistedModels") {
-      FrogPilotButtonsControl *blacklistBtn = new FrogPilotButtonsControl(title, {tr("ADD"), tr("REMOVE")}, desc);
+      FrogPilotButtonsControl *blacklistBtn = new FrogPilotButtonsControl(title, desc, {tr("ADD"), tr("REMOVE")});
       QObject::connect(blacklistBtn, &FrogPilotButtonsControl::buttonClicked, [=](int id) {
         QStringList blacklistedModels = QString::fromStdString(params.get("BlacklistedModels")).split(",", QString::SkipEmptyParts);
         QMap<QString, QString> labelToModelMap;
@@ -635,7 +635,7 @@ FrogPilotDrivingPanel::FrogPilotDrivingPanel(SettingsWindow *parent) : FrogPilot
       drivingToggle = reinterpret_cast<AbstractControl*>(blacklistBtn);
     } else if (param == "ResetScores") {
       ButtonControl *resetCalibrationsBtn = new ButtonControl(title, tr("RESET"), desc);
-      QObject::connect(resetCalibrationsBtn, &ButtonControl::clicked, [=]() {
+      QObject::connect(resetCalibrationsBtn, &ButtonControl::clicked, [this]() {
         if (FrogPilotConfirmationDialog::yesorno(tr("Reset all model scores?"), this)) {
           for (const QString &model : availableModelNames) {
             QString cleanedModel = processModelName(model);
@@ -650,7 +650,7 @@ FrogPilotDrivingPanel::FrogPilotDrivingPanel(SettingsWindow *parent) : FrogPilot
       drivingToggle = reinterpret_cast<AbstractControl*>(resetCalibrationsBtn);
     } else if (param == "ReviewScores") {
       ButtonControl *reviewScoresBtn = new ButtonControl(title, tr("VIEW"), desc);
-      QObject::connect(reviewScoresBtn, &ButtonControl::clicked, [=]() {
+      QObject::connect(reviewScoresBtn, &ButtonControl::clicked, [this]() {
         openSubSubParentToggle();
 
         for (LabelControl *label : labelControls) {
@@ -664,7 +664,7 @@ FrogPilotDrivingPanel::FrogPilotDrivingPanel(SettingsWindow *parent) : FrogPilot
       drivingToggle = reinterpret_cast<AbstractControl*>(reviewScoresBtn);
     } else if (param == "DeleteModel") {
       deleteModelBtn = new ButtonControl(title, tr("DELETE"), desc);
-      QObject::connect(deleteModelBtn, &ButtonControl::clicked, [=]() {
+      QObject::connect(deleteModelBtn, &ButtonControl::clicked, [this]() {
         QStringList deletableModels, existingModels = modelDir.entryList({"*.thneed"}, QDir::Files);
         QMap<QString, QString> labelToFileMap;
         QString currentModel = QString::fromStdString(params.get("Model")) + ".thneed";
@@ -707,7 +707,7 @@ FrogPilotDrivingPanel::FrogPilotDrivingPanel(SettingsWindow *parent) : FrogPilot
       drivingToggle = reinterpret_cast<AbstractControl*>(deleteModelBtn);
     } else if (param == "DownloadModel") {
       downloadModelBtn = new ButtonControl(title, tr("DOWNLOAD"), desc);
-      QObject::connect(downloadModelBtn, &ButtonControl::clicked, [=]() {
+      QObject::connect(downloadModelBtn, &ButtonControl::clicked, [this]() {
         if (downloadModelBtn->text() == tr("CANCEL")) {
           paramsMemory.remove("ModelToDownload");
           paramsMemory.putBool("CancelModelDownload", true);
@@ -798,7 +798,7 @@ FrogPilotDrivingPanel::FrogPilotDrivingPanel(SettingsWindow *parent) : FrogPilot
       drivingToggle = reinterpret_cast<AbstractControl*>(downloadModelBtn);
     } else if (param == "DownloadAllModels") {
       downloadAllModelsBtn = new ButtonControl(title, tr("DOWNLOAD"), desc);
-      QObject::connect(downloadAllModelsBtn, &ButtonControl::clicked, [=]() {
+      QObject::connect(downloadAllModelsBtn, &ButtonControl::clicked, [this]() {
         if (downloadAllModelsBtn->text() == tr("CANCEL")) {
           paramsMemory.remove("DownloadAllModels");
           paramsMemory.putBool("CancelModelDownload", true);
@@ -814,7 +814,7 @@ FrogPilotDrivingPanel::FrogPilotDrivingPanel(SettingsWindow *parent) : FrogPilot
       drivingToggle = reinterpret_cast<AbstractControl*>(downloadAllModelsBtn);
     } else if (param == "SelectModel") {
       selectModelBtn = new ButtonControl(title, tr("SELECT"), desc);
-      QObject::connect(selectModelBtn, &ButtonControl::clicked, [=]() {
+      QObject::connect(selectModelBtn, &ButtonControl::clicked, [this]() {
         QSet<QString> modelFilesBaseNames = QSet<QString>::fromList(modelDir.entryList({"*.thneed"}, QDir::Files).replaceInStrings(QRegExp("\\.thneed$"), ""));
         QStringList selectableModels;
 
@@ -856,7 +856,7 @@ FrogPilotDrivingPanel::FrogPilotDrivingPanel(SettingsWindow *parent) : FrogPilot
       selectModelBtn->setValue(QString::fromStdString(params.get("ModelName")));
       drivingToggle = reinterpret_cast<AbstractControl*>(selectModelBtn);
     } else if (param == "ResetCalibrations") {
-      FrogPilotButtonsControl *resetCalibrationsBtn = new FrogPilotButtonsControl(title, {tr("RESET ALL"), tr("RESET ONE")}, desc);
+      FrogPilotButtonsControl *resetCalibrationsBtn = new FrogPilotButtonsControl(title, desc, {tr("RESET ALL"), tr("RESET ONE")});
       QObject::connect(resetCalibrationsBtn, &FrogPilotButtonsControl::showDescriptionEvent, this, &FrogPilotDrivingPanel::updateCalibrationDescription);
       QObject::connect(resetCalibrationsBtn, &FrogPilotButtonsControl::buttonClicked, [=](int id) {
         if (id == 0) {
@@ -921,11 +921,11 @@ FrogPilotDrivingPanel::FrogPilotDrivingPanel(SettingsWindow *parent) : FrogPilot
     } else if (param == "ForceStandstill") {
       std::vector<QString> forceStopToggles{"ForceStops"};
       std::vector<QString> forceStopToggleNames{tr("Only For Stop Lights/Stop Signs")};
-      drivingToggle = new FrogPilotParamToggleControl(param, title, desc, icon, forceStopToggles, forceStopToggleNames);
+      drivingToggle = new FrogPilotButtonToggleControl(param, title, desc, forceStopToggles, forceStopToggleNames);
     } else if (param == "MapGears") {
       std::vector<QString> mapGearsToggles{"MapAcceleration", "MapDeceleration"};
       std::vector<QString> mapGearsToggleNames{tr("Acceleration"), tr("Deceleration")};
-      drivingToggle = new FrogPilotParamToggleControl(param, title, desc, icon, mapGearsToggles, mapGearsToggleNames);
+      drivingToggle = new FrogPilotButtonToggleControl(param, title, desc, mapGearsToggles, mapGearsToggleNames);
     } else if (param == "PauseLateralSpeed") {
       std::vector<QString> pauseLateralToggles{"PauseLateralOnSignal"};
       std::vector<QString> pauseLateralToggleNames{"Turn Signal Only"};
@@ -935,7 +935,7 @@ FrogPilotDrivingPanel::FrogPilotDrivingPanel(SettingsWindow *parent) : FrogPilot
     } else if (param == "ReverseCruise") {
       std::vector<QString> reverseCruiseToggles{"ReverseCruiseUI"};
       std::vector<QString> reverseCruiseNames{tr("Control Via UI")};
-      drivingToggle = new FrogPilotParamToggleControl(param, title, desc, icon, reverseCruiseToggles, reverseCruiseNames);
+      drivingToggle = new FrogPilotButtonToggleControl(param, title, desc, reverseCruiseToggles, reverseCruiseNames);
     } else if (param == "SetSpeedOffset") {
       drivingToggle = new FrogPilotParamValueControl(param, title, desc, icon, 0, 99, std::map<int, QString>(), this, false, tr("mph"));
 
@@ -970,22 +970,22 @@ FrogPilotDrivingPanel::FrogPilotDrivingPanel(SettingsWindow *parent) : FrogPilot
         for (auto &[key, toggle] : toggles) {
           toggle->setVisible(speedLimitControllerKeys.find(key.c_str()) != speedLimitControllerKeys.end());
         }
-
       });
       drivingToggle = speedLimitControllerToggle;
     } else if (param == "SLCControls") {
-      FrogPilotParamManageControl *manageSLCControlsToggle = new FrogPilotParamManageControl(param, title, desc, icon, this, true);
-      QObject::connect(manageSLCControlsToggle, &FrogPilotParamManageControl::manageButtonClicked, this, [this]() {
+      ButtonControl *manageSLCControlsBtn = new ButtonControl(title, tr("MANAGE"), desc);
+      QObject::connect(manageSLCControlsBtn, &ButtonControl::clicked, [this]() {
         openSubParentToggle();
 
         for (auto &[key, toggle] : toggles) {
           toggle->setVisible(speedLimitControllerControlsKeys.find(key.c_str()) != speedLimitControllerControlsKeys.end());
+          update();
         }
       });
-      drivingToggle = manageSLCControlsToggle;
+      drivingToggle = reinterpret_cast<AbstractControl*>(manageSLCControlsBtn);
     } else if (param == "SLCQOL") {
-      FrogPilotParamManageControl *manageSLCQOLToggle = new FrogPilotParamManageControl(param, title, desc, icon, this, true);
-      QObject::connect(manageSLCQOLToggle, &FrogPilotParamManageControl::manageButtonClicked, this, [this]() {
+      ButtonControl *manageSLCQOLBtn = new ButtonControl(title, tr("MANAGE"), desc);
+      QObject::connect(manageSLCQOLBtn, &ButtonControl::clicked, [this]() {
         openSubParentToggle();
 
         for (auto &[key, toggle] : toggles) {
@@ -1000,32 +1000,33 @@ FrogPilotDrivingPanel::FrogPilotDrivingPanel(SettingsWindow *parent) : FrogPilot
           }
 
           toggle->setVisible(modifiedSpeedLimitControllerQOLKeys.find(key.c_str()) != modifiedSpeedLimitControllerQOLKeys.end());
+          update();
         }
-
       });
-      drivingToggle = manageSLCQOLToggle;
+      drivingToggle = reinterpret_cast<AbstractControl*>(manageSLCQOLBtn);
     } else if (param == "SLCConfirmation") {
       std::vector<QString> slcConfirmationToggles{"SLCConfirmationLower", "SLCConfirmationHigher"};
       std::vector<QString> slcConfirmationNames{tr("Lower Limits"), tr("Higher Limits")};
-      drivingToggle = new FrogPilotParamToggleControl(param, title, desc, icon, slcConfirmationToggles, slcConfirmationNames);
+      drivingToggle = new FrogPilotButtonToggleControl(param, title, desc, slcConfirmationToggles, slcConfirmationNames);
     } else if (param == "SLCLookaheadHigher" || param == "SLCLookaheadLower") {
       drivingToggle = new FrogPilotParamValueControl(param, title, desc, icon, 0, 60, std::map<int, QString>(), this, false, " seconds");
     } else if (param == "SLCVisuals") {
-      FrogPilotParamManageControl *manageSLCVisualsToggle = new FrogPilotParamManageControl(param, title, desc, icon, this, true);
-      QObject::connect(manageSLCVisualsToggle, &FrogPilotParamManageControl::manageButtonClicked, this, [this]() {
+      ButtonControl *manageSLCVisualsBtn = new ButtonControl(title, tr("MANAGE"), desc);
+      QObject::connect(manageSLCVisualsBtn, &ButtonControl::clicked, [this]() {
         openSubParentToggle();
 
         for (auto &[key, toggle] : toggles) {
           toggle->setVisible(speedLimitControllerVisualsKeys.find(key.c_str()) != speedLimitControllerVisualsKeys.end());
+          update();
         }
       });
-      drivingToggle = manageSLCVisualsToggle;
+      drivingToggle = reinterpret_cast<AbstractControl*>(manageSLCVisualsBtn);
     } else if (param == "Offset1" || param == "Offset2" || param == "Offset3" || param == "Offset4") {
       drivingToggle = new FrogPilotParamValueControl(param, title, desc, icon, -99, 99, std::map<int, QString>(), this, false, tr("mph"));
     } else if (param == "ShowSLCOffset") {
       std::vector<QString> slcOffsetToggles{"ShowSLCOffsetUI"};
       std::vector<QString> slcOffsetToggleNames{tr("Control Via UI")};
-      drivingToggle = new FrogPilotParamToggleControl(param, title, desc, icon, slcOffsetToggles, slcOffsetToggleNames);
+      drivingToggle = new FrogPilotButtonToggleControl(param, title, desc, slcOffsetToggles, slcOffsetToggleNames);
     } else if (param == "SLCFallback") {
       std::vector<QString> fallbackOptions{tr("Set Speed"), tr("Experimental Mode"), tr("Previous Limit")};
       ButtonParamControl *fallbackSelection = new ButtonParamControl(param, title, desc, icon, fallbackOptions);
@@ -1109,7 +1110,7 @@ FrogPilotDrivingPanel::FrogPilotDrivingPanel(SettingsWindow *parent) : FrogPilot
     toggles[param.toStdString()] = drivingToggle;
 
     QObject::connect(static_cast<ToggleControl*>(drivingToggle), &ToggleControl::toggleFlipped, &updateFrogPilotToggles);
-    QObject::connect(static_cast<FrogPilotParamToggleControl*>(drivingToggle), &FrogPilotParamToggleControl::buttonTypeClicked, &updateFrogPilotToggles);
+    QObject::connect(static_cast<FrogPilotButtonToggleControl*>(drivingToggle), &FrogPilotButtonToggleControl::buttonClicked, &updateFrogPilotToggles);
     QObject::connect(static_cast<FrogPilotParamValueControl*>(drivingToggle), &FrogPilotParamValueControl::valueChanged, &updateFrogPilotToggles);
 
     QObject::connect(drivingToggle, &AbstractControl::showDescriptionEvent, [this]() {
