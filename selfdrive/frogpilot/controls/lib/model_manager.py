@@ -108,7 +108,10 @@ class ModelManager:
 
       if os.path.exists(model_path):
         if automatically_update_models:
-          if not verify_download(model_path, model_url):
+          verify_result = verify_download(model_path, model_url)
+          if verify_result is None:
+            all_models_downloaded = False
+          elif not verify_result:
             print(f"Model {model} is outdated. Re-downloading...")
             delete_file(model_path)
             self.remove_model_params(available_model_names, available_models, model)
