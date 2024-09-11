@@ -154,6 +154,11 @@ class ModelManager:
     if not available_models:
       return
 
+    current_model_path = os.path.join(MODELS_PATH, f"{current_model}.thneed")
+    if not os.path.exists(current_model_path):
+      print(f"Model {current_model} is not downloaded. Downloading...")
+      self.download_model(current_model)
+
     for model_file in os.listdir(MODELS_PATH):
       if model_file.replace(".thneed", "") not in available_models.split(','):
         if model_file == current_model:
