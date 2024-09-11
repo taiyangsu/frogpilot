@@ -24,7 +24,7 @@ bool checkNNFFLogFileExists(const std::string &carFingerprint) {
   return false;
 }
 
-FrogPilotDrivingPanel::FrogPilotDrivingPanel(SettingsWindow *parent) : FrogPilotListWidget(parent) {
+FrogPilotDrivingPanel::FrogPilotDrivingPanel(FrogPilotSettingsWindow *parent) : FrogPilotListWidget(parent) {
   std::string branch = params.get("GitBranch");
   isRelease = branch == "FrogPilot";
 
@@ -1267,10 +1267,10 @@ FrogPilotDrivingPanel::FrogPilotDrivingPanel(SettingsWindow *parent) : FrogPilot
     updateFrogPilotToggles();
   });
 
-  QObject::connect(parent, &SettingsWindow::closeParentToggle, this, &FrogPilotDrivingPanel::hideToggles);
-  QObject::connect(parent, &SettingsWindow::closeSubParentToggle, this, &FrogPilotDrivingPanel::hideSubToggles);
-  QObject::connect(parent, &SettingsWindow::closeSubSubParentToggle, this, &FrogPilotDrivingPanel::hideSubSubToggles);
-  QObject::connect(parent, &SettingsWindow::updateMetric, this, &FrogPilotDrivingPanel::updateMetric);
+  QObject::connect(parent, &FrogPilotSettingsWindow::closeParentToggle, this, &FrogPilotDrivingPanel::hideToggles);
+  QObject::connect(parent, &FrogPilotSettingsWindow::closeSubParentToggle, this, &FrogPilotDrivingPanel::hideSubToggles);
+  QObject::connect(parent, &FrogPilotSettingsWindow::closeSubSubParentToggle, this, &FrogPilotDrivingPanel::hideSubSubToggles);
+  QObject::connect(parent, &FrogPilotSettingsWindow::updateMetric, this, &FrogPilotDrivingPanel::updateMetric);
   QObject::connect(uiState(), &UIState::driveRated, this, &FrogPilotDrivingPanel::updateModelLabels);
   QObject::connect(uiState(), &UIState::offroadTransition, this, &FrogPilotDrivingPanel::updateCarToggles);
   QObject::connect(uiState(), &UIState::uiUpdate, this, &FrogPilotDrivingPanel::updateState);
