@@ -15,11 +15,15 @@ from panda import ALTERNATIVE_EXPERIENCE
 from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_functions import MODELS_PATH
 from openpilot.selfdrive.frogpilot.controls.lib.model_manager import DEFAULT_MODEL, DEFAULT_MODEL_NAME, process_model_name
 
+GearShifter = car.CarState.GearShifter
+
 CITY_SPEED_LIMIT = 25                                   # 55mph is typically the minimum speed for highways
 CRUISING_SPEED = 5                                      # Roughly the speed cars go when not touching the gas while in drive
 MODEL_LENGTH = ModelConstants.IDX_N                     # Minimum length of the model
 PLANNER_TIME = ModelConstants.T_IDXS[MODEL_LENGTH - 1]  # Length of time the model projects out for
 THRESHOLD = 0.6                                         # 60% chance of condition being true
+
+NON_DRIVING_GEARS = [GearShifter.neutral, GearShifter.park, GearShifter.reverse, GearShifter.unknown]
 
 class FrogPilotVariables:
   def __init__(self):
