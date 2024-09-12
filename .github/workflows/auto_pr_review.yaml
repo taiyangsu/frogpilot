@@ -2,7 +2,7 @@ name: "PR Review"
 
 on:
   pull_request_target:
-    types: [edited, opened, reopened, synchronize]
+    types: [opened, reopened]
 
 jobs:
   pr_check:
@@ -15,15 +15,20 @@ jobs:
         fetch-depth: 0
 
     - name: Check Target Branch
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
       run: |
         if [[ "${{ github.base_ref }}" != "MAKE-PRS-HERE" ]]; then
-          echo "Please submit your PR to the 'MAKE-PRS-HERE' branch."
           git config --global user.name "${{ github.actor }}"
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
 
-          git push origin --delete "${{ github.event.pull_request.head.ref }}"
+          gh auth login --with-token <<< "${GITHUB_TOKEN}"
+          gh pr comment ${{ github.event.pull_request.number }} --body "Please submit your PR to the 'MAKE-PRS-HERE' branch."
+
+          gh pr close ${{ github.event.pull_request.number }}
           exit 1
         else
-          echo "Thank you for submitting your PR to the correct branch!"
-          echo "If you're not already in the FrogPilot Discord, please join via 'discord.FrogPilot.download'"
-          echo "and feel free to @FrogsGoMoo and let me know you opened a PR!"
+          gh auth login --with-token <<< "${GITHUB_TOKEN}"
+          gh pr comment ${{ github.event.pull_request.number }} --body "Thank you for submitting your PR to the correct branch! If you're not already in the FrogPilot Discord, please join via 'discord.FrogPilot.download' and feel free to @FrogsGoMoo and let me know you opened a PR!"
+        fi
