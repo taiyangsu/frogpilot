@@ -37,7 +37,7 @@ class ConditionalExperimentalMode:
       self.status_value = 7 if following_lead else 8
       return True
 
-    desired_lane = self.frogpilot_planner.lane_width_left if carstate.leftBlinker else self.frogpilot_planner.lane_width_right
+    desired_lane = self.frogpilot_planner.lane_width_left if carState.leftBlinker else self.frogpilot_planner.lane_width_right
     lane_available = desired_lane >= frogpilot_toggles.lane_detection_width
     if frogpilot_toggles.conditional_signal and v_ego < CITY_SPEED_LIMIT and (carState.leftBlinker or carState.rightBlinker) and not lane_available:
       self.status_value = 9
