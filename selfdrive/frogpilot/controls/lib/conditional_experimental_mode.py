@@ -1,7 +1,7 @@
 from openpilot.common.params import Params
 
-from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_functions import MovingAverageCalculator
-from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import CITY_SPEED_LIMIT, CRUISING_SPEED, THRESHOLD
+from openpilot.selfdrive.frogpilot.frogpilot_functions import MovingAverageCalculator
+from openpilot.selfdrive.frogpilot.frogpilot_variables import CITY_SPEED_LIMIT, CRUISING_SPEED, THRESHOLD
 
 class ConditionalExperimentalMode:
   def __init__(self, FrogPilotPlanner):

@@ -15,7 +15,7 @@ from openpilot.system.hardware import HARDWARE, PC
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.version import get_build_metadata, get_version
 
-from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_functions import is_url_pingable
+from openpilot.selfdrive.frogpilot.frogpilot_functions import is_url_pingable
 
 CRASHES_DIR = "/data/crashes/"
 

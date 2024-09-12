@@ -32,7 +32,7 @@ from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 from openpilot.system.hardware import HARDWARE
 
 from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_acceleration import get_max_allowed_accel
-from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import NON_DRIVING_GEARS, FrogPilotVariables
+from openpilot.selfdrive.frogpilot.frogpilot_variables import NON_DRIVING_GEARS, FrogPilotVariables
 
 SOFT_DISABLE_TIME = 3  # seconds
 LDW_MIN_SPEED = 31 * CV.MPH_TO_MS

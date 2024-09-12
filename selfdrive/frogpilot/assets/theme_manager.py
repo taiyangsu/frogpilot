@@ -10,8 +10,8 @@ import zipfile
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 
-from openpilot.selfdrive.frogpilot.controls.lib.download_functions import GITHUB_URL, GITLAB_URL, download_file, get_repository_url, handle_error, handle_request_error, link_valid, verify_download
-from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_functions import ACTIVE_THEME_PATH, THEME_SAVE_PATH, delete_file, update_frogpilot_toggles
+from openpilot.selfdrive.frogpilot.assets.download_functions import GITHUB_URL, GITLAB_URL, download_file, get_repository_url, handle_error, handle_request_error, link_valid, verify_download
+from openpilot.selfdrive.frogpilot.frogpilot_functions import ACTIVE_THEME_PATH, THEME_SAVE_PATH, delete_file, update_frogpilot_toggles
 
 def copy_theme_asset(asset_type, theme, holiday_theme, params):
   save_location = os.path.join(ACTIVE_THEME_PATH, asset_type)

@@ -9,8 +9,8 @@ from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.controls.controlsd import Desire
 from openpilot.selfdrive.controls.lib.events import EventName, Events
 
-from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import CRUISING_SPEED
-from openpilot.selfdrive.frogpilot.controls.lib.theme_manager import update_wheel_image
+from openpilot.selfdrive.frogpilot.assets.theme_manager import update_wheel_image
+from openpilot.selfdrive.frogpilot.frogpilot_variables import CRUISING_SPEED
 
 class FrogPilotEvents:
   def __init__(self, FrogPilotPlanner):

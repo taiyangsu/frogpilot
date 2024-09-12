@@ -8,12 +8,12 @@ from openpilot.common.realtime import Priority, config_realtime_process
 from openpilot.common.time import system_time_valid
 from openpilot.system.hardware import HARDWARE
 
+from openpilot.selfdrive.frogpilot.assets.model_manager import DEFAULT_MODEL, DEFAULT_MODEL_NAME, ModelManager
+from openpilot.selfdrive.frogpilot.assets.theme_manager import ThemeManager
 from openpilot.selfdrive.frogpilot.controls.frogpilot_planner import FrogPilotPlanner
-from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_functions import backup_toggles, is_url_pingable
 from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_tracking import FrogPilotTracking
-from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_variables import FrogPilotVariables
-from openpilot.selfdrive.frogpilot.controls.lib.model_manager import DEFAULT_MODEL, DEFAULT_MODEL_NAME, ModelManager
-from openpilot.selfdrive.frogpilot.controls.lib.theme_manager import ThemeManager
+from openpilot.selfdrive.frogpilot.frogpilot_functions import backup_toggles, is_url_pingable
+from openpilot.selfdrive.frogpilot.frogpilot_variables import FrogPilotVariables
 
 WIFI = log.DeviceState.NetworkType.wifi
 
