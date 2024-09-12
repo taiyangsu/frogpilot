@@ -37,7 +37,9 @@ class ConditionalExperimentalMode:
       self.status_value = 7 if following_lead else 8
       return True
 
-    if frogpilot_toggles.conditional_signal and v_ego < CITY_SPEED_LIMIT and (carState.leftBlinker or carState.rightBlinker):
+    desired_lane = self.frogpilot_planner.lane_width_left if carstate.leftBlinker else self.frogpilot_planner.lane_width_right
+    lane_available = desired_lane >= frogpilot_toggles.lane_detection_width
+    if frogpilot_toggles.conditional_signal and v_ego < CITY_SPEED_LIMIT and (carState.leftBlinker or carState.rightBlinker) and not lane_available:
       self.status_value = 9
       return True
 
@@ -70,15 +72,11 @@ class ConditionalExperimentalMode:
     self.stop_sign_and_light(tracking_lead, v_ego, frogpilot_toggles)
 
   def curve_detection(self, tracking_lead, v_ego, frogpilot_toggles):
-    if v_ego > CRUISING_SPEED:
-      curve_detected = (1 / self.frogpilot_planner.road_curvature)**0.5 < v_ego
-      curve_active = (0.9 / self.frogpilot_planner.road_curvature)**0.5 < v_ego and self.curve_detected
+    curve_detected = (1 / self.frogpilot_planner.road_curvature)**0.5 < v_ego
+    curve_active = (0.9 / self.frogpilot_planner.road_curvature)**0.5 < v_ego and self.curve_detected
 
-      self.curvature_mac.add_data(curve_detected or curve_active)
-      self.curve_detected = self.curvature_mac.get_moving_average() >= THRESHOLD
-    else:
-      self.curvature_mac.reset_data()
-      self.curve_detected = False
+    self.curvature_mac.add_data(curve_detected or curve_active)
+    self.curve_detected = self.curvature_mac.get_moving_average() >= THRESHOLD
 
   def slow_lead(self, tracking_lead, v_lead, frogpilot_toggles):
     if tracking_lead:
