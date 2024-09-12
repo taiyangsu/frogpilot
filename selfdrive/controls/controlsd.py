@@ -724,7 +724,7 @@ class Controls:
     self.always_on_lateral_active &= not (CS.brakePressed and CS.vEgo < self.frogpilot_toggles.always_on_lateral_pause_speed) or CS.standstill
 
     if self.always_on_lateral_active and not self.always_on_lateral_active_previously and self.frogpilot_toggles.random_events:
-      if random.random() < 0.01:
+      if random.random() < 0.5:
         self.events.add(EventName.youveGotMail)
 
     self.always_on_lateral_active_previously = self.always_on_lateral_active
