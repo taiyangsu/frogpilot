@@ -100,7 +100,7 @@ void AnnotatedCameraWidget::updateState(int alert_height, const UIState &s) {
   }
 
   // Update FrogPilot widgets
-  updateFrogPilotWidgets(alert_height, s.scene);
+  updateFrogPilotVariables(alert_height, s.scene);
 }
 
 void AnnotatedCameraWidget::drawHud(QPainter &p) {
@@ -771,7 +771,7 @@ void AnnotatedCameraWidget::initializeFrogPilotWidgets() {
   recordTimer->start(75);
 }
 
-void AnnotatedCameraWidget::updateFrogPilotWidgets(int alert_height, const UIScene &scene) {
+void AnnotatedCameraWidget::updateFrogPilotVariables(int alert_height, const UIScene &scene) {
   if (is_metric || useSI) {
     accelerationUnit = tr("m/s²");
     leadDistanceUnit = tr(mapOpen ? "m" : "meters");
