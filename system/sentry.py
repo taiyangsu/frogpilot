@@ -181,7 +181,7 @@ def set_tag(key: str, value: str) -> None:
 
 def init(project: SentryProject) -> bool:
   build_metadata = get_build_metadata()
-  FrogPilot = "FrogAi" in build_metadata.openpilot.git_origin
+  FrogPilot = "frogai" in build_metadata.openpilot.git_origin.lower()
   if not FrogPilot or PC:
     return False
 
