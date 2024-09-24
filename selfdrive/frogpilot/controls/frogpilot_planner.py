@@ -65,8 +65,7 @@ class FrogPilotPlanner:
     lead_distance = self.lead_one.dRel - distance_offset
     stopping_distance = STOP_DISTANCE + distance_offset
 
-    if frogpilot_toggles.openpilot_longitudinal:
-      self.frogpilot_acceleration.update(controlsState, frogpilotCarState, v_cruise, v_ego, frogpilot_toggles)
+    self.frogpilot_acceleration.update(controlsState, frogpilotCarState, v_cruise, v_ego, frogpilot_toggles)
 
     run_cem = frogpilot_toggles.conditional_experimental_mode or frogpilot_toggles.force_stops or frogpilot_toggles.green_light_alert or frogpilot_toggles.show_stopping_point
     if run_cem and (controlsState.enabled or frogpilotCarControl.alwaysOnLateralActive) and driving_gear:
@@ -75,8 +74,7 @@ class FrogPilotPlanner:
       self.cem.stop_light_detected = False
 
     self.frogpilot_events.update(carState, controlsState, frogpilotCarControl, frogpilotCarState, modelData, frogpilot_toggles)
-    if frogpilot_toggles.openpilot_longitudinal:
-      self.frogpilot_following.update(controlsState, frogpilotCarState, lead_distance, stopping_distance, v_ego, v_lead, frogpilot_toggles)
+    self.frogpilot_following.update(controlsState, frogpilotCarState, lead_distance, stopping_distance, v_ego, v_lead, frogpilot_toggles)
 
     check_lane_width = frogpilot_toggles.adjacent_lanes or frogpilot_toggles.blind_spot_path or frogpilot_toggles.lane_detection
     if check_lane_width and v_ego >= frogpilot_toggles.minimum_lane_change_speed:
@@ -113,11 +111,7 @@ class FrogPilotPlanner:
 
     self.tracking_lead = self.set_lead_status(carState, lead_distance, stopping_distance, v_ego)
 
-    if frogpilot_toggles.openpilot_longitudinal:
-      self.v_cruise = self.frogpilot_vcruise.update(carState, controlsState, frogpilotCarControl, frogpilotCarState, frogpilotNavigation, modelData, v_cruise, v_ego, frogpilot_toggles)
-    else:
-      self.frogpilot_vcruise.mtsc_target = v_cruise
-      self.frogpilot_vcruise.vtsc_target = v_cruise
+    self.v_cruise = self.frogpilot_vcruise.update(carState, controlsState, frogpilotCarControl, frogpilotCarState, frogpilotNavigation, modelData, v_cruise, v_ego, frogpilot_toggles)
 
     if self.frogpilot_events.frame == 1:  # Force update to check the current state of "Always On Lateral" and holiday theme
       update_frogpilot_toggles()
