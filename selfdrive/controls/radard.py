@@ -12,6 +12,7 @@ from openpilot.common.realtime import DT_CTRL, Ratekeeper, Priority, config_real
 from openpilot.common.swaglog import cloudlog
 
 from openpilot.common.simple_kalman import KF1D
+from openpilot.selfdrive.car.hyundai.values import HyundaiFlags
 
 from openpilot.selfdrive.frogpilot.frogpilot_variables import FrogPilotVariables
 
@@ -92,10 +93,11 @@ class Track:
     self.aLeadK = aLeadK
     self.aLeadTau = aLeadTau
 
-  def get_RadarState(self, model_prob: float = 0.0):
+  def get_RadarState(self, CP: car.CarParams = None, lead_msg_y: float = 0.0, model_prob: float = 0.0):
+    y_rel_vision = False if CP is None or CP.carName != "hyundai" else CP.flags & HyundaiFlags.CANFD_CAMERA_SCC
     return {
       "dRel": float(self.dRel),
-      "yRel": float(self.yRel),
+      "yRel": float(-lead_msg_y) if y_rel_vision else float(self.yRel),
       "vRel": float(self.vRel),
       "vLead": float(self.vLead),
       "vLeadK": float(self.vLeadK),
@@ -181,7 +183,7 @@ def get_RadarState_from_vision(lead_msg: capnp._DynamicStructReader, v_ego: floa
 
 
 def get_lead(v_ego: float, ready: bool, tracks: dict[int, Track], lead_msg: capnp._DynamicStructReader,
-             model_v_ego: float, lead_detection_threshold: float, low_speed_override: bool = True) -> dict[str, Any]:
+             model_v_ego: float, CP: car.CarParams,  lead_detection_threshold: float, low_speed_override: bool = True) -> dict[str, Any]:
   # Determine leads, this is where the essential logic happens
   if len(tracks) > 0 and ready and lead_msg.prob > lead_detection_threshold:
     track = match_vision_to_track(v_ego, lead_msg, tracks)
@@ -190,7 +192,7 @@ def get_lead(v_ego: float, ready: bool, tracks: dict[int, Track], lead_msg: capn
 
   lead_dict = {'status': False}
   if track is not None:
-    lead_dict = track.get_RadarState(lead_msg.prob)
+    lead_dict = track.get_RadarState(CP, lead_msg.y[0], lead_msg.prob)
   elif (track is None) and ready and (lead_msg.prob > lead_detection_threshold):
     lead_dict = get_RadarState_from_vision(lead_msg, v_ego, model_v_ego)
 
@@ -218,7 +220,7 @@ def get_lead_adjacent(tracks: dict[int, Track], model_data: capnp._DynamicStruct
 
 
 class RadarD:
-  def __init__(self, radar_ts: float, delay: int = 0):
+  def __init__(self, radar_ts: float, CP: car.CarParams, delay: int = 0):
     self.points: dict[int, tuple[float, float, float]] = {}
 
     self.current_time = 0.0
@@ -236,6 +238,8 @@ class RadarD:
 
     self.ready = False
 
+    self.CP = CP
+    
     # FrogPilot variables
     self.frogpilot_toggles = FrogPilotVariables.toggles
     FrogPilotVariables.update_frogpilot_params()
@@ -295,8 +299,8 @@ class RadarD:
       model_v_ego = self.v_ego
     leads_v3 = sm['modelV2'].leadsV3
     if len(leads_v3) > 1:
-      self.radar_state.leadOne = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[0], model_v_ego, self.frogpilot_toggles.lead_detection_threshold, low_speed_override=True)
-      self.radar_state.leadTwo = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[1], model_v_ego, self.frogpilot_toggles.lead_detection_threshold, low_speed_override=False)
+      self.radar_state.leadOne = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[0], model_v_ego, self.CP, self.frogpilot_toggles.lead_detection_threshold, low_speed_override=True)
+      self.radar_state.leadTwo = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[1], model_v_ego, self.CP, self.frogpilot_toggles.lead_detection_threshold, low_speed_override=False)
 
     if self.frogpilot_toggles.adjacent_lead_tracking_ui:
       self.radar_state.leadLeft = get_lead_adjacent(self.tracks, sm['modelV2'], sm['frogpilotPlan'].laneWidthLeft, left=True)
@@ -378,7 +382,7 @@ def main():
   RI = RadarInterface(CP)
 
   rk = Ratekeeper(1.0 / CP.radarTimeStep, print_delay_threshold=None)
-  RD = RadarD(CP.radarTimeStep, RI.delay)
+  RD = RadarD(CP.radarTimeStep, CP, RI.delay)
 
   # FrogPilot variables
   frogpilot_toggles = FrogPilotVariables.toggles
