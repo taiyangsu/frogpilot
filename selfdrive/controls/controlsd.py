@@ -92,12 +92,19 @@ class Controls:
     # TODO: de-couple controlsd with card/conflate on carState without introducing controls mismatches
     self.car_state_sock = messaging.sub_sock('carState', timeout=20)
 
+    self.d_camera_hardware_missing = self.params.get_bool("DriverCameraHardwareMissing") and not is_registered_device()
+    if self.d_camera_hardware_missing:
+      IGNORE_PROCESSES.update({"dmonitoringd", "dmonitoringmodeld"})
+      self.camera_packets.remove("driverCameraState")
+
     ignore = self.sensor_packets + ['testJoystick']
     if SIMULATION:
       ignore += ['driverCameraState', 'managerState']
     if REPLAY:
       # no vipc in replay will make them ignored anyways
       ignore += ['roadCameraState', 'wideRoadCameraState']
+    if self.d_camera_hardware_missing:
+      ignore += ['driverMonitoringState']
     if get_frogpilot_toggles(True).radarless_model:
       ignore += ['radarState']
     self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
@@ -336,6 +343,9 @@ class Controls:
       if not SIMULATION and not self.rk.lagging:
         if not self.sm.all_alive(self.camera_packets):
           self.events.add(EventName.cameraMalfunction)
+          if not self.sm.all_alive(['driverCameraState']) and not self.d_camera_hardware_missing:
+            self.d_camera_hardware_missing = True
+            self.params.put_bool_nonblocking("DriverCameraHardwareMissing", True)
         elif not self.sm.all_freq_ok(self.camera_packets):
           self.events.add(EventName.cameraFrameRate)
     if not REPLAY and self.rk.lagging:
