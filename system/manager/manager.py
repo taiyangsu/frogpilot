@@ -20,7 +20,7 @@ from openpilot.system.hardware.power_monitoring import VBATT_PAUSE_CHARGING
 from openpilot.system.manager.helpers import unblock_stdout, write_onroad_params, save_bootlog
 from openpilot.system.manager.process import ensure_running
 from openpilot.system.manager.process_config import managed_processes
-from openpilot.system.athena.registration import register, UNREGISTERED_DONGLE_ID, is_registered_device
+from openpilot.system.athena.registration import register, UNREGISTERED_DONGLE_ID
 from openpilot.common.swaglog import cloudlog, add_file_handler
 from openpilot.system.version import get_build_metadata, terms_version, training_version
 
@@ -165,8 +165,6 @@ def manager_thread() -> None:
   if os.getenv("NOBOARD") is not None:
     ignore.append("pandad")
   ignore += [x for x in os.getenv("BLOCK", "").split(",") if len(x) > 0]
-  if params.get("DriverCameraHardwareMissing") and not is_registered_device():
-    ignore += ["dmonitoringd", "dmonitoringmodeld"]
 
   sm = messaging.SubMaster(['deviceState', 'carParams', 'frogpilotPlan'], poll='deviceState')
   pm = messaging.PubMaster(['managerState'])
