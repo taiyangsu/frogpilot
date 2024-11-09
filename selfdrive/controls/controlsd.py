@@ -87,6 +87,8 @@ class Controls:
     self.sensor_packets = ["accelerometer", "gyroscope"]
     self.camera_packets = ["roadCameraState", "wideRoadCameraState"]
 
+    IGNORE_PROCESSES.update({"dmonitoringd", "dmonitoringmodeld"})
+
     self.log_sock = messaging.sub_sock('androidLog')
 
     # TODO: de-couple controlsd with card/conflate on carState without introducing controls mismatches
