@@ -111,7 +111,7 @@ class CarController(CarControllerBase):
         self.secoc_lta_message_counter = 0
         self.secoc_prev_reset_counter = CS.secoc_synchronization['RESET_CNT']
 
-        expected_mac = build_sync_mac(self.secoc_key, int(CS.secoc_synchronization['TRIP_CNT']), int(CS.secoc_synchronization['RESET_CNT']))
+        expected_mac = build_sync_mac(self.CP.secOCKey, int(CS.secoc_synchronization['TRIP_CNT']), int(CS.secoc_synchronization['RESET_CNT']))
         if int(CS.secoc_synchronization['AUTHENTICATOR']) != expected_mac and self.secoc_mismatch_counter < 100:
           self.secoc_mismatch_counter += 1
 
@@ -151,7 +151,7 @@ class CarController(CarControllerBase):
     steer_command = toyotacan.create_steer_command(self.packer, apply_steer, apply_steer_req)
     if self.CP.flags & ToyotaFlags.SECOC.value:
       # TODO: check if this slow and needs to be done by the CANPacker
-      steer_command = add_mac(self.secoc_key,
+      steer_command = add_mac(self.CP.secOCKey,
                               int(CS.secoc_synchronization['TRIP_CNT']),
                               int(CS.secoc_synchronization['RESET_CNT']),
                               self.secoc_lka_message_counter,
@@ -174,7 +174,7 @@ class CarController(CarControllerBase):
 
       if self.CP.flags & ToyotaFlags.SECOC.value:
         lta_steer_2 = toyotacan.create_lta_steer_command_2(self.packer, self.frame // 2)
-        lta_steer_2 = add_mac(self.secoc_key,
+        lta_steer_2 = add_mac(self.CP.secOCKey,
                               int(CS.secoc_synchronization['TRIP_CNT']),
                               int(CS.secoc_synchronization['RESET_CNT']),
                               self.secoc_lta_message_counter,

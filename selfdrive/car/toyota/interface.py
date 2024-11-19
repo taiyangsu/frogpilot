@@ -1,6 +1,7 @@
 from cereal import car, custom
 from panda import Panda
 from panda.python import uds
+from openpilot.common.params import Params
 from openpilot.selfdrive.car.toyota.values import Ecu, CAR, DBC, ToyotaFlags, CarControllerParams, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, \
                                         MIN_ACC_SPEED, EPS_SCALE, UNSUPPORTED_DSU_CAR, NO_STOP_TIMER_CAR, ANGLE_CONTROL_CAR, STOP_AND_GO_CAR
 from openpilot.selfdrive.car import create_button_events, get_safety_config
@@ -29,7 +30,7 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_ALT_BRAKE
 
     if ret.flags & ToyotaFlags.SECOC.value:
-      ret.secOcRequired = True
+      # ret.secOcRequired = True
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_SECOC
 
     if candidate in ANGLE_CONTROL_CAR:
@@ -146,6 +147,16 @@ class CarInterface(CarInterfaceBase):
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
     ret.minEnableSpeed = -1. if (candidate in STOP_AND_GO_CAR or ret.enableGasInterceptor) else MIN_ACC_SPEED
+
+    # Read SecOC key from param
+    if ret.flags & ToyotaFlags.SECOC.value:
+      key = Params().get("SecOCKey", encoding='utf8')
+
+      # TODO: show warning, and handle setting key in CI
+      if key is None:
+        key = "0" * 32
+
+      ret.secOCKey = bytes.fromhex(key.strip())
 
     tune = ret.longitudinalTuning
     if candidate in TSS2_CAR:
