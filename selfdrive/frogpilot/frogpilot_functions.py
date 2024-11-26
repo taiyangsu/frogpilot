@@ -171,6 +171,15 @@ def convert_params(params, params_storage):
   for key in ["LaneDetectionWidth", "PathWidth"]:
     decrease_param(key)
 
+  priority_keys = ["SLCPriority1", "SLCPriority2", "SLCPriority3"]
+
+  for key in priority_keys:
+    if params.get(key, encoding='utf-8') == "Offline Maps":
+      params.put(key, "Map Data")
+
+    if params_storage.get(key, encoding='utf-8') == "Offline Maps":
+      params_storage.put(key, "Map Data")
+
   print("Param conversion completed")
 
 
