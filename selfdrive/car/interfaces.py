@@ -193,9 +193,17 @@ def get_nn_model_path(car, eps_firmware) -> tuple[str | None, float]:
   return model_path
 
 def get_nn_model(car, eps_firmware) -> tuple[FluxModel | None, float]:
+  with open(TORQUE_SUBSTITUTE_PATH, 'rb') as f:
+    sub = tomllib.load(f)
   model = get_nn_model_path(car, eps_firmware)
   if model is not None:
     model = FluxModel(model)
+  else:
+    sub_candidate = sub.get(car, car)
+    if sub_candidate != car:
+      model = get_nn_model_path(sub_candidate, eps_firmware)
+      if model is not None:
+        model = FluxModel(model)
   return model
 
 # generic car and radar interfaces
