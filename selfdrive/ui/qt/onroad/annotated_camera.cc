@@ -71,7 +71,7 @@ void AnnotatedCameraWidget::updateState(int alert_height, const UIState &s) {
 
   auto speed_limit_sign = nav_instruction.getSpeedLimitSign();
   if (s.scene.show_speed_limits || s.scene.speed_limit_controller) {
-    speedLimit = slcOverridden ? s.scene.speed_limit_overridden_speed : s.scene.speed_limit;
+    speedLimit = s.scene.speed_limit;
   } else {
     speedLimit = nav_alive ? nav_instruction.getSpeedLimit() : 0.0;
   }
