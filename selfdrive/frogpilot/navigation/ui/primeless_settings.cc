@@ -12,7 +12,7 @@ void FrogPilotPrimelessPanel::createMapboxKeyControl(ButtonControl *&control, co
       if (key.length() >= 80) {
         params.put(paramKey, key.toStdString());
       } else {
-        FrogPilotConfirmationDialog::toggleAlert(tr("Inputted key is invalid or too short!"), tr("Ok"), this);
+        ConfirmationDialog::alert(tr("Inputted key is invalid or too short!"), this);
       }
     } else {
       if (FrogPilotConfirmationDialog::yesorno(tr("Are you sure you want to remove your %1?").arg(label), this)) {
@@ -66,7 +66,7 @@ FrogPilotPrimelessPanel::FrogPilotPrimelessPanel(FrogPilotSettingsWindow *parent
       if (key.length() >= 39) {
         params.put("AMapKey1", key.toStdString());
       } else {
-        FrogPilotConfirmationDialog::toggleAlert(tr("Inputted key is invalid or too short!"), tr("Ok"), this);
+        ConfirmationDialog::alert(tr("Inputted key is invalid or too short!"), this);
       }
     } else {
       if (FrogPilotConfirmationDialog::yesorno(tr("Are you sure you want to remove your Amap key?"), this)) {
@@ -88,7 +88,7 @@ FrogPilotPrimelessPanel::FrogPilotPrimelessPanel(FrogPilotSettingsWindow *parent
       if (key.length() >= 39) {
         params.put("AMapKey2", key.toStdString());
       } else {
-        FrogPilotConfirmationDialog::toggleAlert(tr("Inputted key is invalid or too short!"), tr("Ok"), this);
+        ConfirmationDialog::alert(tr("Inputted key is invalid or too short!"), this);
       }
     } else {
       if (FrogPilotConfirmationDialog::yesorno(tr("Are you sure you want to remove your Amap key?"), this)) {
@@ -110,7 +110,7 @@ FrogPilotPrimelessPanel::FrogPilotPrimelessPanel(FrogPilotSettingsWindow *parent
       if (key.length() >= 25) {
         params.put("GMapKey", key.toStdString());
       } else {
-        FrogPilotConfirmationDialog::toggleAlert(tr("Inputted key is invalid or too short!"), tr("Ok"), this);
+        ConfirmationDialog::alert(tr("Inputted key is invalid or too short!"), this);
       }
     } else {
       if (FrogPilotConfirmationDialog::yesorno(tr("Are you sure you want to remove your Google Maps key?"), this)) {
@@ -151,12 +151,9 @@ void FrogPilotPrimelessPanel::showEvent(QShowEvent *event) {
   QString ipAddress = uiState()->wifi->getIp4Address();
   ipLabel->setText(ipAddress.isEmpty() ? tr("Device Offline") : QString("%1:8082").arg(ipAddress));
 
-  mapboxPublicKeySet = QString::fromStdString(params.get("MapboxPublicKey")).startsWith("pk");
-  mapboxSecretKeySet = QString::fromStdString(params.get("MapboxSecretKey")).startsWith("sk");
-  setupCompleted = mapboxPublicKeySet && mapboxSecretKeySet;
+  updateButtons();
 
-  publicMapboxKeyControl->setText(mapboxPublicKeySet ? tr("REMOVE") : tr("ADD"));
-  secretMapboxKeyControl->setText(mapboxSecretKeySet ? tr("REMOVE") : tr("ADD"));
+  setupCompleted = mapboxPublicKeySet && mapboxSecretKeySet;
 
   int searchInput = params.getInt("SearchInput");
 
@@ -180,20 +177,26 @@ void FrogPilotPrimelessPanel::mousePressEvent(QMouseEvent *event) {
   }
 }
 
-void FrogPilotPrimelessPanel::updateState() {
-  if (!isVisible()) {
+void FrogPilotPrimelessPanel::updateButtons() {
+  amapKeyControl1->setText(QString::fromStdString(params.get("AMapKey1")) != "0" ? tr("REMOVE") : tr("ADD"));
+  amapKeyControl2->setText(QString::fromStdString(params.get("AMapKey2")) != "0" ? tr("REMOVE") : tr("ADD"));
+
+  googleKeyControl->setText(QString::fromStdString(params.get("GMapKey")) != "0" ? tr("REMOVE") : tr("ADD"));
+
+  mapboxPublicKeySet = QString::fromStdString(params.get("MapboxPublicKey")).startsWith("pk");
+  mapboxSecretKeySet = QString::fromStdString(params.get("MapboxSecretKey")).startsWith("sk");
+
+  publicMapboxKeyControl->setText(mapboxPublicKeySet ? tr("REMOVE") : tr("ADD"));
+  secretMapboxKeyControl->setText(mapboxSecretKeySet ? tr("REMOVE") : tr("ADD"));
+}
+
+void FrogPilotPrimelessPanel::updateState(const UIState &s) {
+  if (!isVisible() || s.sm->frame % (UI_FREQ / 2) != 0) {
     return;
   }
 
-  if (primelessLayout->currentIndex() == 1) {
-    mapboxPublicKeySet = QString::fromStdString(params.get("MapboxPublicKey")).startsWith("pk");
-    mapboxSecretKeySet = QString::fromStdString(params.get("MapboxSecretKey")).startsWith("sk");
-
-    publicMapboxKeyControl->setText(mapboxPublicKeySet ? tr("REMOVE") : tr("ADD"));
-    secretMapboxKeyControl->setText(mapboxSecretKeySet ? tr("REMOVE") : tr("ADD"));
-
-    updateStep();
-  }
+  updateButtons();
+  updateStep();
 
   parent->keepScreenOn = primelessLayout->currentIndex() == 1;
 }

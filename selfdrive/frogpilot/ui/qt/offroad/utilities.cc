@@ -71,7 +71,7 @@ FrogPilotUtilitiesPanel::FrogPilotUtilitiesPanel(FrogPilotSettingsWindow *parent
     params.putNonBlocking("DiscordUsername", reportData["DiscordUser"].toString().toStdString());
     params_memory.put("IssueReported", QJsonDocument(reportData).toJson(QJsonDocument::Compact).toStdString());
 
-    FrogPilotConfirmationDialog::toggleAlert(tr("Thanks for letting us know! Your report has been submitted."), tr("Ok"), this);
+    ConfirmationDialog::alert(tr("Thanks for letting us know! Your report has been submitted."), this);
   });
   addItem(reportIssueBtn);
 

@@ -40,7 +40,7 @@ FrogPilotModelPanel::FrogPilotModelPanel(FrogPilotSettingsWindow *parent) : Frog
           }
 
           if (blacklistableModels.size() <= 1) {
-            FrogPilotConfirmationDialog::toggleAlert(tr("There are no more models to blacklist! The only available model is \"%1\"!").arg(blacklistableModels.first()), tr("Ok"), this);
+            ConfirmationDialog::alert(tr("There are no more models to blacklist! The only available model is \"%1\"!").arg(blacklistableModels.first()), this);
           } else {
             QString modelToBlacklist = MultiOptionDialog::getSelection(tr("Select a model to add to the blacklist"), blacklistableModels, "", this);
             if (!modelToBlacklist.isEmpty()) {

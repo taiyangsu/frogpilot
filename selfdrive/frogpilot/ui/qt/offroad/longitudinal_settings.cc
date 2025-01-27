@@ -201,8 +201,8 @@ FrogPilotLongitudinalPanel::FrogPilotLongitudinalPanel(FrogPilotSettingsWindow *
       });
       longitudinalToggle = curveControlToggle;
     } else if (param == "CurveDetectionMethod") {
-      std::vector<QString> curveDetectionToggles{"MapTurnControl", "VisionTurnControl"};
-      std::vector<QString> curveDetectionToggleNames{tr("Map Based"), tr("Vision")};
+      std::vector<QString> curveDetectionToggles{"MapTurnControl", "SmartTurnControl", "VisionTurnControl"};
+      std::vector<QString> curveDetectionToggleNames{tr("Map Based"), tr("Smart"), tr("Vision")};
       curveDetectionToggle = new FrogPilotButtonToggleControl(param, title, desc, curveDetectionToggles, curveDetectionToggleNames, false, true);
       QObject::connect(curveDetectionToggle, &FrogPilotButtonToggleControl::buttonClicked, [this](int index) {
         std::set<QString> modifiedCurveSpeedKeys = curveSpeedKeys;
@@ -222,10 +222,7 @@ FrogPilotLongitudinalPanel::FrogPilotLongitudinalPanel(FrogPilotSettingsWindow *
       });
       QObject::connect(curveDetectionToggle, &FrogPilotButtonToggleControl::disabledButtonClicked, [=](int id) {
         if (id == 0) {
-          FrogPilotConfirmationDialog::toggleAlert(
-            tr("The 'Map Based' option is only available when some 'Map Data' has been downloaded!"),
-            tr("Ok"), this
-          );
+          ConfirmationDialog::alert(tr("The 'Map Based' option is only available when some 'Map Data' has been downloaded!"), this);
         }
       });
       longitudinalToggle = curveDetectionToggle;

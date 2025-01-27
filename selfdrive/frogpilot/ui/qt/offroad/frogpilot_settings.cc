@@ -143,19 +143,13 @@ FrogPilotSettingsWindow::FrogPilotSettingsWindow(SettingsWindow *parent) : QFram
   QObject::connect(togglePreset, &ButtonParamControl::buttonClicked, [this](int id) {
     tuningLevel = id;
     if (id == 3) {
-      FrogPilotConfirmationDialog::toggleAlert(
-        tr("WARNING: This unlocks some potentially dangerous settings that can DRASTICALLY alter your driving experience!"),
-        tr("I understand the risks."), this
-      );
+      ConfirmationDialog::alert(tr("WARNING: This unlocks some potentially dangerous settings that can DRASTICALLY alter your driving experience!"), this);
     }
     updateVariables();
   });
   QObject::connect(togglePreset, &ButtonParamControl::disabledButtonClicked, [this](int id) {
     if (id == 3) {
-      FrogPilotConfirmationDialog::toggleAlert(
-        tr("The 'Developer' preset is only available for users with either over 100 hours on FrogPilot, or 250 hours with openpilot."),
-        tr("Ok"), this
-      );
+      ConfirmationDialog::alert(tr("The 'Developer' preset is only available for users with either over 100 hours on FrogPilot, or 250 hours with openpilot."), this);
     }
   });
   list->addItem(togglePreset);

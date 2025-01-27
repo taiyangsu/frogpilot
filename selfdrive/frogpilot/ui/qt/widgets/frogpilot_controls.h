@@ -45,7 +45,6 @@ class FrogPilotConfirmationDialog : public ConfirmationDialog {
 public:
   explicit FrogPilotConfirmationDialog(const QString &prompt_text, const QString &confirm_text,
                                        const QString &cancel_text, const bool rich, QWidget *parent);
-  static bool toggleAlert(const QString &prompt_text, const QString &button_text, QWidget *parent, const bool isLong=false);
   static bool toggleReboot(QWidget *parent);
   static bool yesorno(const QString &prompt_text, QWidget *parent);
 };
