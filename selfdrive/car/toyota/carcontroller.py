@@ -29,6 +29,7 @@ ACCELERATION_DUE_TO_GRAVITY = 9.81  # m/s^2
 ACCEL_WINDUP_LIMIT = 4.0 * DT_CTRL * 3  # m/s^2 / frame
 ACCEL_WINDDOWN_LIMIT = -4.0 * DT_CTRL * 3  # m/s^2 / frame
 ACCEL_PID_UNWIND = 0.03 * DT_CTRL * 3  # m/s^2 / frame
+ACCEL_PID_UNWIND_SPORT_PLUS = 0.3 * DT_CTRL * 3  # m/s^2 / frame
 
 # LKA limits
 # EPS faults if you apply torque while the steering rate is above 100 deg/s for too long
@@ -271,7 +272,10 @@ class CarController(CarControllerBase):
 
         if CC.longActive:
           # constantly slowly unwind integral to recover from large temporary errors
-          self.long_pid.i -= ACCEL_PID_UNWIND * float(np.sign(self.long_pid.i))
+          if frogpilot_toggles.sport_plus:
+            self.long_pid.i -= ACCEL_PID_UNWIND_SPORT_PLUS * float(np.sign(self.long_pid.i))
+          else:
+            self.long_pid.i -= ACCEL_PID_UNWIND * float(np.sign(self.long_pid.i))
 
           error_future = pcm_accel_cmd - a_ego_future
           pcm_accel_cmd = self.long_pid.update(error_future,
